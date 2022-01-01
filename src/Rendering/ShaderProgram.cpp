@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 
+
 // Utility function to read shader code files
 std::string readFile(const char* filePath)
 {
