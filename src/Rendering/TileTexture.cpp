@@ -13,8 +13,7 @@ constexpr long long TEXTURE_MEMORY_SIZE = TEXTURE_SIZE * TEXTURE_SIZE * TEXTURE_
 constexpr GLenum PIXEL_FORMAT = GL_RGBA;
 
 
-
-TileTexture::TileTexture(const char* textureFilePath, const GLenum imageType)
+TileTexture::TileTexture(const char* textureFilePath)
 {
 	textureID = 0;
 
@@ -38,7 +37,9 @@ TileTexture::TileTexture(const char* textureFilePath, const GLenum imageType)
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, PIXEL_FORMAT, TEXTURE_SIZE, TEXTURE_SIZE, atlasTextureCount, 0, imageType, GL_UNSIGNED_BYTE, NULL);
+	const GLenum pixelFormat = (imageColourChannelCount == 3) ? GL_RGB : GL_RGBA;
+
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, PIXEL_FORMAT, TEXTURE_SIZE, TEXTURE_SIZE, atlasTextureCount, 0, pixelFormat, GL_UNSIGNED_BYTE, NULL);
 
 	for (int j = 0; j < atlasHeight; ++j)
 	{
@@ -62,4 +63,11 @@ TileTexture::TileTexture(const char* textureFilePath, const GLenum imageType)
 			glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, (j * atlasWidth + i), TEXTURE_SIZE, TEXTURE_SIZE, 1, PIXEL_FORMAT, GL_UNSIGNED_BYTE, textureDataArray.data());
 		}
 	}
+}
+
+
+
+void TileTexture::bindTexture() const
+{
+	glBindTexture(GL_TEXTURE_2D_ARRAY, textureID);
 }

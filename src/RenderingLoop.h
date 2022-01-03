@@ -17,15 +17,10 @@ public:
 
 	void runLoop(std::atomic<bool>& gameShouldClose);
 private:
-	void render();
 
 	LoopTimer framerateCounter;
 
 	EntityPosition playerPos;
-
-	ShaderProgram testShader;
-	GLuint VAO;
-	GLuint VBO;
 
 	GLFWwindow* mainWindow;
 };

@@ -43,8 +43,10 @@ GLuint createShader(const char* shaderCode, const int shaderType)
 
 
 
-void ShaderProgram::loadProgram(const char* shaderVertexPath, const char* shaderFragmentPath)
+ShaderProgram::ShaderProgram(const char* shaderVertexPath, const char* shaderFragmentPath)
 {
+	programID = NULL;
+
 	std::string codeVertex = readFile(shaderVertexPath);
 	std::string codeFragment = readFile(shaderFragmentPath);
 

@@ -6,8 +6,8 @@
 class TileTexture
 {
 public:
-	TileTexture(const char* textureFilePath, const GLenum imageType);
-	void bindTexture();
+	TileTexture(const char* textureFilePath);
+	void bindTexture() const;
 
 private:
 	GLuint textureID;
