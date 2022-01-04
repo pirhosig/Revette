@@ -8,5 +8,5 @@ public:
 	Block();
 	Block(int type);
 
-	int blockType;
+	const int blockType;
 };

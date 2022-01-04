@@ -2,14 +2,7 @@
 
 
 
-Block::Block()
-{
-	blockType = 0;
-}
+Block::Block() : blockType{ 0 } {}
 
 
-
-Block::Block(int type)
-{
-	blockType = type;
-}
+Block::Block(int type) : blockType{ type } {}

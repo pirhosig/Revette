@@ -4,7 +4,7 @@
 
 
 
-Renderer::Renderer(GLFWwindow* window) : testShader("shader/testShader.vs", "shader/testShader.fs")
+Renderer::Renderer(GLFWwindow* window) : testShader("shader/testShader.vs", "shader/testShader.fs"), tileTextureAtlas("res/texture_atlas.png")
 {
 	mainWindow = window;
 	VAO = NULL;

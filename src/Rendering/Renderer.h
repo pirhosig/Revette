@@ -2,8 +2,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "ShaderProgram.h"
 #include "../EntityPosition.h"
+#include "ShaderProgram.h"
+#include "TileTexture.h"
 
 
 
@@ -15,6 +16,7 @@ public:
 	void render(const EntityPosition& playerPos);
 
 private:
+	TileTexture tileTextureAtlas;
 
 	ShaderProgram testShader;
 	GLuint VAO;
