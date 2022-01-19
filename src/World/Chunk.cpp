@@ -1,20 +1,21 @@
 #include "Chunk.h"
+#include "../Constants.h"
 #include "../Exceptions.h"
 
 
 
-inline int checkAndFlattenIndex(const int x, const int y, const int z)
+inline int checkAndFlattenIndex(const ChunkLocalBlockPos blockPos)
 {
-	if (!((x > 0) && (x < CHUNK_SIZE) && (y > 0) && (y < CHUNK_SIZE) && (z > 0) && (z < CHUNK_SIZE)))
+	if (!((blockPos.x > 0) && (blockPos.x < CHUNK_SIZE) && (blockPos.y > 0) && (blockPos.y < CHUNK_SIZE) && (blockPos.z > 0) && (blockPos.z < CHUNK_SIZE)))
 	{
 		throw EXCEPTION_WORLD::BlockIndexOutOfRange("Invalid chunk index");
 	}
-	return x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z;
+	return blockPos.x * CHUNK_SIZE * CHUNK_SIZE + blockPos.y * CHUNK_SIZE + blockPos.z;
 }
 
 
 
-Chunk::Chunk(int x, int y, int z) : position(x, y, z)
+Chunk::Chunk(ChunkPos _pos) : position(_pos)
 {
 	blockArrayBlocksByIndex.push_back(Block(0));
 	blockArrayIndicesByBlock[Block(0)] = 0;
@@ -36,19 +37,19 @@ Chunk::Chunk(int x, int y, int z) : position(x, y, z)
 
 
 
-Block Chunk::getBlock(int x, int y, int z) const
+Block Chunk::getBlock(ChunkLocalBlockPos blockPos) const
 {
 	if (!blockArray) return blockArrayBlocksByIndex[0];
-	int index = checkAndFlattenIndex(x, y, z);
+	int index = checkAndFlattenIndex(blockPos);
 	return blockArrayBlocksByIndex.at(blockArray[index]);
 }
 
 
 
-void Chunk::setBlock(int x, int y, int z, Block block)
+void Chunk::setBlock(ChunkLocalBlockPos blockPos, Block block)
 {
 	if (!blockArray) createBlockArray();
-	int index = checkAndFlattenIndex(x, y, z);
+	int index = checkAndFlattenIndex(blockPos);
 	auto it = blockArrayIndicesByBlock.find(block);
 	if (it != blockArrayIndicesByBlock.end()) blockArray[index] = it->second;
 	else

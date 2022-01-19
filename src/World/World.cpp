@@ -1,6 +1,8 @@
 #include "World.h"
 #include <cmath>
 
+#include "Chunk.h"
+
 constexpr int RENDER_DISTANCE = 10;
 
 
@@ -17,6 +19,20 @@ void World::tick()
 	if (loadPosUpdated) addLoadQueue();
 
 	loadChunks();
+}
+
+
+
+Block World::getBlock(BlockPos blockPos) const
+{
+	return getChunk(ChunkPos(blockPos))->getBlock(ChunkLocalBlockPos(blockPos));
+}
+
+
+
+void World::setBlock(BlockPos blockPos, Block block) const
+{
+	getChunk(ChunkPos(blockPos))->setBlock(ChunkLocalBlockPos(blockPos), block);
 }
 
 
@@ -52,6 +68,15 @@ void World::loadChunks()
 		ChunkPos lPos = loadQueue.top().pos;
 		loadQueue.pop();
 
-		chunkMap[lPos] = std::make_unique<Chunk>(lPos.x, lPos.y, lPos.z);
+		chunkMap[lPos] = std::make_unique<Chunk>(lPos);
 	}
+}
+
+
+
+
+// More convenient access to a chunk object, the returned value is not intended to be stored beyond local scope.
+const std::unique_ptr<Chunk>& World::getChunk(const ChunkPos chunkPos) const
+{
+	return chunkMap.at(chunkPos);
 }

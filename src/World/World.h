@@ -4,6 +4,7 @@
 #include <set>
 
 #include "Chunk.h"
+#include "ChunkPos.h"
 
 
 
@@ -30,9 +31,14 @@ public:
 	World();
 	void tick();
 
+	Block getBlock(BlockPos blockPos) const;
+	void setBlock(BlockPos blockPos, Block block) const;
+
 private:
 	void addLoadQueue();
 	void loadChunks();
+
+	const std::unique_ptr<Chunk>& getChunk(const ChunkPos chunkPos) const;
 
 	std::map<ChunkPos, std::unique_ptr<Chunk>> chunkMap;
 
