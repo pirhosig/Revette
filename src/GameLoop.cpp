@@ -11,11 +11,11 @@ constexpr int TICK_TIME = 100;
 
 
 
-void GameLoop::runLoop(std::atomic<bool>& gameShouldClose)
+void GameLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes)
 {
 	World zaWarudo;
 
-	while (!gameShouldClose)
+	while (!gameShouldClose->load())
 	{
 		const auto tickEnd = std::chrono::steady_clock::now() + std::chrono::milliseconds(TICK_TIME);
 

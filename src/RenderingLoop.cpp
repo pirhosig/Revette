@@ -47,12 +47,12 @@ RenderingLoop::~RenderingLoop()
 
 
 
-void RenderingLoop::runLoop(std::atomic<bool>& gameShouldClose)
+void RenderingLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes)
 {
 	Renderer gameRenderer(mainWindow);
 	auto lastFrame = std::chrono::steady_clock::now();
 
-	while (!gameShouldClose)
+	while (!gameShouldClose->load())
 	{
 		const auto frameBegin = std::chrono::steady_clock::now();
 		const auto frameEnd = frameBegin + std::chrono::milliseconds(15);
@@ -63,7 +63,7 @@ void RenderingLoop::runLoop(std::atomic<bool>& gameShouldClose)
 		glfwPollEvents();
 		if (glfwGetKey(mainWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		{
-			gameShouldClose.store(true);
+			gameShouldClose->store(true);
 			break;
 		}
 		if (glfwGetKey(mainWindow, GLFW_KEY_W) == GLFW_PRESS) playerPos.moveForward(deltaTime * PLAYER_SPEED);

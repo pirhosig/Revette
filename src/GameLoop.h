@@ -1,12 +1,12 @@
 #pragma once
 #include <atomic>
+#include <memory>
 
+#include "Threading/ThreadQueueMeshes.h"
 
 
 class GameLoop
 {
 public:
-
-	void runLoop(std::atomic<bool>& gameShouldClose);
-private:
+	void runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes);
 };

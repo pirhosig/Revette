@@ -6,15 +6,15 @@
 
 #include "../../World/ChunkPos.h"
 #include "../ShaderProgram.h"
-class World;
-
+#include "MeshDataChunk.h"
 
 
 
 class MeshChunk
 {
 public:
-	MeshChunk(World& world, ChunkPos chunkPos);
+	MeshChunk(MeshDataChunk meshData);
+	MeshChunk(const MeshChunk&) = delete;
 	~MeshChunk();
 
 	void draw(std::unique_ptr<ShaderProgram>& shader, glm::mat4& transformMatrix) const;
