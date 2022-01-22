@@ -49,7 +49,7 @@ RenderingLoop::~RenderingLoop()
 
 void RenderingLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes)
 {
-	Renderer gameRenderer(mainWindow);
+	Renderer gameRenderer(mainWindow, std::move(threadQueueMeshes));
 	auto lastFrame = std::chrono::steady_clock::now();
 
 	while (!gameShouldClose->load())

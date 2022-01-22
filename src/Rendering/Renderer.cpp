@@ -4,11 +4,14 @@
 
 
 
-Renderer::Renderer(GLFWwindow* window) : testShader("shader/testShader.vs", "shader/testShader.fs"), tileTextureAtlas("res/texture_atlas.png")
+Renderer::Renderer(GLFWwindow* window, std::shared_ptr<ThreadQueueMeshes> chunkMeshQueue) : 
+	testShader("shader/testShader.vs", "shader/testShader.fs"),
+	tileTextureAtlas("res/texture_atlas.png"),
+	threadQueueMeshes(chunkMeshQueue)
 {
 	mainWindow = window;
-	VAO = NULL;
-	VBO = NULL;
+	VAO = 0;
+	VBO = 0;
 
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);

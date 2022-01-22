@@ -1,10 +1,11 @@
 #pragma once
-#include <queue>
 #include <map>
+#include <queue>
 #include <set>
 
 #include "Chunk.h"
 #include "ChunkPos.h"
+#include "../Threading/ThreadQueueMeshes.h"
 
 
 
@@ -28,7 +29,8 @@ public:
 class World
 {
 public:
-	World();
+	World(std::shared_ptr<ThreadQueueMeshes> meshQueue);
+	World(const World&) = delete;
 	void tick();
 
 	Block getBlock(BlockPos blockPos) const;
@@ -40,10 +42,15 @@ private:
 
 	const std::unique_ptr<Chunk>& getChunk(const ChunkPos chunkPos) const;
 
+	// Chunk storage
 	std::map<ChunkPos, std::unique_ptr<Chunk>> chunkMap;
 
+	// Chunk loading information
 	ChunkPos loadCentre;
 	bool loadPosUpdated;
 	std::priority_queue<ChunkLoadTicket> loadQueue;
 	std::set<ChunkPos> loadQueuedChunks;
+
+	// Chunk mesh container
+	std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes;
 };

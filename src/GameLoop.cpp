@@ -13,7 +13,7 @@ constexpr int TICK_TIME = 100;
 
 void GameLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes)
 {
-	World zaWarudo;
+	World zaWarudo(std::move(threadQueueMeshes));
 
 	while (!gameShouldClose->load())
 	{

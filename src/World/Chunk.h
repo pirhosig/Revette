@@ -12,6 +12,7 @@ class Chunk
 {
 public:
 	Chunk(ChunkPos _pos);
+	Chunk(const Chunk&) = delete;
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
 

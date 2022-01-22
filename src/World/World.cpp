@@ -1,13 +1,11 @@
 #include "World.h"
 #include <cmath>
 
-#include "Chunk.h"
-
 constexpr int RENDER_DISTANCE = 10;
 
 
 
-World::World() : loadCentre(0, 0, 0)
+World::World(std::shared_ptr<ThreadQueueMeshes> meshQueue) : loadCentre(0, 0, 0), threadQueueMeshes(meshQueue)
 {
 	loadPosUpdated = true;
 }
