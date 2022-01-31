@@ -23,7 +23,7 @@ struct Vertex
 class MeshDataChunk
 {
 public:
-	MeshDataChunk(World& world, ChunkPos chunkPos);
+	MeshDataChunk(const World& world, ChunkPos chunkPos);
 	MeshDataChunk(const MeshDataChunk&) = delete;
 
 	ChunkPos position;

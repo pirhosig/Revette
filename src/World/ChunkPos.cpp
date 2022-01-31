@@ -3,8 +3,8 @@
 
 inline int ChunkFloor(int x)
 {
-	if (x < 0) return (x - CHUNK_SIZE + 1) / CHUNK_SIZE;
-	else return x / CHUNK_SIZE;
+	if (x < 0) return ((x - CHUNK_SIZE + 1) / CHUNK_SIZE);
+	else return (x / CHUNK_SIZE);
 }
 
 
@@ -25,6 +25,13 @@ bool ChunkPos::operator<(const ChunkPos& other) const
 
 
 
+bool ChunkPos::operator==(const ChunkPos& other) const
+{
+	return ((x == other.x) && (y == other.y) && (z == other.z));
+}
+
+
+
 BlockPos ChunkLocalBlockPos::asBlockPos(ChunkPos chunkPos) const
 {
 	return BlockPos(
@@ -32,13 +39,4 @@ BlockPos ChunkLocalBlockPos::asBlockPos(ChunkPos chunkPos) const
 		chunkPos.y * CHUNK_SIZE + y,
 		chunkPos.z * CHUNK_SIZE + z
 	);
-}
-
-
-
-bool ChunkLocalBlockPos::operator<(const BlockPos& other) const
-{
-	if (x != other.x) return x < other.x;
-	else if (y != other.y) return y < other.y;
-	else return z < other.z;
 }

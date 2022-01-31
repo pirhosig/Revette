@@ -5,30 +5,11 @@
 
 
 Renderer::Renderer(GLFWwindow* window, std::shared_ptr<ThreadQueueMeshes> chunkMeshQueue) : 
-	testShader("shader/testShader.vs", "shader/testShader.fs"),
+	chunkShader("shader/chunkShader.vs", "shader/chunkShader.fs"),
 	tileTextureAtlas("res/texture_atlas.png"),
 	threadQueueMeshes(chunkMeshQueue)
 {
 	mainWindow = window;
-	VAO = 0;
-	VBO = 0;
-
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 8, (void*)(0));
-	glEnableVertexAttribArray(0);
-
-	const float TEST_VERTICIES[] = {
-		 0.0f,  0.0f,
-		 0.5f,  1.5f,
-		 0.0f,  1.0f
-	};
-
-	glBufferData(GL_ARRAY_BUFFER, 24, &TEST_VERTICIES[0], GL_STATIC_DRAW);
 }
 
 
@@ -48,10 +29,26 @@ void Renderer::render(const EntityPosition& playerPos)
 	const glm::mat4 view = glm::lookAt(pos, pos + front, glm::vec3(0.0, 1.0, 0.0));
 	const glm::mat4 projectionView = projection * view;
 
-	testShader.use();
-	testShader.setMat4("transform", projectionView);
-
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	chunkShader.use();
+	tileTextureAtlas.bindTexture();
+	chunkShader.setInt("tileAtlas", 0);
+	for (const auto& mesh : meshesChunk)
+	{
+		mesh->draw(chunkShader, projectionView);
+	}
 
 	glfwSwapBuffers(mainWindow);
+}
+
+
+
+void Renderer::unqueueMeshes()
+{
+	std::queue<std::unique_ptr<MeshDataChunk>> queue;
+	threadQueueMeshes->getQueue(queue);
+	while (!queue.empty())
+	{
+		meshesChunk.insert(std::make_unique<MeshChunk>(std::move(queue.front())));
+		queue.pop();
+	}
 }

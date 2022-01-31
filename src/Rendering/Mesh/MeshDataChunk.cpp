@@ -1,10 +1,10 @@
 #include "MeshDataChunk.h"
 
 #include "../../World/World.h"
+#include <iostream>
 
 
-
-MeshDataChunk::MeshDataChunk(World& world, ChunkPos chunkPos) : position(chunkPos)
+MeshDataChunk::MeshDataChunk(const World& world, ChunkPos chunkPos) : position(chunkPos)
 {
 	// Offsets for every vertex to draw a cube
 	const int FACE_TABLE[6][4][3] = {
@@ -49,7 +49,9 @@ MeshDataChunk::MeshDataChunk(World& world, ChunkPos chunkPos) : position(chunkPo
 				for (int l = 0; l < 6; ++l)
 				{
 					AxisDirection neighborDirection = static_cast<AxisDirection>(l);
-					Block neighbor = world.getBlock(worldPos.direction(neighborDirection));
+					BlockPos neighborBlock = worldPos.direction(neighborDirection);
+					Block neighbor = Block(0);
+					if (ChunkPos(neighborBlock) == position) neighbor = world.getBlock(neighborBlock);
 
 					// Only add face if the adjacent block is transparent
 					if (neighbor.blockType != 0) continue;

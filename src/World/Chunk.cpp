@@ -1,4 +1,6 @@
 #include "Chunk.h"
+#include <string>
+
 #include "../Constants.h"
 #include "../Exceptions.h"
 
@@ -6,9 +8,11 @@
 
 inline int checkAndFlattenIndex(const ChunkLocalBlockPos blockPos)
 {
-	if (!((blockPos.x > 0) && (blockPos.x < CHUNK_SIZE) && (blockPos.y > 0) && (blockPos.y < CHUNK_SIZE) && (blockPos.z > 0) && (blockPos.z < CHUNK_SIZE)))
+	if (!((blockPos.x >= 0) && (blockPos.x < CHUNK_SIZE) && (blockPos.y >= 0) && (blockPos.y < CHUNK_SIZE) && (blockPos.z >= 0) && (blockPos.z < CHUNK_SIZE)))
 	{
-		throw EXCEPTION_WORLD::BlockIndexOutOfRange("Invalid chunk index");
+		std::string errorMessage = "Invalid chunk block index at ";
+		errorMessage += std::to_string(blockPos.x) + " " + std::to_string(blockPos.y) + " " + std::to_string(blockPos.z);
+		throw EXCEPTION_WORLD::BlockIndexOutOfRange(errorMessage);
 	}
 	return blockPos.x * CHUNK_SIZE * CHUNK_SIZE + blockPos.y * CHUNK_SIZE + blockPos.z;
 }

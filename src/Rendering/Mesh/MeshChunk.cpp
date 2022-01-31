@@ -6,14 +6,11 @@
 
 
 // Creates a chunk mesh using the passed data object, the data members of "meshData" are moved into this instance
-MeshChunk::MeshChunk(MeshDataChunk meshData) : triangleCount(std::move(meshData.triangleCount)), position(std::move(meshData.position))
+MeshChunk::MeshChunk(std::unique_ptr<MeshDataChunk> meshData) : triangleCount(meshData->triangleCount), position(meshData->position)
 {
 	VAO = 0;
 	VBO = 0;
 	EBO = 0;
-
-	std::vector<Vertex> verticies = std::move(meshData.verticies);
-	std::vector<uint32_t> indicies = std::move(meshData.indicies);
 
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
@@ -28,7 +25,7 @@ MeshChunk::MeshChunk(MeshDataChunk meshData) : triangleCount(std::move(meshData.
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
 	glVertexAttribPointer(0, 3, GL_UNSIGNED_SHORT, GL_FALSE, sizeof(Vertex), (void*)(0));
-	glVertexAttribIPointer(1, 1, GL_UNSIGNED_SHORT, sizeof(Vertex), (void*)(6));
+	glVertexAttribPointer(1, 1, GL_UNSIGNED_SHORT, GL_FALSE, sizeof(Vertex), (void*)(6));
 	glVertexAttribPointer(
 		2,
 		2,
@@ -42,9 +39,9 @@ MeshChunk::MeshChunk(MeshDataChunk meshData) : triangleCount(std::move(meshData.
 	glEnableVertexAttribArray(2);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)* verticies.size(), verticies.data(), GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)* meshData->verticies.size(), meshData->verticies.data(), GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * indicies.size(), indicies.data(), GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * meshData->indicies.size(), meshData->indicies.data(), GL_DYNAMIC_DRAW);
 
 	glBindVertexArray(0);
 }
@@ -61,13 +58,12 @@ MeshChunk::~MeshChunk()
 
 
 // Draws the mesh, the shader program should already be active when this function is called
-void MeshChunk::draw(std::unique_ptr<ShaderProgram>& shader, glm::mat4& transformMatrix) const
+void MeshChunk::draw(const ShaderProgram& shader, const glm::mat4& transformMatrix) const
 {
 	BlockPos worldPosition = ChunkLocalBlockPos(0, 0, 0).asBlockPos(position);
 	glm::vec3 chunkVector(worldPosition.x, worldPosition.y, worldPosition.z);
-	glm::mat4 model = glm::translate(glm::mat4(1.0f), chunkVector);
-	glm::mat4 modelViewProjection = transformMatrix * model;
-	shader->setMat4("TransformMatrix", modelViewProjection);
+	glm::mat4 modelViewProjection = transformMatrix * glm::translate(glm::mat4(1.0f), chunkVector);
+	shader.setMat4("transform", modelViewProjection);
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, triangleCount * 3, GL_UNSIGNED_INT, 0);

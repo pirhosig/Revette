@@ -12,11 +12,11 @@
 void runGameLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes) try
 {
 	GameLoop mainLoop;
-	mainLoop.runLoop(std::move(gameShouldClose), std::move(threadQueueMeshes));
+	mainLoop.runLoop(gameShouldClose, std::move(threadQueueMeshes));
 }
 catch (const std::exception& error)
 {
-	std::cout << "Rendering exception: " << error.what() << std::endl;
+	std::cout << "Game exception: " << error.what() << std::endl;
 	gameShouldClose->store(true);
 }
 catch (...)
@@ -30,11 +30,11 @@ catch (...)
 void runRenderingLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes) try
 {
 	RenderingLoop mainLoop;
-	mainLoop.runLoop(std::move(gameShouldClose), std::move(threadQueueMeshes));
+	mainLoop.runLoop(gameShouldClose, std::move(threadQueueMeshes));
 }
 catch (const std::exception& error)
 {
-	std::cout << "Game exception: " << error.what() << std::endl;
+	std::cout << "Rendering exception: " << error.what() << std::endl;
 	gameShouldClose->store(true);
 }
 catch (...)

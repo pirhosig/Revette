@@ -34,7 +34,7 @@ public:
 	Block();
 	Block(int type);
 
-	const int blockType;
+	int blockType;
 };
 
 

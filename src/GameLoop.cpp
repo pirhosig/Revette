@@ -23,5 +23,4 @@ void GameLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::
 
 		std::this_thread::sleep_until(tickEnd);
 	}
-	return;
 }

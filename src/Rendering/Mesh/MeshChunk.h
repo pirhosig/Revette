@@ -13,11 +13,11 @@
 class MeshChunk
 {
 public:
-	MeshChunk(MeshDataChunk meshData);
+	MeshChunk(std::unique_ptr<MeshDataChunk> meshData);
 	MeshChunk(const MeshChunk&) = delete;
 	~MeshChunk();
 
-	void draw(std::unique_ptr<ShaderProgram>& shader, glm::mat4& transformMatrix) const;
+	void draw(const ShaderProgram& shader, const glm::mat4& transformMatrix) const;
 
 private:
 	ChunkPos position;

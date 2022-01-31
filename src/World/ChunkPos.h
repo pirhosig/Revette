@@ -15,6 +15,7 @@ public:
 	ChunkPos(BlockPos blockPos);
 
 	bool operator<(const ChunkPos& other) const;
+	bool operator==(const ChunkPos& other) const;
 };
 
 
@@ -30,12 +31,10 @@ public:
 	ChunkLocalBlockPos(BlockPos blockPos)
 	{
 		ChunkPos chunkPos(blockPos);
-		x = blockPos.x - chunkPos.x * CHUNK_SIZE;
-		y = blockPos.y - chunkPos.y * CHUNK_SIZE;
-		z = blockPos.z - chunkPos.z * CHUNK_SIZE;
+		x = blockPos.x - (chunkPos.x * CHUNK_SIZE);
+		y = blockPos.y - (chunkPos.y * CHUNK_SIZE);
+		z = blockPos.z - (chunkPos.z * CHUNK_SIZE);
 	}
 
 	BlockPos asBlockPos(ChunkPos chunkPos) const;
-
-	bool operator<(const BlockPos& other) const;
 };

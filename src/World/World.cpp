@@ -1,6 +1,8 @@
 #include "World.h"
 #include <cmath>
 
+#include "../Exceptions.h"
+
 constexpr int RENDER_DISTANCE = 10;
 
 
@@ -59,6 +61,8 @@ void World::addLoadQueue()
 
 void World::loadChunks()
 {
+	std::queue<std::unique_ptr<MeshDataChunk>> meshQueue;
+
 	constexpr int LOAD_COUNT = 100;
 	for (int i = 0; i < LOAD_COUNT; ++i)
 	{
@@ -67,14 +71,25 @@ void World::loadChunks()
 		loadQueue.pop();
 
 		chunkMap[lPos] = std::make_unique<Chunk>(lPos);
+		meshQueue.push(std::make_unique<MeshDataChunk>((*this), lPos));
 	}
-}
 
+	threadQueueMeshes->mergeQueue(meshQueue);
+}
 
 
 
 // More convenient access to a chunk object, the returned value is not intended to be stored beyond local scope.
 const std::unique_ptr<Chunk>& World::getChunk(const ChunkPos chunkPos) const
 {
-	return chunkMap.at(chunkPos);
+	try
+	{
+		return chunkMap.at(chunkPos);
+	}
+	catch (std::out_of_range)
+	{
+		std::string error = "Attempted to access non-existent chunk at ";
+		error += std::to_string(chunkPos.x) + " " + std::to_string(chunkPos.y) + " " + std::to_string(chunkPos.z);
+		throw EXCEPTION_WORLD::ChunkNonExistence(error);
+	}
 }
