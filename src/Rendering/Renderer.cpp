@@ -16,8 +16,9 @@ Renderer::Renderer(GLFWwindow* window, std::shared_ptr<ThreadQueueMeshes> chunkM
 
 void Renderer::render(const EntityPosition& playerPos)
 {
+	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.53f, 0.52f, 0.83f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	const glm::mat4 projection = glm::perspective(glm::radians(45.0), 1920.0 / 1080.0, 0.1, 100.0);
 	const glm::vec3 pos(playerPos.X, playerPos.Y, playerPos.Z);

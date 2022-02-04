@@ -17,7 +17,7 @@ TileTexture::TileTexture(const char* textureFilePath)
 {
 	textureID = 0;
 
-	int imageWidth, imageHeight, imageColourChannelCount;
+	int imageWidth{}, imageHeight{}, imageColourChannelCount{};
 	std::unique_ptr<unsigned char[]> imageDataArray(stbi_load(textureFilePath, &imageWidth, &imageHeight, &imageColourChannelCount, 0));
 	if (!imageDataArray)
 	{
@@ -37,7 +37,7 @@ TileTexture::TileTexture(const char* textureFilePath)
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	const GLenum pixelFormat = (imageColourChannelCount == 3) ? GL_RGB : GL_RGBA;
+	const GLenum pixelFormat = GL_RGBA; //((imageColourChannelCount == 3) ? GL_RGB : GL_RGBA);
 
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, PIXEL_FORMAT, TEXTURE_SIZE, TEXTURE_SIZE, atlasTextureCount, 0, pixelFormat, GL_UNSIGNED_BYTE, NULL);
 
@@ -63,11 +63,14 @@ TileTexture::TileTexture(const char* textureFilePath)
 			glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, (j * atlasWidth + i), TEXTURE_SIZE, TEXTURE_SIZE, 1, PIXEL_FORMAT, GL_UNSIGNED_BYTE, textureDataArray.data());
 		}
 	}
+
+	glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 }
 
 
 
 void TileTexture::bindTexture() const
 {
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, textureID);
 }

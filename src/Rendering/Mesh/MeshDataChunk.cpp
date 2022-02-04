@@ -23,10 +23,10 @@ MeshDataChunk::MeshDataChunk(const World& world, ChunkPos chunkPos) : position(c
 	};
 
 	const int TEXTURE_COORDINATES[4][2] = {
-		{ 0, 0 },
-		{ 1, 0 },
-		{ 1, 1 },
-		{ 0, 1 }
+		{   0,   0 },
+		{ 255,   0 },
+		{ 255, 255 },
+		{   0, 255 }
 	};
 
 	triangleCount = 0;

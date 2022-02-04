@@ -68,8 +68,8 @@ void RenderingLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, 
 		}
 		if (glfwGetKey(mainWindow, GLFW_KEY_W) == GLFW_PRESS) playerPos.moveForward(deltaTime * PLAYER_SPEED);
 		if (glfwGetKey(mainWindow, GLFW_KEY_S) == GLFW_PRESS) playerPos.moveForward(deltaTime * -PLAYER_SPEED);
-		if (glfwGetKey(mainWindow, GLFW_KEY_A) == GLFW_PRESS) playerPos.moveSideways(deltaTime * PLAYER_SPEED);
-		if (glfwGetKey(mainWindow, GLFW_KEY_D) == GLFW_PRESS) playerPos.moveSideways(deltaTime * -PLAYER_SPEED);
+		if (glfwGetKey(mainWindow, GLFW_KEY_A) == GLFW_PRESS) playerPos.moveSideways(deltaTime * -PLAYER_SPEED);
+		if (glfwGetKey(mainWindow, GLFW_KEY_D) == GLFW_PRESS) playerPos.moveSideways(deltaTime * PLAYER_SPEED);
 		if (glfwGetKey(mainWindow, GLFW_KEY_SPACE) == GLFW_PRESS) playerPos.moveVertical(deltaTime * PLAYER_SPEED);
 		if (glfwGetKey(mainWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) playerPos.moveVertical(deltaTime * -PLAYER_SPEED);
 
