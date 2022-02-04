@@ -7,8 +7,8 @@
 #include "ShaderProgram.h"
 #include "TileTexture.h"
 #include "Mesh/MeshChunk.h"
-#include "../EntityPosition.h"
 #include "../Threading/ThreadQueueMeshes.h"
+#include "../World/Entities/EntityPosition.h"
 
 
 

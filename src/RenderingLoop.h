@@ -4,10 +4,10 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "EntityPosition.h"
 #include "LoopTimer.h"
 #include "Rendering/ShaderProgram.h"
 #include "Threading/ThreadQueueMeshes.h"
+#include "World/Entities/EntityPosition.h"
 
 
 
