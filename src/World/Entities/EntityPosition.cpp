@@ -81,3 +81,19 @@ void EntityPosition::moveVertical(const double distance)
 {
 	Y += distance;
 }
+
+
+
+// Rotate the entity by the specified number of degrees
+void EntityPosition::rotate(const double xRot, const double yRot)
+{
+	// Rotation and constrain x angle to [0, 360)
+	xRotation += xRot;
+	xRotation = fmod(xRotation, 360.0);
+	if (xRotation < 0.0) xRotation += 360.0;
+
+	// Rotation and constrain y angle to [-90, 90]
+	yRotation += yRot;
+	if (yRotation < -90.0) yRotation = -90.0;
+	else if (yRotation > 90.0) yRotation = 90.0;
+}

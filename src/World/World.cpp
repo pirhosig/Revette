@@ -4,10 +4,14 @@
 #include "../Exceptions.h"
 
 constexpr int RENDER_DISTANCE = 10;
+constexpr int RENDER_DISTANCE_VERTICAL = 5;
 
 
 
-World::World(std::shared_ptr<ThreadQueueMeshes> meshQueue) : loadCentre(0, 0, 0), threadQueueMeshes(meshQueue)
+World::World(std::shared_ptr<ThreadQueueMeshes> meshQueue, const char* settingNoiseHeightmap) :
+	loadCentre(0, 0, 0),
+	threadQueueMeshes(meshQueue),
+	noiseHeightmap(FastNoise::NewFromEncodedNodeTree(settingNoiseHeightmap))
 {
 	loadPosUpdated = true;
 }
@@ -42,9 +46,9 @@ void World::addLoadQueue()
 	loadPosUpdated = false;
 	for (int x = loadCentre.x - RENDER_DISTANCE; x < loadCentre.x + RENDER_DISTANCE; ++x)
 	{
-		for (int y = loadCentre.x - RENDER_DISTANCE; y < loadCentre.x + RENDER_DISTANCE; ++y)
+		for (int z = loadCentre.z - RENDER_DISTANCE; z < loadCentre.z + RENDER_DISTANCE; ++z)
 		{
-			for (int z = loadCentre.x - RENDER_DISTANCE; z < loadCentre.x + RENDER_DISTANCE; ++z)
+			for (int y = loadCentre.y - RENDER_DISTANCE_VERTICAL; y < loadCentre.y + RENDER_DISTANCE_VERTICAL; ++y)
 			{
 				if (loadQueuedChunks.contains(ChunkPos(x, y, z))) continue;
 				int distance = std::abs(x - loadCentre.x) + std::abs(y - loadCentre.y) + std::abs(z - loadCentre.z);
@@ -70,9 +74,14 @@ void World::loadChunks()
 		ChunkPos lPos = loadQueue.top().pos;
 		loadQueue.pop();
 
-		chunkMap[lPos] = std::make_unique<Chunk>(lPos);
+		auto insertRes = chunkMap.insert({ lPos, std::make_unique<Chunk>(lPos) });
+		// Load the chunk
+		insertRes.first->second->GenerateChunk(noiseHeightmap);
 		// Create a mesh if the chunk is not empty
-		if (!getChunk(lPos)->isEmpty()) meshQueue.push(std::make_unique<MeshDataChunk>((*this), lPos));
+		if (!getChunk(lPos)->isEmpty()) {
+			std::unique_ptr<MeshDataChunk> meshData = std::make_unique<MeshDataChunk>((*this), lPos);
+			if (meshData->triangleCount > 0) meshQueue.push(std::move(meshData));
+		}
 	}
 
 	threadQueueMeshes->mergeQueue(meshQueue);

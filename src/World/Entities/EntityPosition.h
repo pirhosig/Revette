@@ -16,6 +16,7 @@ public:
 	void moveForward(const double distance);
 	void moveSideways(const double distance);
 	void moveVertical(const double distance);
+	void rotate(const double xRot, const double yRot);
 
 	double X;
 	double Y;

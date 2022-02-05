@@ -3,6 +3,8 @@
 #include <queue>
 #include <set>
 
+#include <FastNoise/FastNoise.h>
+
 #include "Chunk.h"
 #include "ChunkPos.h"
 #include "../Rendering/Mesh/MeshDataChunk.h"
@@ -29,7 +31,7 @@ public:
 class World
 {
 public:
-	World(std::shared_ptr<ThreadQueueMeshes> meshQueue);
+	World(std::shared_ptr<ThreadQueueMeshes> meshQueue, const char* settingNoiseHeightmap);
 	World(const World&) = delete;
 	void tick();
 
@@ -51,6 +53,9 @@ private:
 	bool loadPosUpdated;
 	std::priority_queue<ChunkLoadTicket> loadQueue;
 	std::set<ChunkPos> loadQueuedChunks;
+
+	// Chunk generation tools
+	FastNoise::SmartNode<> noiseHeightmap;
 
 	// Chunk mesh container
 	std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes;

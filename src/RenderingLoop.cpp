@@ -7,7 +7,7 @@
 
 #include "Rendering/Renderer.h"
 
-constexpr double PLAYER_SPEED = 3.0;
+constexpr double PLAYER_SPEED = 10.0;
 
 
 
@@ -125,6 +125,6 @@ void RenderingLoop::cursorPositionCallback(double xpos, double ypos)
 	cursorLastY = ypos;
 
 	constexpr double sensitivity = 0.1;
-
+	playerPos.rotate(deltaX * sensitivity, -deltaY * sensitivity);
 }
 

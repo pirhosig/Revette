@@ -20,12 +20,15 @@ void Renderer::render(const EntityPosition& playerPos)
 	glClearColor(0.53f, 0.52f, 0.83f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	const glm::mat4 projection = glm::perspective(glm::radians(45.0), 1920.0 / 1080.0, 0.1, 100.0);
+	double rotationY = glm::radians(fmax(fmin(playerPos.yRotation, 89.5), -89.5));
+	double rotationX = glm::radians(playerPos.xRotation);
+
+	const glm::mat4 projection = glm::perspective(glm::radians(45.0), 1920.0 / 1080.0, 0.1, 1000.0);
 	const glm::vec3 pos(playerPos.X, playerPos.Y, playerPos.Z);
-	const glm::vec front = glm::normalize(glm::vec3(
-		cos(glm::radians(playerPos.xRotation)) * cos(glm::radians(playerPos.yRotation)),
-		sin(glm::radians(playerPos.yRotation)),
-		sin(glm::radians(playerPos.xRotation)) * cos(glm::radians(playerPos.yRotation))
+	const glm::vec3 front = glm::normalize(glm::vec3(
+		cos(rotationX) * cos(rotationY),
+		sin(rotationY),
+		sin(rotationX) * cos(rotationY)
 	));
 	const glm::mat4 view = glm::lookAt(pos, pos + front, glm::vec3(0.0, 1.0, 0.0));
 	const glm::mat4 projectionView = projection * view;
