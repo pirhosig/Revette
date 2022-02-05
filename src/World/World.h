@@ -5,8 +5,8 @@
 
 #include "Chunk.h"
 #include "ChunkPos.h"
+#include "../Rendering/Mesh/MeshDataChunk.h"
 #include "../Threading/ThreadQueueMeshes.h"
-
 
 
 class ChunkLoadTicket
@@ -40,7 +40,8 @@ private:
 	void addLoadQueue();
 	void loadChunks();
 
-	const std::unique_ptr<Chunk>& getChunk(const ChunkPos chunkPos) const;
+	bool chunkExists(const ChunkPos& chunkPos) const;
+	const std::unique_ptr<Chunk>& getChunk(const ChunkPos& chunkPos) const;
 
 	// Chunk storage
 	std::map<ChunkPos, std::unique_ptr<Chunk>> chunkMap;
@@ -53,4 +54,5 @@ private:
 
 	// Chunk mesh container
 	std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes;
+	friend MeshDataChunk;
 };

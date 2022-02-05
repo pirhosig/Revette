@@ -67,6 +67,14 @@ void Chunk::setBlock(ChunkLocalBlockPos blockPos, Block block)
 
 
 
+bool Chunk::isEmpty() const
+{
+	if (blockArray) return false;
+	else return true;
+}
+
+
+
 void Chunk::createBlockArray()
 {
 	blockArray = std::make_unique<uint16_t[]>(CHUNK_VOLUME);

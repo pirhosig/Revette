@@ -4,34 +4,43 @@
 #include <iostream>
 
 
+
+// Offsets for every vertex to draw a cube
+const int FACE_TABLE[6][4][3] = {
+	// Up
+	{{ 0, 1, 0 }, { 1, 1, 0 }, { 1, 1, 1 }, {0, 1, 1}},
+	// Down
+	{{ 0, 0, 0 }, { 1, 0, 0 }, { 1, 0, 1 }, {0, 0, 1}},
+	// North
+	{{ 1, 1, 1 }, { 1, 1, 0 }, { 1, 0, 0 }, {1, 0, 1}},
+	// South
+	{{ 0, 1, 1 }, { 0, 1, 0 }, { 0, 0, 0 }, {0, 0, 1}},
+	// East
+	{{ 0, 0, 1 }, { 1, 0, 1 }, { 1, 1, 1 }, {0, 1, 1}},
+	// West
+	{{ 0, 0, 0 }, { 1, 0, 0 }, { 1, 1, 0 }, {0, 1, 0}}
+};
+
+const int TEXTURE_COORDINATES[4][2] = {
+	{   0,   0 },
+	{ 255,   0 },
+	{ 255, 255 },
+	{   0, 255 }
+};
+
+
+
 MeshDataChunk::MeshDataChunk(const World& world, ChunkPos chunkPos) : position(chunkPos)
 {
-	// Offsets for every vertex to draw a cube
-	const int FACE_TABLE[6][4][3] = {
-		// Up
-		{{ 0, 1, 0 }, { 1, 1, 0 }, { 1, 1, 1 }, {0, 1, 1}},
-		// Down
-		{{ 0, 0, 0 }, { 1, 0, 0 }, { 1, 0, 1 }, {0, 0, 1}},
-		// North
-		{{ 1, 1, 1 }, { 1, 1, 0 }, { 1, 0, 0 }, {1, 0, 1}},
-		// South
-		{{ 0, 1, 1 }, { 0, 1, 0 }, { 0, 0, 0 }, {0, 0, 1}},
-		// East
-		{{ 0, 0, 1 }, { 1, 0, 1 }, { 1, 1, 1 }, {0, 1, 1}},
-		// West
-		{{ 0, 0, 0 }, { 1, 0, 0 }, { 1, 1, 0 }, {0, 1, 0}}
-	};
-
-	const int TEXTURE_COORDINATES[4][2] = {
-		{   0,   0 },
-		{ 255,   0 },
-		{ 255, 255 },
-		{   0, 255 }
-	};
-
 	triangleCount = 0;
 	int indexCounter = 0;
 
+	const std::unique_ptr<Chunk>& chunkCurrent = world.getChunk(position);
+
+	// Skip loop if chunk is empty
+	if (chunkCurrent->isEmpty()) return;
+
+	// Loop and check for each block whether it is solid, and so whether it needs to be added
 	for (int i = 0; i < CHUNK_SIZE; ++i)
 	{
 		for (int j = 0; j < CHUNK_SIZE; ++j)
@@ -41,7 +50,7 @@ MeshDataChunk::MeshDataChunk(const World& world, ChunkPos chunkPos) : position(c
 				ChunkLocalBlockPos localPos(i, j, k);
 				BlockPos worldPos = localPos.asBlockPos(chunkPos);
 
-				Block block = world.getBlock(worldPos);
+				Block block = chunkCurrent->getBlock(worldPos);
 				// Skip if air block
 				if (block.blockType == 0) continue;
 

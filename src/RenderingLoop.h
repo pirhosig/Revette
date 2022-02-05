@@ -18,11 +18,19 @@ public:
 	~RenderingLoop();
 
 	void runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes);
+
+	static void cursorPositionCallbackWrapper(GLFWwindow* window, double xpos, double ypos);
 private:
+	void processInput(const double deltaTime);
+
+
+	// Callback functions
+
+	double cursorLastX;
+	double cursorLastY;
+	void cursorPositionCallback(double xpos, double ypos);
 
 	LoopTimer framerateCounter;
-
 	EntityPosition playerPos;
-
 	GLFWwindow* mainWindow;
 };

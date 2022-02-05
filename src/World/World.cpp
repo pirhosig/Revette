@@ -46,7 +46,7 @@ void World::addLoadQueue()
 		{
 			for (int z = loadCentre.x - RENDER_DISTANCE; z < loadCentre.x + RENDER_DISTANCE; ++z)
 			{
-				if (loadQueuedChunks.count(ChunkPos(x, y, z))) continue;
+				if (loadQueuedChunks.contains(ChunkPos(x, y, z))) continue;
 				int distance = std::abs(x - loadCentre.x) + std::abs(y - loadCentre.y) + std::abs(z - loadCentre.z);
 				int priority = std::max(100 - distance, 0);
 
@@ -71,7 +71,8 @@ void World::loadChunks()
 		loadQueue.pop();
 
 		chunkMap[lPos] = std::make_unique<Chunk>(lPos);
-		meshQueue.push(std::make_unique<MeshDataChunk>((*this), lPos));
+		// Create a mesh if the chunk is not empty
+		if (!getChunk(lPos)->isEmpty()) meshQueue.push(std::make_unique<MeshDataChunk>((*this), lPos));
 	}
 
 	threadQueueMeshes->mergeQueue(meshQueue);
@@ -79,8 +80,15 @@ void World::loadChunks()
 
 
 
+bool World::chunkExists(const ChunkPos& chunkPos) const
+{
+	return chunkMap.contains(chunkPos);
+}
+
+
+
 // More convenient access to a chunk object, the returned value is not intended to be stored beyond local scope.
-const std::unique_ptr<Chunk>& World::getChunk(const ChunkPos chunkPos) const
+const std::unique_ptr<Chunk>& World::getChunk(const ChunkPos& chunkPos) const
 {
 	try
 	{

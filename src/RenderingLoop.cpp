@@ -11,7 +11,7 @@ constexpr double PLAYER_SPEED = 3.0;
 
 
 
-RenderingLoop::RenderingLoop() : framerateCounter(1024)
+RenderingLoop::RenderingLoop() : framerateCounter(1024), cursorLastX(0.0), cursorLastY(0.0)
 {
 	// Initialize glfw and configure it
 	glfwInit();
@@ -23,18 +23,26 @@ RenderingLoop::RenderingLoop() : framerateCounter(1024)
 	GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
 
+	// Create a window and verify that it was created, then set it as the current opengl context on this thread
 	mainWindow = glfwCreateWindow(videoMode->width, videoMode->height, "Revette-3D", primaryMonitor, NULL);
 	if (mainWindow == NULL) throw std::runtime_error("Unable to create window");
-
 	glfwMakeContextCurrent(mainWindow);
-
 
 	// Load opengl function pointers
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) throw std::runtime_error("Failed to load openGL function pointers");
 
-	// Sets the user pointer for use in callback functions
+	// Set the user pointer for use in callback functions
 	glfwSetWindowUserPointer(mainWindow, this);
 
+	// Set the callback functions
+	glfwSetCursorPosCallback(mainWindow, RenderingLoop::cursorPositionCallbackWrapper);
+
+	// Disable the cursor
+	glfwSetInputMode(mainWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	glfwGetCursorPos(mainWindow, &cursorLastX, &cursorLastY);
+
+	// Set the viewport to match the screen height and width
 	glViewport(0, 0, videoMode->width, videoMode->height);
 }
 
@@ -60,18 +68,14 @@ void RenderingLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, 
 		const double deltaTime = timeElapsed.count();
 		lastFrame = frameBegin;
 
-		glfwPollEvents();
+		// Exit if escape key is pressed
 		if (glfwGetKey(mainWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		{
 			gameShouldClose->store(true);
 			break;
 		}
-		if (glfwGetKey(mainWindow, GLFW_KEY_W) == GLFW_PRESS) playerPos.moveForward(deltaTime * PLAYER_SPEED);
-		if (glfwGetKey(mainWindow, GLFW_KEY_S) == GLFW_PRESS) playerPos.moveForward(deltaTime * -PLAYER_SPEED);
-		if (glfwGetKey(mainWindow, GLFW_KEY_A) == GLFW_PRESS) playerPos.moveSideways(deltaTime * -PLAYER_SPEED);
-		if (glfwGetKey(mainWindow, GLFW_KEY_D) == GLFW_PRESS) playerPos.moveSideways(deltaTime * PLAYER_SPEED);
-		if (glfwGetKey(mainWindow, GLFW_KEY_SPACE) == GLFW_PRESS) playerPos.moveVertical(deltaTime * PLAYER_SPEED);
-		if (glfwGetKey(mainWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) playerPos.moveVertical(deltaTime * -PLAYER_SPEED);
+
+		processInput(deltaTime);
 
 		gameRenderer.unqueueMeshes();
 		gameRenderer.render(playerPos);
@@ -85,4 +89,42 @@ void RenderingLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, 
 	}
 }
 
+
+
+// Non-instance bound wrapper required for the glfw mouse callback
+void RenderingLoop::cursorPositionCallbackWrapper(GLFWwindow* window, double xpos, double ypos)
+{
+	RenderingLoop* instance = static_cast<RenderingLoop*>(glfwGetWindowUserPointer(window));
+	instance->cursorPositionCallback(xpos, ypos);
+}
+
+
+
+// Process keyboard and mouse input
+void RenderingLoop::processInput(const double deltaTime)
+{
+	glfwPollEvents();
+	if (glfwGetKey(mainWindow, GLFW_KEY_W) == GLFW_PRESS) playerPos.moveForward(deltaTime * PLAYER_SPEED);
+	if (glfwGetKey(mainWindow, GLFW_KEY_S) == GLFW_PRESS) playerPos.moveForward(deltaTime * -PLAYER_SPEED);
+	if (glfwGetKey(mainWindow, GLFW_KEY_A) == GLFW_PRESS) playerPos.moveSideways(deltaTime * -PLAYER_SPEED);
+	if (glfwGetKey(mainWindow, GLFW_KEY_D) == GLFW_PRESS) playerPos.moveSideways(deltaTime * PLAYER_SPEED);
+	if (glfwGetKey(mainWindow, GLFW_KEY_SPACE) == GLFW_PRESS) playerPos.moveVertical(deltaTime * PLAYER_SPEED);
+	if (glfwGetKey(mainWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) playerPos.moveVertical(deltaTime * -PLAYER_SPEED);
+}
+
+
+
+// This function is called every time the cursor position changes, and changes the camera rotation accordingly
+void RenderingLoop::cursorPositionCallback(double xpos, double ypos)
+{
+	// Get change in mouse position
+	double deltaX = xpos - cursorLastX;
+	double deltaY = ypos - cursorLastY;
+	// Update the mouse position
+	cursorLastX = xpos;
+	cursorLastY = ypos;
+
+	constexpr double sensitivity = 0.1;
+
+}
 
