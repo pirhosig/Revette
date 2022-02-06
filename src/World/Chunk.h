@@ -3,10 +3,9 @@
 #include <memory>
 #include <vector>
 
-#include <FastNoise/FastNoise.h>
-
 #include "Block.h"
 #include "ChunkPos.h"
+class NoiseSource2D;
 
 
 
@@ -16,7 +15,7 @@ public:
 	Chunk(ChunkPos _pos);
 	Chunk(const Chunk&) = delete;
 
-	void GenerateChunk(FastNoise::SmartNode<>& noiseHeightmap);
+	void GenerateChunk(NoiseSource2D& noiseHeightmap);
 
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
@@ -27,6 +26,7 @@ public:
 
 private:
 	void createBlockArray();
+	void deleteBlockArray();
 
 	std::unique_ptr<uint16_t[]> blockArray;
 	std::vector<Block> blockArrayBlocksByIndex;

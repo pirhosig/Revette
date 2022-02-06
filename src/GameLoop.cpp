@@ -7,7 +7,7 @@
 #include "World/World.h"
 
 
-constexpr int TICK_TIME = 100;
+constexpr int TICK_TIME = 40;
 const char* NOISE_HEIGHTMAP = "DQAEAAAAAAAAQAkAAAAAAD8AAAAAAA==";
 
 
@@ -18,10 +18,13 @@ void GameLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::
 
 	while (!gameShouldClose->load())
 	{
-		const auto tickEnd = std::chrono::steady_clock::now() + std::chrono::milliseconds(TICK_TIME);
+		auto tickTimeBegin = std::chrono::steady_clock::now();
+		const auto tickTimeEnd = tickTimeBegin + std::chrono::milliseconds(TICK_TIME);
 
 		zaWarudo.tick();
 
-		std::this_thread::sleep_until(tickEnd);
+		std::this_thread::sleep_until(tickTimeEnd);
+		const auto tickDuration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - tickTimeBegin);
+		tickTime.addTime(tickDuration.count());
 	}
 }

@@ -40,6 +40,13 @@ MeshDataChunk::MeshDataChunk(const World& world, ChunkPos chunkPos) : position(c
 	// Skip loop if chunk is empty
 	if (chunkCurrent->isEmpty()) return;
 
+	const std::unique_ptr<Chunk>& chunkUp    = world.getChunk(position.direction(AxisDirection::Up));
+	const std::unique_ptr<Chunk>& chunkDown  = world.getChunk(position.direction(AxisDirection::Down));
+	const std::unique_ptr<Chunk>& chunkNorth = world.getChunk(position.direction(AxisDirection::North));
+	const std::unique_ptr<Chunk>& chunkSouth = world.getChunk(position.direction(AxisDirection::South));
+	const std::unique_ptr<Chunk>& chunkEast  = world.getChunk(position.direction(AxisDirection::East));
+	const std::unique_ptr<Chunk>& chunkWest  = world.getChunk(position.direction(AxisDirection::West));
+
 	// Loop and check for each block whether it is solid, and so whether it needs to be added
 	for (int i = 0; i < CHUNK_SIZE; ++i)
 	{
@@ -59,8 +66,35 @@ MeshDataChunk::MeshDataChunk(const World& world, ChunkPos chunkPos) : position(c
 				{
 					AxisDirection neighborDirection = static_cast<AxisDirection>(l);
 					BlockPos neighborBlock = worldPos.direction(neighborDirection);
-					Block neighbor = Block(0);
-					if (ChunkPos(neighborBlock) == position) neighbor = world.getBlock(neighborBlock);
+					ChunkLocalBlockPos neighborLocal(neighborBlock);
+					Block neighbor;
+					if (ChunkPos(neighborBlock) == position) neighbor = chunkCurrent->getBlock(neighborLocal);
+					else
+					{
+						switch (neighborDirection)
+						{
+						case AxisDirection::Up:
+							neighbor = chunkUp->getBlock(neighborLocal);
+							break;
+						case AxisDirection::Down:
+							neighbor = chunkDown->getBlock(neighborLocal);
+							break;
+						case AxisDirection::North:
+							neighbor = chunkNorth->getBlock(neighborLocal);
+							break;
+						case AxisDirection::South:
+							neighbor = chunkSouth->getBlock(neighborLocal);
+							break;
+						case AxisDirection::East:
+							neighbor = chunkEast->getBlock(neighborLocal);
+							break;
+						case AxisDirection::West:
+							neighbor = chunkWest->getBlock(neighborLocal);
+							break;
+						default:
+							break;
+						}
+					}
 
 					// Only add face if the adjacent block is transparent
 					if (neighbor.blockType != 0) continue;

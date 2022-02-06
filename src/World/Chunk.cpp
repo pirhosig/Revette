@@ -4,6 +4,7 @@
 
 #include "../Constants.h"
 #include "../Exceptions.h"
+#include "Generation/NoiseSource.h"
 
 
 
@@ -29,7 +30,7 @@ Chunk::Chunk(ChunkPos _pos) : position(_pos), generated(false)
 
 
 
-void Chunk::GenerateChunk(FastNoise::SmartNode<>& noiseHeightmap)
+void Chunk::GenerateChunk(NoiseSource2D& noiseHeightmap)
 {
 	if (generated) throw EXCEPTION_WORLD::ChunkRegeneration("Attempted to re-generate chunk");
 	generated = true;
@@ -37,10 +38,7 @@ void Chunk::GenerateChunk(FastNoise::SmartNode<>& noiseHeightmap)
 
 	std::array<int, CHUNK_AREA> heightMap{};
 	{
-		std::array<float, CHUNK_AREA> noiseMap{};
-		int cPosX = position.x * CHUNK_SIZE;
-		int cPosZ = position.z * CHUNK_SIZE;
-		noiseHeightmap->GenUniformGrid2D(noiseMap.data(), cPosX, cPosZ, CHUNK_SIZE, CHUNK_SIZE, 0.00625, 42);
+		std::array<float, CHUNK_AREA> noiseMap = noiseHeightmap.GenChunkNoise(position);
 		for (int i = 0; i < CHUNK_AREA; ++i)
 		{
 			heightMap[i] = static_cast<int>(noiseMap[i] * 5.0);
@@ -54,12 +52,14 @@ void Chunk::GenerateChunk(FastNoise::SmartNode<>& noiseHeightmap)
 			for (int lY = 0; lY < CHUNK_SIZE; ++lY)
 			{
 				ChunkLocalBlockPos blockPos(lX, lY, lZ);
-				int index = lX * CHUNK_SIZE + lZ;
+				int index = lZ * CHUNK_SIZE + lX;
 				if (heightMap[index] < (position.y * CHUNK_SIZE + lY)) blockArray[checkAndFlattenIndex(blockPos)] = 0;
 				else setBlock(blockPos, Block(1));
 			}
 		}
 	}
+
+	if (blockArrayBlocksByIndex.size() == 1) deleteBlockArray();
 }
 
 
@@ -101,6 +101,13 @@ bool Chunk::isEmpty() const
 void Chunk::createBlockArray()
 {
 	blockArray = std::make_unique<uint16_t[]>(CHUNK_VOLUME);
+}
+
+
+
+void Chunk::deleteBlockArray()
+{
+	blockArray.reset();
 }
 
 

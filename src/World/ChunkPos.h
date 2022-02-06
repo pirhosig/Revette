@@ -13,6 +13,7 @@ public:
 
 	ChunkPos(int x, int y, int z) : x(x), y(y), z(z) {}
 	ChunkPos(BlockPos blockPos);
+	ChunkPos direction(AxisDirection direction) const;
 
 	bool operator<(const ChunkPos& other) const;
 	bool operator==(const ChunkPos& other) const;

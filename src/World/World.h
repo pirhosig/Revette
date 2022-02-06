@@ -7,23 +7,43 @@
 
 #include "Chunk.h"
 #include "ChunkPos.h"
+#include "Generation/NoiseSource.h"
 #include "../Rendering/Mesh/MeshDataChunk.h"
 #include "../Threading/ThreadQueueMeshes.h"
 
 
-class ChunkLoadTicket
+
+class ChunkPriorityTicket
 {
 public:
 	int priority;
 	ChunkPos pos;
 
-	ChunkLoadTicket(int priority, int x, int y, int z) : priority(priority), pos(x, y, z) {}
+	ChunkPriorityTicket(int _priority, ChunkPos _pos) : priority{ _priority }, pos{ _pos } {}
 
-	bool operator<(const ChunkLoadTicket& other) const
+	bool operator<(const ChunkPriorityTicket& other) const
 	{
 		if (priority != other.priority) return priority < other.priority;
 		else return pos < other.pos;
 	}
+};
+
+
+
+enum class StatusChunkLoad
+{
+	NON_EXISTENT,
+	QUEUED,
+	LOADED,
+	GENERATED,
+};
+
+
+
+struct StatusChunk
+{
+	StatusChunkLoad loadStatus{ StatusChunkLoad::NON_EXISTENT };
+	bool hasMesh{ false };
 };
 
 
@@ -39,11 +59,17 @@ public:
 	void setBlock(BlockPos blockPos, Block block) const;
 
 private:
+
 	void addLoadQueue();
 	void loadChunks();
+	void meshChunks();
 
-	bool chunkExists(const ChunkPos& chunkPos) const;
-	const std::unique_ptr<Chunk>& getChunk(const ChunkPos& chunkPos) const;
+	bool chunkExists(const ChunkPos chunkPos) const;
+	const std::unique_ptr<Chunk>& getChunk(const ChunkPos chunkPos) const;
+	StatusChunkLoad getChunkStatusLoad(const ChunkPos chunkPos) const;
+	bool getChunkStatusMesh(const ChunkPos chunkPos);
+	void setChunkStatusLoad(const ChunkPos chunkPos, StatusChunkLoad status);
+	void setChunkStatusMesh(const ChunkPos chunkPos, bool status);
 
 	// Chunk storage
 	std::map<ChunkPos, std::unique_ptr<Chunk>> chunkMap;
@@ -51,11 +77,12 @@ private:
 	// Chunk loading information
 	ChunkPos loadCentre;
 	bool loadPosUpdated;
-	std::priority_queue<ChunkLoadTicket> loadQueue;
-	std::set<ChunkPos> loadQueuedChunks;
+	std::map<ChunkPos, StatusChunk> chunkStatusMap;
+	std::priority_queue<ChunkPriorityTicket> loadQueue;
+	std::priority_queue<ChunkPriorityTicket> meshQueue;
 
 	// Chunk generation tools
-	FastNoise::SmartNode<> noiseHeightmap;
+	NoiseSource2D noiseHeightmap;
 
 	// Chunk mesh container
 	std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes;

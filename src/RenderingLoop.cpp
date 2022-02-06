@@ -83,8 +83,7 @@ void RenderingLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, 
 		// Limit framerate
 		std::this_thread::sleep_until(frameEnd);
 		// Calculate framerate
-		const auto frameEndTime = std::chrono::steady_clock::now();
-		const auto frameTime = std::chrono::duration_cast<std::chrono::microseconds>(frameEndTime - frameBegin);
+		const auto frameTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - frameBegin);
 		framerateCounter.addTime(frameTime.count());
 	}
 }
