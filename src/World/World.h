@@ -3,8 +3,6 @@
 #include <queue>
 #include <set>
 
-#include <FastNoise/FastNoise.h>
-
 #include "Chunk.h"
 #include "ChunkPos.h"
 #include "Generation/NoiseSource.h"
@@ -51,7 +49,7 @@ struct StatusChunk
 class World
 {
 public:
-	World(std::shared_ptr<ThreadQueueMeshes> meshQueue, const char* settingNoiseHeightmap);
+	World(std::shared_ptr<ThreadQueueMeshes> meshQueue, const char* settingNoiseHeightmap, const char* settingNoiseFoliage);
 	World(const World&) = delete;
 	void tick();
 
@@ -83,6 +81,7 @@ private:
 
 	// Chunk generation tools
 	NoiseSource2D noiseHeightmap;
+	NoiseSource2D noiseFoliage;
 
 	// Chunk mesh container
 	std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes;

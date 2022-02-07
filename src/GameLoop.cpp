@@ -9,12 +9,13 @@
 
 constexpr int TICK_TIME = 40;
 const char* NOISE_HEIGHTMAP = "DQAEAAAAAAAAQAkAAAAAAD8AAAAAAA==";
+const char* NOISE_FOLIAGE = "AQA=";
 
 
 
 void GameLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes)
 {
-	World zaWarudo(std::move(threadQueueMeshes), NOISE_HEIGHTMAP);
+	World zaWarudo(std::move(threadQueueMeshes), NOISE_HEIGHTMAP, NOISE_FOLIAGE);
 
 	while (!gameShouldClose->load())
 	{

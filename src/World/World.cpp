@@ -10,10 +10,11 @@ constexpr int RENDER_DISTANCE_VERTICAL = 4;
 
 
 
-World::World(std::shared_ptr<ThreadQueueMeshes> meshQueue, const char* settingNoiseHeightmap) :
+World::World(std::shared_ptr<ThreadQueueMeshes> meshQueue, const char* settingNoiseHeightmap, const char* settingNoiseFoliage) :
 	loadCentre(0, 0, 0),
 	threadQueueMeshes(meshQueue),
 	noiseHeightmap(settingNoiseHeightmap, 0.00625f, 42),
+	noiseFoliage(settingNoiseFoliage, 1.0, 42),
 	loadPosUpdated{ true }
 {}
 
