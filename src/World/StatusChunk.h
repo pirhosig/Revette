@@ -9,6 +9,16 @@ enum class StatusChunkLoad
 	QUEUED,
 	LOADED,
 	GENERATED,
+	POPULATED
+};
+
+
+
+enum class StatusChunkMesh
+{
+	NON_EXISTENT,
+	QUEUED,
+	MESHED
 };
 
 
@@ -18,15 +28,15 @@ class StatusChunk
 public:
 	StatusChunkLoad getLoadStatus() const { return loadStatus; }
 	void setLoadStatus(StatusChunkLoad _loadStatus) { loadStatus = _loadStatus; }
-	bool getHasMesh() const { return hasMesh; }
-	void setHasMesh(bool _hasMesh) { hasMesh = _hasMesh; }
+	StatusChunkMesh getMeshStatus() const { return hasMesh; }
+	void setHasMesh(StatusChunkMesh _hasMesh) { hasMesh = _hasMesh; }
 
-	void setNeighbourLoadStatus(int xOffset, int yOffset, int zOffset, bool isLoaded);
-	bool getNeighboursCardinalAreLoaded() const;
-	bool getNeighboursCubeAreLoaded() const;
+	void setNeighbourLoadStatus(int xOffset, int yOffset, int zOffset, StatusChunkLoad loadStatus);
+	bool getNeighboursCardinalHaveStatus(StatusChunkLoad loadStatus) const;
+	bool getNeighboursCubeHaveStatus(StatusChunkLoad loadStatus) const;
 
 private:
 	StatusChunkLoad loadStatus{ StatusChunkLoad::NON_EXISTENT };
-	bool hasMesh{ false };
-	std::array<bool, 26> neighboursLoaded{};
+	StatusChunkMesh hasMesh{ StatusChunkMesh::NON_EXISTENT };
+	std::array<StatusChunkLoad, 26> neighboursLoaded{};
 };

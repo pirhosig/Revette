@@ -48,9 +48,11 @@ private:
 	bool chunkExists(const ChunkPos chunkPos) const;
 	const std::unique_ptr<Chunk>& getChunk(const ChunkPos chunkPos) const;
 	StatusChunkLoad getChunkStatusLoad(const ChunkPos chunkPos) const;
-	bool getChunkStatusMesh(const ChunkPos chunkPos);
+	StatusChunkMesh getChunkStatusMesh(const ChunkPos chunkPos);
 	void setChunkStatusLoad(const ChunkPos chunkPos, StatusChunkLoad status);
-	void setChunkStatusMesh(const ChunkPos chunkPos, bool status);
+	void setChunkStatusMesh(const ChunkPos chunkPos, StatusChunkMesh status);
+
+	void queueChunkMeshing(const ChunkPos chunkPos);
 
 	// Chunk storage
 	std::map<ChunkPos, std::unique_ptr<Chunk>> chunkMap;
