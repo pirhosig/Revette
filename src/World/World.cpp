@@ -1,4 +1,5 @@
 #include "World.h"
+#include <cassert>
 #include <cmath>
 
 #include "../Exceptions.h"
@@ -80,7 +81,7 @@ void World::loadChunks()
 		loadQueue.pop();
 
 		// Make sure that the chunk is queued for loading (something has gone horribly wrong if it isn't)
-		if (getChunkStatusLoad(lPos) == StatusChunkLoad::NON_EXISTENT) continue;
+		assert((getChunkStatusLoad(lPos) == StatusChunkLoad::NON_EXISTENT), "Attempted to load already loaded chunk.");
 
 		// Load the chunk
 		auto insertRes = chunkMap.insert({ lPos, std::make_unique<Chunk>(lPos) });
@@ -113,7 +114,8 @@ void World::meshChunks()
 		ChunkPos mPos = meshQueue.top().pos;
 
 		// Make sure chunk is generated but does not have a mesh (the universe is broken if it isn't)
-		if ((getChunkStatusLoad(mPos) != StatusChunkLoad::GENERATED) || (getChunkStatusMesh(mPos))) break;
+		assert((getChunkStatusLoad(mPos) != StatusChunkLoad::GENERATED), "Attempted to create mesh for chunk that has not finished loading");
+		assert(getChunkStatusMesh(mPos), "Attempted to regenerate mesh.");
 
 		// Only continue if all chunks on cardinal directions are already generated
 		bool generated = true;
@@ -170,7 +172,7 @@ StatusChunkLoad World::getChunkStatusLoad(const ChunkPos chunkPos) const
 {
 	auto chunkStatusIterator = chunkStatusMap.find(chunkPos);
 	if (chunkStatusIterator == chunkStatusMap.end()) return StatusChunkLoad::NON_EXISTENT;
-	else return chunkStatusIterator->second.loadStatus;
+	else return chunkStatusIterator->second.getLoadStatus();
 }
 
 
@@ -179,19 +181,19 @@ bool World::getChunkStatusMesh(const ChunkPos chunkPos)
 {
 	auto chunkStatusIterator = chunkStatusMap.find(chunkPos);
 	if (chunkStatusIterator == chunkStatusMap.end()) return false;
-	else return chunkStatusIterator->second.hasMesh;
+	else return chunkStatusIterator->second.getHasMesh();
 }
 
 
 
 void World::setChunkStatusLoad(const ChunkPos chunkPos, StatusChunkLoad status)
 {
-	chunkStatusMap[chunkPos].loadStatus = status;
+	chunkStatusMap[chunkPos].setLoadStatus(status);
 }
 
 
 
 void World::setChunkStatusMesh(const ChunkPos chunkPos, bool status)
 {
-	chunkStatusMap[chunkPos].hasMesh = true;
+	chunkStatusMap[chunkPos].setHasMesh(status);
 }

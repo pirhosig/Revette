@@ -5,6 +5,7 @@
 
 #include "Chunk.h"
 #include "ChunkPos.h"
+#include "StatusChunk.h"
 #include "Generation/NoiseSource.h"
 #include "../Rendering/Mesh/MeshDataChunk.h"
 #include "../Threading/ThreadQueueMeshes.h"
@@ -24,24 +25,6 @@ public:
 		if (priority != other.priority) return priority < other.priority;
 		else return pos < other.pos;
 	}
-};
-
-
-
-enum class StatusChunkLoad
-{
-	NON_EXISTENT,
-	QUEUED,
-	LOADED,
-	GENERATED,
-};
-
-
-
-struct StatusChunk
-{
-	StatusChunkLoad loadStatus{ StatusChunkLoad::NON_EXISTENT };
-	bool hasMesh{ false };
 };
 
 
