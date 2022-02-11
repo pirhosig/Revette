@@ -18,30 +18,46 @@ inline int convertIndex(int xOffset, int yOffset, int zOffset)
 
 void StatusChunk::setNeighbourLoadStatus(int xOffset, int yOffset, int zOffset, StatusChunkLoad loadStatus)
 {
-	neighboursLoaded[convertIndex(xOffset, yOffset, zOffset)] = loadStatus;
+	const int index = convertIndex(xOffset, yOffset, zOffset);
+	bool isCardinal = (
+		(xOffset == -1 && yOffset ==  0 && zOffset ==  0) ||
+		(xOffset ==  1 && yOffset ==  0 && zOffset ==  0) ||
+		(xOffset ==  0 && yOffset == -1 && zOffset ==  0) ||
+		(xOffset ==  0 && yOffset ==  1 && zOffset ==  0) ||
+		(xOffset ==  0 && yOffset ==  0 && zOffset == -1) ||
+		(xOffset ==  0 && yOffset ==  0 && zOffset ==  1)
+	);
+	if (isCardinal)
+	{
+		neighbourLoadCountCardinal[static_cast<int>(neighboursLoaded[index])]--;
+		neighbourLoadCountCardinal[static_cast<int>(loadStatus)]++;
+	}
+	else
+	{
+		neighbourLoadCountCubic[static_cast<int>(neighboursLoaded[index])]--;
+		neighbourLoadCountCubic[static_cast<int>(loadStatus)]++;
+	}
+	neighboursLoaded[index] = loadStatus;
 }
 
 
-bool StatusChunk::getNeighboursCardinalHaveStatus(StatusChunkLoad loadStatus) const
+bool StatusChunk::canMesh() const
 {
-	return (
-		(neighboursLoaded[convertIndex( 0,  1,  0)] == loadStatus) &&
-		(neighboursLoaded[convertIndex( 0, -1,  0)] == loadStatus) &&
-		(neighboursLoaded[convertIndex( 1,  0,  0)] == loadStatus) &&
-		(neighboursLoaded[convertIndex(-1,  0,  0)] == loadStatus) &&
-		(neighboursLoaded[convertIndex( 0,  0,  1)] == loadStatus) &&
-		(neighboursLoaded[convertIndex( 0,  0, -1)] == loadStatus)
+	return ((hasMesh == StatusChunkMesh::NON_EXISTENT) &&
+		(loadStatus == StatusChunkLoad::POPULATED) &&
+		(neighbourLoadCountCardinal[static_cast<int>(StatusChunkLoad::POPULATED)] == 6)
 	);
 }
 
 
 
-bool StatusChunk::getNeighboursCubeHaveStatus(StatusChunkLoad loadStatus) const
+bool StatusChunk::canPopulate() const
 {
-	bool allAreLoaded = true;
-	for (int i = 0; i < 26; ++i)
-	{
-		allAreLoaded = allAreLoaded && (neighboursLoaded[i] == loadStatus);
-	}
-	return allAreLoaded;
+	int count = (neighbourLoadCountCardinal[static_cast<int>(StatusChunkLoad::GENERATED)]
+		+ neighbourLoadCountCubic[static_cast<int>(StatusChunkLoad::GENERATED)]
+		+ neighbourLoadCountCardinal[static_cast<int>(StatusChunkLoad::QUEUED_POPULATE)]
+		+ neighbourLoadCountCubic[static_cast<int>(StatusChunkLoad::QUEUED_POPULATE)]
+		+ neighbourLoadCountCardinal[static_cast<int>(StatusChunkLoad::POPULATED)]
+		+ neighbourLoadCountCubic[static_cast<int>(StatusChunkLoad::POPULATED)]);
+	return ((loadStatus == StatusChunkLoad::GENERATED) && (count == 26));
 }

@@ -4,8 +4,8 @@
 
 #include "../Constants.h"
 #include "../Exceptions.h"
+#include "Generation/HeightMap.h"
 #include "Generation/NoiseSource.h"
-
 
 
 inline int checkAndFlattenIndex(const ChunkLocalBlockPos blockPos)
@@ -30,19 +30,30 @@ Chunk::Chunk(ChunkPos _pos) : position(_pos), generated(false)
 
 
 
-void Chunk::GenerateChunk(NoiseSource2D& noiseHeightmap)
+void Chunk::GenerateChunk(const HeightMap& noiseHeightmap)
 {
 	if (generated) throw EXCEPTION_WORLD::ChunkRegeneration("Attempted to re-generate chunk");
 	generated = true;
+
+	// Return if all of the chunk falls above the terrain height
+	if (noiseHeightmap.heightMax < position.y * CHUNK_SIZE) return;
+
 	createBlockArray();
 
-	std::array<int, CHUNK_AREA> heightMap{};
+	// Fill the chunk if all of the chunk falls below the terrain height
+	if (position.y * CHUNK_SIZE + CHUNK_SIZE - 1 <= noiseHeightmap.heightMin)
 	{
-		std::array<float, CHUNK_AREA> noiseMap = noiseHeightmap.GenChunkNoise(position);
-		for (int i = 0; i < CHUNK_AREA; ++i)
+		for (int lX = 0; lX < CHUNK_SIZE; ++lX)
 		{
-			heightMap[i] = static_cast<int>(noiseMap[i] * 5.0);
+			for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ)
+			{
+				for (int lY = 0; lY < CHUNK_SIZE; ++lY)
+				{
+					setBlock(ChunkLocalBlockPos(lX, lY, lZ), Block(2));
+				}
+			}
 		}
+		return;
 	}
 
 	for (int lX = 0; lX < CHUNK_SIZE; ++lX)
@@ -53,13 +64,43 @@ void Chunk::GenerateChunk(NoiseSource2D& noiseHeightmap)
 			{
 				ChunkLocalBlockPos blockPos(lX, lY, lZ);
 				int index = lZ * CHUNK_SIZE + lX;
-				if (heightMap[index] < (position.y * CHUNK_SIZE + lY)) blockArray[checkAndFlattenIndex(blockPos)] = 0;
+				if (noiseHeightmap.heightArray[index] < (position.y * CHUNK_SIZE + lY)) blockArray[checkAndFlattenIndex(blockPos)] = 0;
 				else setBlock(blockPos, Block(1));
 			}
 		}
 	}
+}
 
-	if (blockArrayBlocksByIndex.size() == 1) deleteBlockArray();
+
+
+void Chunk::PopulateChunk(const HeightMap& noiseHeightmap, const NoiseSource2D& noiseFoliage)
+{
+	const int _chunkHeightMin = position.y * CHUNK_SIZE;
+	const int _chunkHeightMax = _chunkHeightMin + CHUNK_SIZE - 1;
+
+	// Return if chunk is entirely below surface
+	if (_chunkHeightMax <= noiseHeightmap.heightMin) return;
+
+	// Return if all the surface air blocks are also below this chunk
+	if (noiseHeightmap.heightMax + 1 < _chunkHeightMin) return;
+
+	std::array<float, CHUNK_AREA> foliageValues = noiseFoliage.GenChunkNoise(ChunkPos2D(position));
+
+	for (int lX = 0; lX < CHUNK_SIZE; ++lX)
+	{
+		for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ)
+		{
+			// Continue if surface air block is below chunk
+			int _index = lZ * CHUNK_SIZE + lX;
+			if (noiseHeightmap.heightArray[_index] + 1 < _chunkHeightMin) continue;
+
+			// Continue if the topmost block is above the chunk
+			if (noiseHeightmap.heightArray[_index] + 1 > _chunkHeightMax) continue;
+
+			// Check if the topmost block needs a tree
+			if (foliageValues[_index] > 0.973) setBlock(ChunkLocalBlockPos(lX, noiseHeightmap.heightArray[_index] + 1 - position.y * CHUNK_SIZE, lZ), Block(3));
+		}
+	}
 }
 
 

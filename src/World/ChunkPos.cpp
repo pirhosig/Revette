@@ -48,9 +48,10 @@ bool ChunkPos::operator<(const ChunkPos& other) const
 
 
 
-bool ChunkPos::operator==(const ChunkPos& other) const
+bool ChunkPos2D::operator<(const ChunkPos2D& other) const
 {
-	return ((x == other.x) && (y == other.y) && (z == other.z));
+	if (x != other.x) return x < other.x;
+	return z < other.z;
 }
 
 

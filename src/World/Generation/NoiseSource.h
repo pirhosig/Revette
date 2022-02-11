@@ -15,7 +15,7 @@ public:
 		seed{ _seed }
 	{}
 	NoiseSource2D(const NoiseSource2D&) = delete;
-	std::array<float, CHUNK_AREA> GenChunkNoise(ChunkPos chunkPos) const;
+	std::array<float, CHUNK_AREA> GenChunkNoise(ChunkPos2D chunkPos) const;
 
 private:
 	const FastNoise::SmartNode<> generator;

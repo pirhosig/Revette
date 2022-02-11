@@ -26,6 +26,7 @@ void World::tick()
 	if (loadPosUpdated) addLoadQueue();
 
 	loadChunks();
+	populateChunks();
 	meshChunks();
 }
 
@@ -57,12 +58,10 @@ void World::addLoadQueue()
 				ChunkPos loadPos(x, y, z);
 				// Make sure chunks queued to be loaded do not exist yet
 				if (getChunkStatusLoad(loadPos) != StatusChunkLoad::NON_EXISTENT) continue;
-				int loadCentreDistanceX = std::abs(x - loadCentre.x);
-				int loadCentreDistanceY = std::abs(y - loadCentre.y);
-				int loadCentreDistanceZ = std::abs(z - loadCentre.z);
-				int priority = std::max(100 - (loadCentreDistanceX + loadCentreDistanceY + loadCentreDistanceZ), 0);
+				int dist = static_cast<int>(std::hypot(loadPos.x - loadCentre.x, loadPos.y - loadCentre.y, loadPos.z - loadCentre.z));
+				int priority = std::max(100 - dist, 0);
 				// Update chunk state
-				setChunkStatusLoad(loadPos, StatusChunkLoad::QUEUED);
+				setChunkStatusLoad(loadPos, StatusChunkLoad::QUEUED_LOAD);
 				loadQueue.push(ChunkPriorityTicket(priority, loadPos));
 			}
 		}
@@ -73,7 +72,7 @@ void World::addLoadQueue()
 
 void World::loadChunks()
 {
-	constexpr int MAX_LOAD_COUNT = 150;
+	constexpr int MAX_LOAD_COUNT = 100;
 	for (int i = 0; i < MAX_LOAD_COUNT; ++i)
 	{
 		if (loadQueue.empty()) break;
@@ -81,14 +80,40 @@ void World::loadChunks()
 		loadQueue.pop();
 
 		// Make sure that the chunk is queued for loading (something has gone horribly wrong if it isn't)
-		assert((getChunkStatusLoad(lPos) == StatusChunkLoad::QUEUED) && "Attempted to load already loaded chunk.");
+		assert((getChunkStatusLoad(lPos) == StatusChunkLoad::QUEUED_LOAD) && "Attempted to load already loaded chunk.");
 
 		// Load the chunk
 		auto insertRes = chunkMap.insert({ lPos, std::make_unique<Chunk>(lPos) });
-		setChunkStatusLoad(lPos, StatusChunkLoad::LOADED);
+		setChunkStatusLoad(lPos, StatusChunkLoad::LOADED); 
+
 		// Generate the chunk
-		insertRes.first->second->GenerateChunk(noiseHeightmap);
+		insertRes.first->second->GenerateChunk(
+			getHeightMap(ChunkPos2D(lPos))
+		);
 		setChunkStatusLoad(lPos, StatusChunkLoad::GENERATED);
+	}
+}
+
+
+
+void World::populateChunks()
+{
+	constexpr int MAX_POPULATE_COUNT = 100;
+	for (int i = 0; i < MAX_POPULATE_COUNT; ++i)
+	{
+		if (populateQueue.empty()) break;
+		ChunkPos _pos = populateQueue.top().pos;
+		populateQueue.pop();
+
+		// Make sure that the chunk is queued for population
+		assert((getChunkStatusLoad(_pos) == StatusChunkLoad::QUEUED_POPULATE) && "Attempted to load already loaded chunk.");
+
+		getChunk(_pos)->PopulateChunk(
+			getHeightMap(ChunkPos2D(_pos)),
+			noiseFoliage
+		);
+
+		setChunkStatusLoad(_pos, StatusChunkLoad::POPULATED);
 	}
 }
 
@@ -103,24 +128,11 @@ void World::meshChunks()
 	{
 		if (meshQueue.empty()) break;
 		ChunkPos mPos = meshQueue.top().pos;
+		meshQueue.pop();
 
 		// Make sure chunk is generated but does not have a mesh (the universe is broken if it isn't)
-		assert((getChunkStatusLoad(mPos) == StatusChunkLoad::GENERATED) && "Attempted to create mesh for chunk that has not finished loading");
+		assert((getChunkStatusLoad(mPos) == StatusChunkLoad::POPULATED) && "Attempted to create mesh for chunk that has not finished loading");
 		assert((getChunkStatusMesh(mPos) == StatusChunkMesh::QUEUED) && "Attempted to regenerate mesh.");
-
-		// Only continue if all chunks on cardinal directions are already generated
-		bool generated = true;
-		for (int j = 0; j < 6; ++j)
-		{
-			if (getChunkStatusLoad(mPos.direction(static_cast<AxisDirection>(j))) != StatusChunkLoad::GENERATED)
-			{
-				generated = false;
-				break;
-			}
-		}
-		if (!generated) break;
-
-		meshQueue.pop();
 
 		// Create a mesh if the chunk is not empty
 		if (!getChunk(mPos)->isEmpty()) {
@@ -168,7 +180,7 @@ StatusChunkLoad World::getChunkStatusLoad(const ChunkPos chunkPos) const
 
 
 
-StatusChunkMesh World::getChunkStatusMesh(const ChunkPos chunkPos)
+StatusChunkMesh World::getChunkStatusMesh(const ChunkPos chunkPos) const
 {
 	auto chunkStatusIterator = chunkStatusMap.find(chunkPos);
 	if (chunkStatusIterator == chunkStatusMap.end()) return StatusChunkMesh::NON_EXISTENT;
@@ -180,10 +192,8 @@ StatusChunkMesh World::getChunkStatusMesh(const ChunkPos chunkPos)
 void World::setChunkStatusLoad(const ChunkPos chunkPos, StatusChunkLoad status)
 {
 	chunkStatusMap[chunkPos].setLoadStatus(status);
-	if ((chunkStatusMap[chunkPos].getMeshStatus() == StatusChunkMesh::NON_EXISTENT)&&
-		status == StatusChunkLoad::GENERATED &&
-		chunkStatusMap[chunkPos].getNeighboursCardinalHaveStatus(StatusChunkLoad::GENERATED)
-	) queueChunkMeshing(chunkPos);
+	if (getChunkStatusCanMesh(chunkPos)) queueChunkMeshing(chunkPos);
+	if (getChunkStatusCanPopulate(chunkPos)) queueChunkPopulation(chunkPos);
 
 	// Also update the neighbours of the chunk
 	for (int i = -1; i < 2; ++i)
@@ -197,10 +207,8 @@ void World::setChunkStatusLoad(const ChunkPos chunkPos, StatusChunkLoad status)
 				if (chunkExists(pos))
 				{
 					chunkStatusMap[pos].setNeighbourLoadStatus(-i, -j, -k, status);
-					if ((chunkStatusMap[pos].getMeshStatus() == StatusChunkMesh::NON_EXISTENT) &&
-						chunkStatusMap[pos].getLoadStatus() == StatusChunkLoad::GENERATED &&
-						chunkStatusMap[pos].getNeighboursCardinalHaveStatus(StatusChunkLoad::GENERATED)
-					) queueChunkMeshing(pos);
+					if (getChunkStatusCanMesh(pos)) queueChunkMeshing(pos);
+					if (getChunkStatusCanPopulate(pos)) queueChunkPopulation(pos);
 				}
 			}
 		}
@@ -216,12 +224,50 @@ void World::setChunkStatusMesh(const ChunkPos chunkPos, StatusChunkMesh status)
 
 
 
+bool World::getChunkStatusCanMesh(const ChunkPos chunkPos) const
+{
+	auto chunkStatusIterator = chunkStatusMap.find(chunkPos);
+	if (chunkStatusIterator == chunkStatusMap.end()) return false;
+	else return chunkStatusIterator->second.canMesh();
+}
+
+
+
+bool World::getChunkStatusCanPopulate(const ChunkPos chunkPos) const
+{
+	auto chunkStatusIterator = chunkStatusMap.find(chunkPos);
+	if (chunkStatusIterator == chunkStatusMap.end()) return false;
+	else return chunkStatusIterator->second.canPopulate();
+}
+
+
+
 void World::queueChunkMeshing(const ChunkPos chunkPos)
 {
-	int loadCentreDistanceX = std::abs(chunkPos.x - loadCentre.x);
-	int loadCentreDistanceY = std::abs(chunkPos.y - loadCentre.y);
-	int loadCentreDistanceZ = std::abs(chunkPos.z - loadCentre.z);
-	int meshPriority = std::max(100 - (loadCentreDistanceX + loadCentreDistanceY + loadCentreDistanceZ), 0);
+	assert(getChunkStatusCanMesh(chunkPos) && "Attempted to queue mesh that cannot be meshed");
+	int dist = static_cast<int>(std::hypot(chunkPos.x - loadCentre.x, chunkPos.y - loadCentre.y, chunkPos.z - loadCentre.z));
+	int meshPriority = std::max(100 - dist, 0);
 	meshQueue.push(ChunkPriorityTicket(meshPriority, chunkPos));
 	setChunkStatusMesh(chunkPos, StatusChunkMesh::QUEUED);
+}
+
+
+
+void World::queueChunkPopulation(const ChunkPos chunkPos)
+{
+	assert(getChunkStatusCanPopulate(chunkPos) && "Attempted to populate chunk that cannot be populated");
+	int dist = static_cast<int>(std::hypot(chunkPos.x - loadCentre.x, chunkPos.y - loadCentre.y, chunkPos.z - loadCentre.z));
+	int priority = std::max(100 - dist, 0);
+	populateQueue.push(ChunkPriorityTicket(priority, chunkPos));
+	setChunkStatusLoad(chunkPos, StatusChunkLoad::QUEUED_POPULATE);
+}
+
+
+
+const HeightMap& World::getHeightMap(const ChunkPos2D noisePos)
+{
+	// Generate a heightmap if it doesn't exist yet
+	if (!noiseHeightCache.contains(noisePos)) noiseHeightCache.try_emplace(noisePos, noisePos, noiseHeightmap);
+	// Return a reference to the heightmap
+	return noiseHeightCache.at(noisePos);
 }

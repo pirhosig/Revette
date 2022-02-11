@@ -5,20 +5,28 @@
 
 
 
+const int BLOCK_TEXUTRES[][6] = {
+	{0, 0, 1, 1, 1, 1},
+	{2, 2, 2, 2, 2, 2},
+	{3, 3, 3, 3, 3, 3}
+};
+
+
+
 // Offsets for every vertex to draw a cube
 const int FACE_TABLE[6][4][3] = {
 	// Up
-	{{ 0, 1, 0 }, { 1, 1, 0 }, { 1, 1, 1 }, {0, 1, 1}},
+	{{ 0, 1, 0 }, { 1, 1, 0 }, { 1, 1, 1 }, { 0, 1, 1 }},
 	// Down
-	{{ 0, 0, 0 }, { 1, 0, 0 }, { 1, 0, 1 }, {0, 0, 1}},
+	{{ 0, 0, 0 }, { 1, 0, 0 }, { 1, 0, 1 }, { 0, 0, 1 }},
 	// North
-	{{ 1, 1, 1 }, { 1, 1, 0 }, { 1, 0, 0 }, {1, 0, 1}},
+	{{ 1, 1, 1 }, { 1, 1, 0 }, { 1, 0, 0 }, { 1, 0, 1 }},
 	// South
-	{{ 0, 1, 1 }, { 0, 1, 0 }, { 0, 0, 0 }, {0, 0, 1}},
+	{{ 0, 1, 1 }, { 0, 1, 0 }, { 0, 0, 0 }, { 0, 0, 1 }},
 	// East
-	{{ 0, 0, 1 }, { 1, 0, 1 }, { 1, 1, 1 }, {0, 1, 1}},
+	{{ 1, 1, 1 }, { 0, 1, 1 }, { 0, 0, 1 }, { 1, 0, 1 }},
 	// West
-	{{ 0, 0, 0 }, { 1, 0, 0 }, { 1, 1, 0 }, {0, 1, 0}}
+	{{ 1, 1, 0 }, { 0, 1, 0 }, { 0, 0, 0 }, { 1, 0, 0 }}
 };
 
 const int TEXTURE_COORDINATES[4][2] = {
@@ -116,7 +124,7 @@ MeshDataChunk::MeshDataChunk(const World& world, ChunkPos chunkPos) : position(c
 							static_cast<uint16_t>(localPos.x + FACE_TABLE[l][v][0]),
 							static_cast<uint16_t>(localPos.y + FACE_TABLE[l][v][1]),
 							static_cast<uint16_t>(localPos.z + FACE_TABLE[l][v][2]),
-							static_cast<uint8_t>(block.blockType - 1),
+							static_cast<uint8_t>(BLOCK_TEXUTRES[block.blockType - 1][l]),
 							static_cast<uint8_t>(TEXTURE_COORDINATES[v][0]),
 							static_cast<uint8_t>(TEXTURE_COORDINATES[v][1])
 						};

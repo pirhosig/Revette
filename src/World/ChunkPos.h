@@ -11,12 +11,27 @@ public:
 	int y;
 	int z;
 
-	ChunkPos(int x, int y, int z) : x(x), y(y), z(z) {}
+	ChunkPos(int _x, int _y, int _z) : x(_x), y(_y), z(_z) {}
 	ChunkPos(BlockPos blockPos);
 	ChunkPos direction(AxisDirection direction) const;
 
 	bool operator<(const ChunkPos& other) const;
-	bool operator==(const ChunkPos& other) const;
+	bool operator==(const ChunkPos& other) const { return ((x == other.x) && (y == other.y) && (z == other.z)); }
+};
+
+
+
+class ChunkPos2D
+{
+public:
+	int x;
+	int z;
+
+	ChunkPos2D(int _x, int _z) : x(_x), z(_z) {}
+	ChunkPos2D(ChunkPos chunkPos) : x(chunkPos.x), z(chunkPos.z) {}
+
+	bool operator<(const ChunkPos2D& other) const;
+	bool operator==(const ChunkPos2D& other) const { return ((x == other.x) && (z == other.z)); }
 };
 
 
