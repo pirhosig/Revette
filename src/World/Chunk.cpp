@@ -1,21 +1,25 @@
 #include "Chunk.h"
 #include <array>
+#include <cassert>
 #include <string>
 
-#include "../Constants.h"
-#include "../Exceptions.h"
+#include "World.h"
 #include "Generation/HeightMap.h"
 #include "Generation/NoiseSource.h"
+#include "../Constants.h"
+#include "../Exceptions.h"
+
+
+
+inline int blockPositionIsInside(int x, int y, int z)
+{
+	return (x >= 0) && (x < CHUNK_SIZE) && (y >= 0) && (y < CHUNK_SIZE) && (z >= 0) && (z < CHUNK_SIZE);
+}
 
 
 inline int checkAndFlattenIndex(const ChunkLocalBlockPos blockPos)
 {
-	if (!((blockPos.x >= 0) && (blockPos.x < CHUNK_SIZE) && (blockPos.y >= 0) && (blockPos.y < CHUNK_SIZE) && (blockPos.z >= 0) && (blockPos.z < CHUNK_SIZE)))
-	{
-		std::string errorMessage = "Invalid chunk block index at ";
-		errorMessage += std::to_string(blockPos.x) + " " + std::to_string(blockPos.y) + " " + std::to_string(blockPos.z);
-		throw EXCEPTION_WORLD::BlockIndexOutOfRange(errorMessage);
-	}
+	assert(blockPositionIsInside(blockPos.x, blockPos.y, blockPos.z) && "Block outside chunk.");
 	return blockPos.x * CHUNK_SIZE * CHUNK_SIZE + blockPos.y * CHUNK_SIZE + blockPos.z;
 }
 
@@ -49,7 +53,7 @@ void Chunk::GenerateChunk(const HeightMap& noiseHeightmap)
 			{
 				for (int lY = 0; lY < CHUNK_SIZE; ++lY)
 				{
-					setBlock(ChunkLocalBlockPos(lX, lY, lZ), Block(2));
+					setBlock(ChunkLocalBlockPos(lX, lY, lZ), Block(1));
 				}
 			}
 		}
@@ -73,7 +77,7 @@ void Chunk::GenerateChunk(const HeightMap& noiseHeightmap)
 
 
 
-void Chunk::PopulateChunk(const HeightMap& noiseHeightmap, const NoiseSource2D& noiseFoliage)
+void Chunk::PopulateChunk(const HeightMap& noiseHeightmap, const NoiseSource2D& noiseFoliage, World& world)
 {
 	const int _chunkHeightMin = position.y * CHUNK_SIZE;
 	const int _chunkHeightMax = _chunkHeightMin + CHUNK_SIZE - 1;
@@ -98,7 +102,21 @@ void Chunk::PopulateChunk(const HeightMap& noiseHeightmap, const NoiseSource2D& 
 			if (noiseHeightmap.heightArray[_index] + 1 > _chunkHeightMax) continue;
 
 			// Check if the topmost block needs a tree
-			if (foliageValues[_index] > 0.973) setBlock(ChunkLocalBlockPos(lX, noiseHeightmap.heightArray[_index] + 1 - position.y * CHUNK_SIZE, lZ), Block(3));
+			if (foliageValues[_index] > 0.984)
+			{
+				for (int lH = 0; lH < 5; ++lH)
+				{
+					int currentHeight = noiseHeightmap.heightArray[_index] + 1 - position.y * CHUNK_SIZE + lH;
+					if (blockPositionIsInside(lX, currentHeight, lZ)) setBlock(ChunkLocalBlockPos(lX, currentHeight, lZ), Block(3));
+					else world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE, noiseHeightmap.heightArray[_index] + 1 + lH, lZ + position.z * CHUNK_SIZE), Block(3));
+				}
+				world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE, noiseHeightmap.heightArray[_index] + 6, lZ + position.z * CHUNK_SIZE), Block(4));
+				world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE, noiseHeightmap.heightArray[_index] + 7, lZ + position.z * CHUNK_SIZE), Block(4));
+				world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE + 1, noiseHeightmap.heightArray[_index] + 6, lZ + position.z * CHUNK_SIZE), Block(4));
+				world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE - 1, noiseHeightmap.heightArray[_index] + 6, lZ + position.z * CHUNK_SIZE), Block(4));
+				world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE, noiseHeightmap.heightArray[_index] + 6, lZ + position.z * CHUNK_SIZE + 1), Block(4));
+				world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE, noiseHeightmap.heightArray[_index] + 6, lZ + position.z * CHUNK_SIZE - 1), Block(4));
+			}
 		}
 	}
 }

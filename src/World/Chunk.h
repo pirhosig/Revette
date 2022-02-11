@@ -7,6 +7,7 @@
 #include "ChunkPos.h"
 class HeightMap;
 class NoiseSource2D;
+class World;
 
 
 
@@ -17,7 +18,7 @@ public:
 	Chunk(const Chunk&) = delete;
 
 	void GenerateChunk(const HeightMap& noiseHeightmap);
-	void PopulateChunk(const HeightMap& noiseHeightmap, const NoiseSource2D& noiseFoliage);
+	void PopulateChunk(const HeightMap& noiseHeightmap, const NoiseSource2D& noiseFoliage, World& world);
 
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
