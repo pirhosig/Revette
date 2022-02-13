@@ -4,17 +4,15 @@
 
 #include "../Exceptions.h"
 
-constexpr int LOAD_DISTANCE = 10;
+constexpr int LOAD_DISTANCE = 20;
 constexpr int LOAD_DISTANCE_VERTICAL = 5;
-constexpr int RENDER_DISTANCE = 9;
-constexpr int RENDER_DISTANCE_VERTICAL = 4;
 
 
 
 World::World(std::shared_ptr<ThreadQueueMeshes> meshQueue, const char* settingNoiseHeightmap, const char* settingNoiseFoliage) :
 	loadCentre(0, 0, 0),
 	threadQueueMeshes(meshQueue),
-	noiseHeightmap(settingNoiseHeightmap, 0.00625f, 42),
+	noiseHeightmap(settingNoiseHeightmap, 0.0125, 42),
 	noiseFoliage(settingNoiseFoliage, 1.0, 42),
 	loadPosUpdated{ true }
 {}
@@ -72,7 +70,7 @@ void World::addLoadQueue()
 
 void World::loadChunks()
 {
-	constexpr int MAX_LOAD_COUNT = 100;
+	constexpr int MAX_LOAD_COUNT = 200;
 	for (int i = 0; i < MAX_LOAD_COUNT; ++i)
 	{
 		if (loadQueue.empty()) break;
@@ -110,7 +108,7 @@ void World::loadChunks()
 
 void World::populateChunks()
 {
-	constexpr int MAX_POPULATE_COUNT = 100;
+	constexpr int MAX_POPULATE_COUNT = 200;
 	for (int i = 0; i < MAX_POPULATE_COUNT; ++i)
 	{
 		if (populateQueue.empty()) break;
@@ -153,7 +151,7 @@ void World::meshChunks()
 {
 	std::queue<std::unique_ptr<MeshDataChunk>> meshDataQueue;
 
-	constexpr int MAX_MESH_COUNT = 100;
+	constexpr int MAX_MESH_COUNT = 200;
 	for (int i = 0; i < MAX_MESH_COUNT; ++i)
 	{
 		if (meshQueue.empty()) break;

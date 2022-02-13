@@ -9,7 +9,10 @@ const int BLOCK_TEXUTRES[][6] = {
 	{0, 0, 1, 1, 1, 1},
 	{2, 2, 2, 2, 2, 2},
 	{3, 3, 3, 3, 3, 3},
-	{4, 4, 4, 4, 4, 4}
+	{4, 4, 4, 4, 4, 4},
+	{5, 5, 5, 5, 5, 5},
+	{6, 6, 6, 6, 6, 6},
+	{7, 7, 7, 7, 7, 7}
 };
 
 
@@ -25,9 +28,9 @@ const int FACE_TABLE[6][4][3] = {
 	// South
 	{{ 0, 1, 1 }, { 0, 1, 0 }, { 0, 0, 0 }, { 0, 0, 1 }},
 	// East
-	{{ 1, 1, 1 }, { 0, 1, 1 }, { 0, 0, 1 }, { 1, 0, 1 }},
+	{{ 0, 1, 1 }, { 1, 1, 1 }, { 1, 0, 1 }, { 0, 0, 1 }},
 	// West
-	{{ 1, 1, 0 }, { 0, 1, 0 }, { 0, 0, 0 }, { 1, 0, 0 }}
+	{{ 0, 1, 0 }, { 1, 1, 0 }, { 1, 0, 0 }, { 0, 0, 0 }}
 };
 
 const int TEXTURE_COORDINATES[4][2] = {
@@ -108,14 +111,25 @@ MeshDataChunk::MeshDataChunk(const World& world, ChunkPos chunkPos) : position(c
 					// Only add face if the adjacent block is transparent
 					if (neighbor.blockType != 0) continue;
 
+					if (l % 2)
+					{
+						indicies.push_back(indexCounter);
+						indicies.push_back(indexCounter + 1);
+						indicies.push_back(indexCounter + 2);
+						indicies.push_back(indexCounter + 2);
+						indicies.push_back(indexCounter + 3);
+						indicies.push_back(indexCounter);
+					}
+					else
+					{
+						indicies.push_back(indexCounter);
+						indicies.push_back(indexCounter + 2);
+						indicies.push_back(indexCounter + 1);
+						indicies.push_back(indexCounter + 2);
+						indicies.push_back(indexCounter);
+						indicies.push_back(indexCounter + 3);
+					}
 					triangleCount += 2;
-
-					indicies.push_back(indexCounter);
-					indicies.push_back(indexCounter + 1);
-					indicies.push_back(indexCounter + 2);
-					indicies.push_back(indexCounter + 2);
-					indicies.push_back(indexCounter + 3);
-					indicies.push_back(indexCounter);
 					indexCounter += 4;
 
 					// Loop through each vertex of the face

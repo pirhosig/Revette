@@ -17,6 +17,9 @@ Renderer::Renderer(GLFWwindow* window, std::shared_ptr<ThreadQueueMeshes> chunkM
 void Renderer::render(const EntityPosition& playerPos)
 {
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CCW);
 	glClearColor(0.53f, 0.52f, 0.83f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

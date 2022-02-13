@@ -39,13 +39,16 @@ void Chunk::GenerateChunk(const HeightMap& noiseHeightmap)
 	if (generated) throw EXCEPTION_WORLD::ChunkRegeneration("Attempted to re-generate chunk");
 	generated = true;
 
+	const int _chunkBottom = position.y * CHUNK_SIZE;
+	const int _chunkTop = _chunkBottom + CHUNK_SIZE - 1;
+
 	// Return if all of the chunk falls above the terrain height
-	if (noiseHeightmap.heightMax < position.y * CHUNK_SIZE) return;
+	if (noiseHeightmap.heightMax < _chunkBottom) return;
 
 	createBlockArray();
 
 	// Fill the chunk if all of the chunk falls below the terrain height
-	if (position.y * CHUNK_SIZE + CHUNK_SIZE - 1 <= noiseHeightmap.heightMin)
+	if (_chunkTop <= noiseHeightmap.heightMin)
 	{
 		for (int lX = 0; lX < CHUNK_SIZE; ++lX)
 		{
@@ -68,7 +71,11 @@ void Chunk::GenerateChunk(const HeightMap& noiseHeightmap)
 			{
 				ChunkLocalBlockPos blockPos(lX, lY, lZ);
 				int index = lZ * CHUNK_SIZE + lX;
-				if (noiseHeightmap.heightArray[index] < (position.y * CHUNK_SIZE + lY)) blockArray[checkAndFlattenIndex(blockPos)] = 0;
+				if (noiseHeightmap.heightArray[index] < (position.y * CHUNK_SIZE + lY))
+				{
+					if (lY + _chunkBottom > 0) blockArray[checkAndFlattenIndex(blockPos)] = 0;
+					else setBlock(blockPos, Block(6));
+				}
 				else setBlock(blockPos, Block(1));
 			}
 		}
