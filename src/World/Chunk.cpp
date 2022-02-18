@@ -34,7 +34,7 @@ Chunk::Chunk(ChunkPos _pos) : position(_pos), generated(false)
 
 
 
-void Chunk::GenerateChunk(const HeightMap& noiseHeightmap)
+void Chunk::GenerateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noiseBiomeMap)
 {
 	if (generated) throw EXCEPTION_WORLD::ChunkRegeneration("Attempted to re-generate chunk");
 	generated = true;
@@ -70,13 +70,15 @@ void Chunk::GenerateChunk(const HeightMap& noiseHeightmap)
 			for (int lY = 0; lY < CHUNK_SIZE; ++lY)
 			{
 				ChunkLocalBlockPos blockPos(lX, lY, lZ);
+				Block defaultBlock(1);
 				int index = lZ * CHUNK_SIZE + lX;
+				if (noiseBiomeMap.biomeArray[index] > 0) defaultBlock.blockType = 5;
 				if (noiseHeightmap.heightArray[index] < (position.y * CHUNK_SIZE + lY))
 				{
 					if (lY + _chunkBottom > 0) blockArray[checkAndFlattenIndex(blockPos)] = 0;
 					else setBlock(blockPos, Block(6));
 				}
-				else setBlock(blockPos, Block(1));
+				else setBlock(blockPos, defaultBlock);
 			}
 		}
 	}
@@ -84,7 +86,7 @@ void Chunk::GenerateChunk(const HeightMap& noiseHeightmap)
 
 
 
-void Chunk::PopulateChunk(const HeightMap& noiseHeightmap, const NoiseSource2D& noiseFoliage, World& world)
+void Chunk::PopulateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noiseBiomeMap, const NoiseSource2D& noiseFoliage, World& world)
 {
 	const int _chunkHeightMin = position.y * CHUNK_SIZE;
 	const int _chunkHeightMax = _chunkHeightMin + CHUNK_SIZE - 1;
@@ -109,7 +111,7 @@ void Chunk::PopulateChunk(const HeightMap& noiseHeightmap, const NoiseSource2D& 
 			if (noiseHeightmap.heightArray[_index] + 1 > _chunkHeightMax) continue;
 
 			// Check if the topmost block needs a tree
-			if (foliageValues[_index] > 0.984)
+			if (noiseBiomeMap.biomeArray[_index] == 0 && foliageValues[_index] > 0.984)
 			{
 				for (int lH = 0; lH < 5; ++lH)
 				{
@@ -132,7 +134,7 @@ void Chunk::PopulateChunk(const HeightMap& noiseHeightmap, const NoiseSource2D& 
 
 Block Chunk::getBlock(ChunkLocalBlockPos blockPos) const
 {
-	if (!blockArray) return blockArrayBlocksByIndex[0];
+	if (isEmpty()) return blockArrayBlocksByIndex[0];
 	int index = checkAndFlattenIndex(blockPos);
 	return blockArrayBlocksByIndex.at(blockArray[index]);
 }
@@ -141,7 +143,7 @@ Block Chunk::getBlock(ChunkLocalBlockPos blockPos) const
 
 void Chunk::setBlock(ChunkLocalBlockPos blockPos, Block block)
 {
-	if (!blockArray) createBlockArray();
+	if (isEmpty()) createBlockArray();
 	int index = checkAndFlattenIndex(blockPos);
 	auto it = blockArrayIndicesByBlock.find(block);
 	if (it != blockArrayIndicesByBlock.end()) blockArray[index] = it->second;

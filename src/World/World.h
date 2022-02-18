@@ -7,6 +7,7 @@
 #include "ChunkPos.h"
 #include "ChunkStatusMap.h"
 #include "Generation/HeightMap.h"
+#include "Generation/BiomeMap.h"
 #include "Generation/NoiseSource.h"
 #include "../Rendering/Mesh/MeshDataChunk.h"
 #include "../Threading/ThreadQueueMeshes.h"
@@ -53,6 +54,7 @@ private:
 	void queueChunkPopulation(const ChunkPos chunkPos);
 
 	const HeightMap& getHeightMap(const ChunkPos2D noisePos);
+	const BiomeMap&  getBiomeMap(const ChunkPos2D noisePos);
 
 	// Chunk storage
 	std::map<ChunkPos, std::unique_ptr<Chunk>> chunkMap;
@@ -67,6 +69,9 @@ private:
 
 	// Chunk generation tools
 	std::map<ChunkPos2D, HeightMap> noiseHeightCache;
+	std::map<ChunkPos2D, BiomeMap> noiseBiomeCache;
+	NoiseSource2D noiseBiomeTemperature;
+	NoiseSource2D noiseBiomeHumidity;
 	NoiseSource2D noiseHeightmap;
 	NoiseSource2D noiseFoliage;
 

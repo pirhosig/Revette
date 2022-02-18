@@ -9,11 +9,14 @@ constexpr int LOAD_DISTANCE_VERTICAL = 5;
 
 
 
+
 World::World(std::shared_ptr<ThreadQueueMeshes> meshQueue, const char* settingNoiseHeightmap, const char* settingNoiseFoliage) :
 	loadCentre(0, 0, 0),
 	threadQueueMeshes(meshQueue),
-	noiseHeightmap(settingNoiseHeightmap, 0.0125, 42),
-	noiseFoliage(settingNoiseFoliage, 1.0, 42),
+	noiseBiomeHumidity("DQACAAAAAAAAQAkAAAAAAD8AAAAAAA==", 0.00125f, 43),
+	noiseBiomeTemperature("DQACAAAAAAAAQAkAAAAAAD8AAAAAAA==", 0.00125f, 44),
+	noiseHeightmap(settingNoiseHeightmap, 0.0125f, 42),
+	noiseFoliage(settingNoiseFoliage, 1.0f, 42),
 	loadPosUpdated{ true }
 {}
 
@@ -86,7 +89,8 @@ void World::loadChunks()
 
 		// Generate the chunk
 		insertRes.first->second->GenerateChunk(
-			getHeightMap(ChunkPos2D(lPos))
+			getHeightMap(ChunkPos2D(lPos)),
+			getBiomeMap(ChunkPos2D(lPos))
 		);
 		chunkStatusMap.setChunkStatusLoad(lPos, StatusChunkLoad::GENERATED);
 		// Check if it, or it's neighbours can populate
@@ -120,6 +124,7 @@ void World::populateChunks()
 
 		getChunk(_pos)->PopulateChunk(
 			getHeightMap(ChunkPos2D(_pos)),
+			getBiomeMap(ChunkPos2D(_pos)),
 			noiseFoliage,
 			(*this)
 		);
@@ -220,4 +225,12 @@ const HeightMap& World::getHeightMap(const ChunkPos2D noisePos)
 	if (!noiseHeightCache.contains(noisePos)) noiseHeightCache.try_emplace(noisePos, noisePos, noiseHeightmap);
 	// Return a reference to the heightmap
 	return noiseHeightCache.at(noisePos);
+}
+
+
+
+const BiomeMap& World::getBiomeMap(const ChunkPos2D noisePos)
+{
+	if (!noiseBiomeCache.contains(noisePos)) noiseBiomeCache.try_emplace(noisePos, noisePos, noiseBiomeTemperature, noiseBiomeHumidity);
+	return noiseBiomeCache.at(noisePos);
 }

@@ -4,13 +4,12 @@
 
 
 
-Renderer::Renderer(GLFWwindow* window, std::shared_ptr<ThreadQueueMeshes> chunkMeshQueue) : 
+Renderer::Renderer(GLFWwindow* window, std::shared_ptr<ThreadQueueMeshes> chunkMeshQueue) :
 	chunkShader("shader/chunkShader.vs", "shader/chunkShader.fs"),
 	tileTextureAtlas("res/texture_atlas.png"),
-	threadQueueMeshes(chunkMeshQueue)
-{
-	mainWindow = window;
-}
+	threadQueueMeshes(chunkMeshQueue),
+	mainWindow(window)
+{}
 
 
 
