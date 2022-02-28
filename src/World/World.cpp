@@ -13,8 +13,8 @@ constexpr int LOAD_DISTANCE_VERTICAL = 5;
 World::World(std::shared_ptr<ThreadQueueMeshes> meshQueue, const char* settingNoiseHeightmap, const char* settingNoiseFoliage) :
 	loadCentre(0, 0, 0),
 	threadQueueMeshes(meshQueue),
-	noiseBiomeHumidity("DQACAAAAAAAAQAkAAAAAAD8AAAAAAA==", 0.00125f, 43),
-	noiseBiomeTemperature("DQACAAAAAAAAQAkAAAAAAD8AAAAAAA==", 0.00125f, 44),
+	noiseBiomeHumidity("HAABGQANAAIAAAAAAABACQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==", 0.00125f, 43),
+	noiseBiomeTemperature("HAABGQANAAIAAAAAAABACQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==", 0.00125f, 44),
 	noiseHeightmap(settingNoiseHeightmap, 0.0125f, 42),
 	noiseFoliage(settingNoiseFoliage, 1.0f, 42),
 	loadPosUpdated{ true }

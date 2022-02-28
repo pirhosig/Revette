@@ -11,6 +11,14 @@ class NoiseSource2D;
 class World;
 
 
+enum class BlockArrayType
+{
+	NONE,
+	COMPACT,
+	EXTENDED
+};
+
+
 
 class Chunk
 {
@@ -29,10 +37,14 @@ public:
 	bool generated;
 
 private:
-	void createBlockArray();
-	void deleteBlockArray();
+	void blockArrayCreate();
+	void blockArrayDelete();
+	void blockArrayExtend();
 
-	std::unique_ptr<uint16_t[]> blockArray;
+	std::unique_ptr<uint8_t[]> blockArrayCompact;
+	std::unique_ptr<uint16_t[]> blockArrayExtended;
+	BlockArrayType blockArrayType;
+
 	std::vector<Block> blockArrayBlocksByIndex;
 	std::map<Block, uint16_t, blockComparator> blockArrayIndicesByBlock;
 	uint16_t currentIndex;

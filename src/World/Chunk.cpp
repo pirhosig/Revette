@@ -25,7 +25,7 @@ inline int checkAndFlattenIndex(const ChunkLocalBlockPos blockPos)
 
 
 
-Chunk::Chunk(ChunkPos _pos) : position(_pos), generated(false)
+Chunk::Chunk(ChunkPos _pos) : position(_pos), generated(false), blockArrayType(BlockArrayType::NONE)
 {
 	blockArrayBlocksByIndex.push_back(Block(0));
 	blockArrayIndicesByBlock[Block(0)] = 0;
@@ -45,7 +45,7 @@ void Chunk::GenerateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noise
 	// Return if all of the chunk falls above the terrain height
 	if (noiseHeightmap.heightMax < _chunkBottom) return;
 
-	createBlockArray();
+	blockArrayCreate();
 
 	// Fill the chunk if all of the chunk falls below the terrain height
 	if (_chunkTop <= noiseHeightmap.heightMin)
@@ -75,7 +75,7 @@ void Chunk::GenerateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noise
 				if (noiseBiomeMap.biomeArray[index] > 0) defaultBlock.blockType = 5;
 				if (noiseHeightmap.heightArray[index] < (position.y * CHUNK_SIZE + lY))
 				{
-					if (lY + _chunkBottom > 0) blockArray[checkAndFlattenIndex(blockPos)] = 0;
+					if (lY + _chunkBottom > 0) setBlock(blockPos, Block(0));
 					else setBlock(blockPos, Block(6));
 				}
 				else setBlock(blockPos, defaultBlock);
@@ -135,47 +135,72 @@ void Chunk::PopulateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noise
 Block Chunk::getBlock(ChunkLocalBlockPos blockPos) const
 {
 	if (isEmpty()) return blockArrayBlocksByIndex[0];
-	int index = checkAndFlattenIndex(blockPos);
-	return blockArrayBlocksByIndex.at(blockArray[index]);
+	int _index = checkAndFlattenIndex(blockPos);
+	int _blockIndex{};
+	if (blockArrayType == BlockArrayType::COMPACT) _blockIndex = blockArrayCompact[_index];
+	else _blockIndex = blockArrayExtended[_index];
+	return blockArrayBlocksByIndex.at(_blockIndex);
 }
 
 
 
 void Chunk::setBlock(ChunkLocalBlockPos blockPos, Block block)
 {
-	if (isEmpty()) createBlockArray();
-	int index = checkAndFlattenIndex(blockPos);
+	if (isEmpty()) blockArrayCreate();
+	int _index = checkAndFlattenIndex(blockPos);
 	auto it = blockArrayIndicesByBlock.find(block);
-	if (it != blockArrayIndicesByBlock.end()) blockArray[index] = it->second;
+	int _blockIndex;
+	if (it != blockArrayIndicesByBlock.end()) _blockIndex = it->second;
 	else
 	{
 		blockArrayBlocksByIndex.push_back(block);
 		blockArrayIndicesByBlock[block] = currentIndex;
-		blockArray[index] = currentIndex;
+		_blockIndex = currentIndex;
+		if (currentIndex > 255) blockArrayExtend();
 		currentIndex++;
 	}
+
+	if (blockArrayType == BlockArrayType::COMPACT) blockArrayCompact[_index] = _blockIndex;
+	else blockArrayExtended[_index] = _blockIndex;
 }
 
 
 
 bool Chunk::isEmpty() const
 {
-	if (blockArray) return false;
-	else return true;
+	return (blockArrayType == BlockArrayType::NONE);
 }
 
 
 
-void Chunk::createBlockArray()
+void Chunk::blockArrayCreate()
 {
-	blockArray = std::make_unique<uint16_t[]>(CHUNK_VOLUME);
+	assert(blockArrayType == BlockArrayType::NONE);
+	blockArrayCompact = std::make_unique<uint8_t[]>(CHUNK_VOLUME);
+	blockArrayType = BlockArrayType::COMPACT;
 }
 
 
 
-void Chunk::deleteBlockArray()
+void Chunk::blockArrayDelete()
 {
-	blockArray.reset();
+	blockArrayCompact.reset();
+	blockArrayExtended.reset();
+	blockArrayType = BlockArrayType::NONE;
+}
+
+
+
+void Chunk::blockArrayExtend()
+{
+	assert(blockArrayType == BlockArrayType::COMPACT);
+	blockArrayExtended = std::make_unique<uint16_t[]>(CHUNK_VOLUME);
+	for (int i = 0; i < CHUNK_VOLUME; ++i)
+	{
+		blockArrayExtended[i] = blockArrayCompact[i];
+	}
+	blockArrayCompact.reset();
+	blockArrayType = BlockArrayType::EXTENDED;
 }
 
 
