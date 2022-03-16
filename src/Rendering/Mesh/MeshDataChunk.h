@@ -15,6 +15,7 @@ struct Vertex
 	uint16_t t;
 	uint8_t u;
 	uint8_t v;
+	uint8_t w;
 };
 #pragma pack(pop)
 

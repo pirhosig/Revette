@@ -34,9 +34,11 @@ MeshChunk::MeshChunk(std::unique_ptr<MeshDataChunk> meshData) : triangleCount(me
 		sizeof(Vertex),
 		(void*)(8)
 	);
+	glVertexAttribPointer(3, 1, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Vertex), (void*)(10));
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
+	glEnableVertexAttribArray(3);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)* meshData->verticies.size(), meshData->verticies.data(), GL_DYNAMIC_DRAW);

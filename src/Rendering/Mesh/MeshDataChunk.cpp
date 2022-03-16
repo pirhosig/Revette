@@ -1,11 +1,10 @@
 #include "MeshDataChunk.h"
 
 #include "../../World/World.h"
-#include <iostream>
 
 
 
-const int BLOCK_TEXUTRES[][6] = {
+const uint16_t BLOCK_TEXUTRES[][6] = {
 	{0, 0, 1, 1, 1, 1},
 	{2, 2, 2, 2, 2, 2},
 	{3, 3, 3, 3, 3, 3},
@@ -33,11 +32,22 @@ const int FACE_TABLE[6][4][3] = {
 	{{ 0, 1, 0 }, { 1, 1, 0 }, { 1, 0, 0 }, { 0, 0, 0 }}
 };
 
-const int TEXTURE_COORDINATES[4][2] = {
+const uint8_t TEXTURE_COORDINATES[4][2] = {
 	{   0,   0 },
 	{ 255,   0 },
 	{ 255, 255 },
 	{   0, 255 }
+};
+
+
+
+const uint8_t LIGHT[6] = {
+	255,
+	229,
+	240,
+	240,
+	220,
+	220
 };
 
 
@@ -139,9 +149,10 @@ MeshDataChunk::MeshDataChunk(const World& world, ChunkPos chunkPos) : position(c
 							static_cast<uint16_t>(localPos.x + FACE_TABLE[l][v][0]),
 							static_cast<uint16_t>(localPos.y + FACE_TABLE[l][v][1]),
 							static_cast<uint16_t>(localPos.z + FACE_TABLE[l][v][2]),
-							static_cast<uint8_t>(BLOCK_TEXUTRES[block.blockType - 1][l]),
-							static_cast<uint8_t>(TEXTURE_COORDINATES[v][0]),
-							static_cast<uint8_t>(TEXTURE_COORDINATES[v][1])
+							BLOCK_TEXUTRES[block.blockType - 1][l],
+							TEXTURE_COORDINATES[v][0],
+							TEXTURE_COORDINATES[v][1],
+							LIGHT[l]
 						};
 						verticies.push_back(vertex);
 					}

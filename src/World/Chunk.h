@@ -41,6 +41,8 @@ private:
 	void blockArrayDelete();
 	void blockArrayExtend();
 
+	void setBlockRaw(int arrayIndex, int blockIndex);
+
 	std::unique_ptr<uint8_t[]> blockArrayCompact;
 	std::unique_ptr<uint16_t[]> blockArrayExtended;
 	BlockArrayType blockArrayType;

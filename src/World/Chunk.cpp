@@ -17,7 +17,8 @@ inline int blockPositionIsInside(int x, int y, int z)
 }
 
 
-inline int checkAndFlattenIndex(const ChunkLocalBlockPos blockPos)
+
+inline int flattenIndex(const ChunkLocalBlockPos blockPos)
 {
 	assert(blockPositionIsInside(blockPos.x, blockPos.y, blockPos.z) && "Block outside chunk.");
 	return blockPos.x * CHUNK_SIZE * CHUNK_SIZE + blockPos.y * CHUNK_SIZE + blockPos.z;
@@ -135,7 +136,7 @@ void Chunk::PopulateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noise
 Block Chunk::getBlock(ChunkLocalBlockPos blockPos) const
 {
 	if (isEmpty()) return blockArrayBlocksByIndex[0];
-	int _index = checkAndFlattenIndex(blockPos);
+	int _index = flattenIndex(blockPos);
 	int _blockIndex{};
 	if (blockArrayType == BlockArrayType::COMPACT) _blockIndex = blockArrayCompact[_index];
 	else _blockIndex = blockArrayExtended[_index];
@@ -147,7 +148,6 @@ Block Chunk::getBlock(ChunkLocalBlockPos blockPos) const
 void Chunk::setBlock(ChunkLocalBlockPos blockPos, Block block)
 {
 	if (isEmpty()) blockArrayCreate();
-	int _index = checkAndFlattenIndex(blockPos);
 	auto it = blockArrayIndicesByBlock.find(block);
 	int _blockIndex;
 	if (it != blockArrayIndicesByBlock.end()) _blockIndex = it->second;
@@ -159,9 +159,7 @@ void Chunk::setBlock(ChunkLocalBlockPos blockPos, Block block)
 		if (currentIndex > 255) blockArrayExtend();
 		currentIndex++;
 	}
-
-	if (blockArrayType == BlockArrayType::COMPACT) blockArrayCompact[_index] = _blockIndex;
-	else blockArrayExtended[_index] = _blockIndex;
+	setBlockRaw(flattenIndex(blockPos), _blockIndex);
 }
 
 
@@ -201,6 +199,16 @@ void Chunk::blockArrayExtend()
 	}
 	blockArrayCompact.reset();
 	blockArrayType = BlockArrayType::EXTENDED;
+}
+
+
+
+// Directly sets the value in the block array
+void Chunk::setBlockRaw(int arrayIndex, int blockIndex)
+{
+	assert(blockArrayType != BlockArrayType::NONE);
+	if (blockArrayType == BlockArrayType::COMPACT) blockArrayCompact[arrayIndex] = blockIndex;
+	else blockArrayExtended[arrayIndex] = blockIndex;
 }
 
 
