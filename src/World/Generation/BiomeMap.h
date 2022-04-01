@@ -6,6 +6,14 @@
 class NoiseSource2D;
 
 
+enum class BIOME
+{
+	TUNDRA,
+	DESERT,
+	FOREST
+};
+
+
 
 class BiomeMap
 {

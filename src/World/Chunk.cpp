@@ -44,7 +44,7 @@ void Chunk::GenerateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noise
 	const int _chunkTop = _chunkBottom + CHUNK_SIZE - 1;
 
 	// Return if all of the chunk falls above the terrain height
-	if (noiseHeightmap.heightMax < _chunkBottom) return;
+	if (noiseHeightmap.heightMax < _chunkBottom && _chunkBottom > 0) return;
 
 	blockArrayCreate();
 
@@ -89,6 +89,7 @@ void Chunk::GenerateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noise
 
 void Chunk::PopulateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noiseBiomeMap, const NoiseSource2D& noiseFoliage, World& world)
 {
+	return;
 	const int _chunkHeightMin = position.y * CHUNK_SIZE;
 	const int _chunkHeightMax = _chunkHeightMin + CHUNK_SIZE - 1;
 

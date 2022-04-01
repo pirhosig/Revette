@@ -4,9 +4,6 @@
 
 #include "../Exceptions.h"
 
-constexpr int LOAD_DISTANCE = 20;
-constexpr int LOAD_DISTANCE_VERTICAL = 5;
-
 
 
 
@@ -15,7 +12,7 @@ World::World(std::shared_ptr<ThreadQueueMeshes> meshQueue, const char* settingNo
 	threadQueueMeshes(meshQueue),
 	noiseBiomeHumidity("HAABGQANAAIAAAAAAABACQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==", 0.00125f, 43),
 	noiseBiomeTemperature("HAABGQANAAIAAAAAAABACQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==", 0.00125f, 44),
-	noiseHeightmap(settingNoiseHeightmap, 0.0125f, 42),
+	noiseHeightmap(settingNoiseHeightmap, 0.0078125f, 42),
 	noiseFoliage(settingNoiseFoliage, 1.0f, 42),
 	loadPosUpdated{ true }
 {}
