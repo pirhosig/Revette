@@ -7,7 +7,7 @@
 #include "ChunkPos.h"
 #include "ChunkStatusMap.h"
 #include "Generation/GeneratorChunkParameters.h"
-#include "Generation/NoiseSource.h"
+#include "Generation/GeneratorChunkNoise.h"
 #include "../Rendering/Mesh/MeshDataChunk.h"
 #include "../Threading/ThreadQueueMeshes.h"
 
@@ -67,9 +67,7 @@ private:
 
 	// Chunk generation tools
 	std::map<ChunkPos2D, GeneratorChunkParameters> generatorChunkCache;
-	NoiseSource2D noiseBiomeTemperature;
-	NoiseSource2D noiseBiomeHumidity;
-	NoiseSource2D noiseHeightmap;
+	GeneratorChunkNoise generatorChunkNoise;
 	NoiseSource2D noiseFoliage;
 
 	// Chunk mesh container

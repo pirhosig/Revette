@@ -1,23 +1,41 @@
 #include "BiomeMap.h"
 #include <algorithm>
+#include <cmath>
 #include "NoiseSource.h"
 
 
 
-double BIOME_TABLE[5][5] = {
-	{  0.0 ,  0.0 ,  1.0 ,  1.0 ,  1.0  },
-	{  0.0 ,  0.0 ,  1.0 ,  1.0 ,  1.0  },
-	{  0.0 ,  0.0 ,  2.0 ,  2.0 ,  2.0  },
-	{  0.0 ,  0.0 ,  0.0 ,  2.0 ,  2.0  },
-	{  0.0 ,  0.0 ,  0.0 ,  0.0 ,  2.0  }
+int BIOME_TABLE[5][5] = {
+	{  0,  0,  1,  1,  1 },
+	{  0,  0,  1,  1,  1 },
+	{  0,  0,  2,  2,  2 },
+	{  0,  0,  0,  2,  2 },
+	{  0,  0,  0,  0,  2 }
 };
 
 
+constexpr float LOWER_NOISE_CUTOFF = 0.35f;
+constexpr float UPPER_NOISE_CUTOFF = 1.0f - LOWER_NOISE_CUTOFF;
 
-BiomeMap::BiomeMap(ChunkPos2D noisePos, NoiseSource2D& noiseTemperature, NoiseSource2D& noiseHumidity) : biomeArray{}
+
+
+// Randomizes the noise at biome edges
+inline int distributeEdges(float value, int index, const std::array<float, CHUNK_AREA>& edges)
+{
+	float integer;
+	float decimal = modf(value, &integer);
+	value += 0.5f;
+	if (decimal < LOWER_NOISE_CUTOFF || decimal > UPPER_NOISE_CUTOFF) return static_cast<int>(value);
+	return static_cast<int>(value + edges[index]);
+}
+
+
+
+BiomeMap::BiomeMap(ChunkPos2D noisePos, NoiseSource2D& noiseTemperature, NoiseSource2D& noiseHumidity, NoiseSource2D& noiseBiomeEdge) : biomeArray{}
 {
 	std::array<float, CHUNK_AREA> temperature = noiseTemperature.GenChunkNoise(noisePos);
 	std::array<float, CHUNK_AREA> humidity = noiseHumidity.GenChunkNoise(noisePos);
+	std::array<float, CHUNK_AREA> edges = noiseBiomeEdge.GenChunkNoise(noisePos);
 
 	for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ)
 	{
@@ -31,8 +49,8 @@ BiomeMap::BiomeMap(ChunkPos2D noisePos, NoiseSource2D& noiseTemperature, NoiseSo
 
 	for (int i = 0; i < CHUNK_AREA; ++i)
 	{
-		int _indexTemperature = static_cast<int>(temperature[i] * 4.98);
-		int _indexHumidity = std::min(static_cast<int>(humidity[i] * 4.98), _indexTemperature);
+		int _indexTemperature = distributeEdges(temperature[i] * 4.0f, i, edges);
+		int _indexHumidity = std::min(distributeEdges(humidity[i] * 4.0f, i, edges), _indexTemperature);
 		double _biomeType = BIOME_TABLE[_indexHumidity][_indexTemperature];
 		int _biomeInt = static_cast<int>(_biomeType);
 		biomeArray[i] = static_cast<BIOME>(_biomeInt);

@@ -14,9 +14,16 @@ constexpr int SEED = 43;
 World::World(std::shared_ptr<ThreadQueueMeshes> meshQueue, const char* settingNoiseHeightmap, const char* settingNoiseFoliage) :
 	loadCentre(0, 0, 0),
 	threadQueueMeshes(meshQueue),
-	noiseBiomeHumidity("HAABGQANAAIAAAAAAABACQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==", 0.00125f, SEED + 1),
-	noiseBiomeTemperature("HAABGQANAAIAAAAAAABACQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==", 0.00125f, SEED + 2),
-	noiseHeightmap(settingNoiseHeightmap, 0.0078125f, SEED),
+	generatorChunkNoise(
+		SEED,
+		0.0078125f,
+		0.00125f,
+		0.00125f,
+		settingNoiseHeightmap,
+		"HAABGQANAAIAAAAAAABACQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==",
+		"HAABGQANAAIAAAAAAABACQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==",
+		"HAABBgAAAABAQA=="
+	),
 	noiseFoliage(settingNoiseFoliage, 1.0f, SEED),
 	loadPosUpdated{ true }
 {}
@@ -217,6 +224,6 @@ void World::queueChunkPopulation(const ChunkPos chunkPos)
 
 const GeneratorChunkParameters& World::getGeneratorChunkParameters(const ChunkPos2D position)
 {
-	if (!generatorChunkCache.contains(position)) generatorChunkCache.try_emplace(position, position, noiseHeightmap, noiseBiomeTemperature, noiseBiomeHumidity);
+	if (!generatorChunkCache.contains(position)) generatorChunkCache.try_emplace(position, position, generatorChunkNoise);
 	return generatorChunkCache.at(position);
 }
