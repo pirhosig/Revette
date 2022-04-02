@@ -4,7 +4,7 @@
 #include <string>
 
 #include "World.h"
-#include "Generation/HeightMap.h"
+#include "Generation/GeneratorChunkParameters.h"
 #include "Generation/NoiseSource.h"
 #include "../Constants.h"
 #include "../Exceptions.h"
@@ -35,7 +35,7 @@ Chunk::Chunk(ChunkPos _pos) : position(_pos), generated(false), blockArrayType(B
 
 
 
-void Chunk::GenerateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noiseBiomeMap)
+void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters)
 {
 	if (generated) throw EXCEPTION_WORLD::ChunkRegeneration("Attempted to re-generate chunk");
 	generated = true;
@@ -44,12 +44,12 @@ void Chunk::GenerateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noise
 	const int _chunkTop = _chunkBottom + CHUNK_SIZE - 1;
 
 	// Return if all of the chunk falls above the terrain height
-	if (noiseHeightmap.heightMax < _chunkBottom && _chunkBottom > 0) return;
+	if (generatorParameters.heightMap.heightMax < _chunkBottom && _chunkBottom > 0) return;
 
 	blockArrayCreate();
 
 	// Fill the chunk if all of the chunk falls below the terrain height
-	if (_chunkTop <= noiseHeightmap.heightMin)
+	if (_chunkTop <= generatorParameters.heightMap.heightMin)
 	{
 		for (int lX = 0; lX < CHUNK_SIZE; ++lX)
 		{
@@ -57,7 +57,7 @@ void Chunk::GenerateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noise
 			{
 				for (int lY = 0; lY < CHUNK_SIZE; ++lY)
 				{
-					setBlock(ChunkLocalBlockPos(lX, lY, lZ), Block(1));
+					setBlock(ChunkLocalBlockPos(lX, lY, lZ), Block(2));
 				}
 			}
 		}
@@ -68,13 +68,30 @@ void Chunk::GenerateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noise
 	{
 		for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ)
 		{
+			int index = lZ * CHUNK_SIZE + lX;
+
+			// Determine the default block to use based on the biome
+			Block defaultBlock(2);
+			switch (generatorParameters.biomeMap.biomeArray[index])
+			{
+			case BIOME::DESERT:
+				defaultBlock = Block(5);
+				break;
+			case BIOME::FOREST:
+				defaultBlock = Block(1);
+				break;
+			case BIOME::TUNDRA:
+				defaultBlock = Block(7);
+				break;
+			default:
+				break;
+			}
+
 			for (int lY = 0; lY < CHUNK_SIZE; ++lY)
 			{
 				ChunkLocalBlockPos blockPos(lX, lY, lZ);
-				Block defaultBlock(1);
-				int index = lZ * CHUNK_SIZE + lX;
-				if (noiseBiomeMap.biomeArray[index] > 0) defaultBlock.blockType = 5;
-				if (noiseHeightmap.heightArray[index] < (position.y * CHUNK_SIZE + lY))
+
+				if (generatorParameters.heightMap.heightArray[index] < (position.y * CHUNK_SIZE + lY))
 				{
 					if (lY + _chunkBottom > 0) setBlock(blockPos, Block(0));
 					else setBlock(blockPos, Block(6));
@@ -87,17 +104,17 @@ void Chunk::GenerateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noise
 
 
 
-void Chunk::PopulateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noiseBiomeMap, const NoiseSource2D& noiseFoliage, World& world)
+void Chunk::PopulateChunk(const GeneratorChunkParameters& generatorParameters, const NoiseSource2D& noiseFoliage, World& world)
 {
 	return;
 	const int _chunkHeightMin = position.y * CHUNK_SIZE;
 	const int _chunkHeightMax = _chunkHeightMin + CHUNK_SIZE - 1;
 
 	// Return if chunk is entirely below surface
-	if (_chunkHeightMax <= noiseHeightmap.heightMin) return;
+	if (_chunkHeightMax <=  generatorParameters.heightMap.heightMin) return;
 
 	// Return if all the surface air blocks are also below this chunk
-	if (noiseHeightmap.heightMax + 1 < _chunkHeightMin) return;
+	if (generatorParameters.heightMap.heightMax + 1 < _chunkHeightMin) return;
 
 	std::array<float, CHUNK_AREA> foliageValues = noiseFoliage.GenChunkNoise(ChunkPos2D(position));
 
@@ -105,28 +122,32 @@ void Chunk::PopulateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noise
 	{
 		for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ)
 		{
-			// Continue if surface air block is below chunk
 			int _index = lZ * CHUNK_SIZE + lX;
-			if (noiseHeightmap.heightArray[_index] + 1 < _chunkHeightMin) continue;
+			int _surfaceLevel = generatorParameters.heightMap.heightArray[_index];
+			// Continue if surface air block is below chunk
+			if (_surfaceLevel + 1 < _chunkHeightMin) continue;
 
 			// Continue if the topmost block is above the chunk
-			if (noiseHeightmap.heightArray[_index] + 1 > _chunkHeightMax) continue;
+			if (_surfaceLevel + 1 > _chunkHeightMax) continue;
+
+			int _worldX = position.x * CHUNK_SIZE + lX;
+			int _worldZ = position.z * CHUNK_SIZE + lZ;
 
 			// Check if the topmost block needs a tree
-			if (noiseBiomeMap.biomeArray[_index] == 0 && foliageValues[_index] > 0.984)
+			if (generatorParameters.biomeMap.biomeArray[_index] == BIOME::FOREST && foliageValues[_index] > 0.984)
 			{
 				for (int lH = 0; lH < 5; ++lH)
 				{
-					int currentHeight = noiseHeightmap.heightArray[_index] + 1 - position.y * CHUNK_SIZE + lH;
+					int currentHeight = _surfaceLevel + 1 - position.y * CHUNK_SIZE + lH;
 					if (blockPositionIsInside(lX, currentHeight, lZ)) setBlock(ChunkLocalBlockPos(lX, currentHeight, lZ), Block(3));
-					else world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE, noiseHeightmap.heightArray[_index] + 1 + lH, lZ + position.z * CHUNK_SIZE), Block(3));
+					else world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE, _surfaceLevel + 1 + lH, lZ + position.z * CHUNK_SIZE), Block(3));
 				}
-				world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE, noiseHeightmap.heightArray[_index] + 6, lZ + position.z * CHUNK_SIZE), Block(4));
-				world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE, noiseHeightmap.heightArray[_index] + 7, lZ + position.z * CHUNK_SIZE), Block(4));
-				world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE + 1, noiseHeightmap.heightArray[_index] + 6, lZ + position.z * CHUNK_SIZE), Block(4));
-				world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE - 1, noiseHeightmap.heightArray[_index] + 6, lZ + position.z * CHUNK_SIZE), Block(4));
-				world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE, noiseHeightmap.heightArray[_index] + 6, lZ + position.z * CHUNK_SIZE + 1), Block(4));
-				world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE, noiseHeightmap.heightArray[_index] + 6, lZ + position.z * CHUNK_SIZE - 1), Block(4));
+				world.setBlock(BlockPos(_worldX,     _surfaceLevel + 6, _worldZ), Block(4));
+				world.setBlock(BlockPos(_worldX,     _surfaceLevel + 7, _worldZ), Block(4));
+				world.setBlock(BlockPos(_worldX + 1, _surfaceLevel + 6, _worldZ), Block(4));
+				world.setBlock(BlockPos(_worldX - 1, _surfaceLevel + 6, _worldZ), Block(4));
+				world.setBlock(BlockPos(_worldX,     _surfaceLevel + 6, _worldZ + 1), Block(4));
+				world.setBlock(BlockPos(_worldX,     _surfaceLevel + 6, _worldZ - 1), Block(4));
 			}
 		}
 	}

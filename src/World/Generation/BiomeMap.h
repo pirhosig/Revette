@@ -8,9 +8,9 @@ class NoiseSource2D;
 
 enum class BIOME
 {
-	TUNDRA,
 	DESERT,
-	FOREST
+	FOREST,
+	TUNDRA
 };
 
 
@@ -21,5 +21,5 @@ public:
 	BiomeMap(ChunkPos2D noisePos, NoiseSource2D& noiseTemperature, NoiseSource2D& noiseHumidity);
 	BiomeMap(const BiomeMap&) = delete;
 
-	std::array<int, CHUNK_AREA> biomeArray;
+	std::array<BIOME, CHUNK_AREA> biomeArray;
 };

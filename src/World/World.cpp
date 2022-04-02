@@ -6,14 +6,18 @@
 
 
 
+constexpr int SEED = 43;
+
+
+
 
 World::World(std::shared_ptr<ThreadQueueMeshes> meshQueue, const char* settingNoiseHeightmap, const char* settingNoiseFoliage) :
 	loadCentre(0, 0, 0),
 	threadQueueMeshes(meshQueue),
-	noiseBiomeHumidity("HAABGQANAAIAAAAAAABACQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==", 0.00125f, 43),
-	noiseBiomeTemperature("HAABGQANAAIAAAAAAABACQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==", 0.00125f, 44),
-	noiseHeightmap(settingNoiseHeightmap, 0.0078125f, 42),
-	noiseFoliage(settingNoiseFoliage, 1.0f, 42),
+	noiseBiomeHumidity("HAABGQANAAIAAAAAAABACQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==", 0.00125f, SEED + 1),
+	noiseBiomeTemperature("HAABGQANAAIAAAAAAABACQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==", 0.00125f, SEED + 2),
+	noiseHeightmap(settingNoiseHeightmap, 0.0078125f, SEED),
+	noiseFoliage(settingNoiseFoliage, 1.0f, SEED),
 	loadPosUpdated{ true }
 {}
 
@@ -85,10 +89,7 @@ void World::loadChunks()
 		chunkStatusMap.setChunkStatusLoad(lPos, StatusChunkLoad::LOADED);
 
 		// Generate the chunk
-		insertRes.first->second->GenerateChunk(
-			getHeightMap(ChunkPos2D(lPos)),
-			getBiomeMap(ChunkPos2D(lPos))
-		);
+		insertRes.first->second->GenerateChunk(getGeneratorChunkParameters(ChunkPos2D(lPos)));
 		chunkStatusMap.setChunkStatusLoad(lPos, StatusChunkLoad::GENERATED);
 		// Check if it, or it's neighbours can populate
 		for (int ni = -1; ni < 2; ++ni)
@@ -120,8 +121,7 @@ void World::populateChunks()
 		assert((chunkStatusMap.getChunkStatusLoad(_pos) == StatusChunkLoad::QUEUED_POPULATE) && "Attempted to load already loaded chunk.");
 
 		getChunk(_pos)->PopulateChunk(
-			getHeightMap(ChunkPos2D(_pos)),
-			getBiomeMap(ChunkPos2D(_pos)),
+			getGeneratorChunkParameters(ChunkPos2D(_pos)),
 			noiseFoliage,
 			(*this)
 		);
@@ -215,19 +215,8 @@ void World::queueChunkPopulation(const ChunkPos chunkPos)
 }
 
 
-
-const HeightMap& World::getHeightMap(const ChunkPos2D noisePos)
+const GeneratorChunkParameters& World::getGeneratorChunkParameters(const ChunkPos2D position)
 {
-	// Generate a heightmap if it doesn't exist yet
-	if (!noiseHeightCache.contains(noisePos)) noiseHeightCache.try_emplace(noisePos, noisePos, noiseHeightmap);
-	// Return a reference to the heightmap
-	return noiseHeightCache.at(noisePos);
-}
-
-
-
-const BiomeMap& World::getBiomeMap(const ChunkPos2D noisePos)
-{
-	if (!noiseBiomeCache.contains(noisePos)) noiseBiomeCache.try_emplace(noisePos, noisePos, noiseBiomeTemperature, noiseBiomeHumidity);
-	return noiseBiomeCache.at(noisePos);
+	if (!generatorChunkCache.contains(position)) generatorChunkCache.try_emplace(position, position, noiseHeightmap, noiseBiomeTemperature, noiseBiomeHumidity);
+	return generatorChunkCache.at(position);
 }

@@ -5,10 +5,10 @@
 
 #include "Block.h"
 #include "ChunkPos.h"
-class BiomeMap;
-class HeightMap;
+class GeneratorChunkParameters;
 class NoiseSource2D;
 class World;
+
 
 
 enum class BlockArrayType
@@ -26,8 +26,8 @@ public:
 	Chunk(ChunkPos _pos);
 	Chunk(const Chunk&) = delete;
 
-	void GenerateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noiseBiomeMap);
-	void PopulateChunk(const HeightMap& noiseHeightmap, const BiomeMap& noiseBiomeMap, const NoiseSource2D& noiseFoliage, World& world);
+	void GenerateChunk(const GeneratorChunkParameters& generatorParameters);
+	void PopulateChunk(const GeneratorChunkParameters& generatorParameters, const NoiseSource2D& noiseFoliage, World& world);
 
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
