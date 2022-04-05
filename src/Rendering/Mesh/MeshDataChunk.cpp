@@ -5,14 +5,15 @@
 
 
 const uint16_t BLOCK_TEXUTRES[][6] = {
-	{0, 0, 1, 1, 1, 1},
+	{0, 0, 0, 0, 0, 0},
 	{2, 2, 2, 2, 2, 2},
 	{3, 3, 3, 3, 3, 3},
 	{4, 4, 4, 4, 4, 4},
 	{5, 5, 5, 5, 5, 5},
 	{6, 6, 6, 6, 6, 6},
 	{7, 7, 7, 7, 7, 7},
-	{8, 8, 8, 8, 8, 8}
+	{8, 8, 8, 8, 8, 8},
+	{9, 9, 9, 9, 9, 9}
 };
 
 
@@ -122,6 +123,7 @@ MeshDataChunk::MeshDataChunk(const World& world, ChunkPos chunkPos) : position(c
 					// Only add face if the adjacent block is transparent
 					if (neighbor.blockType != 0) continue;
 
+					// Set winding order, to enable GPU based baceface culling
 					if (l % 2)
 					{
 						indicies.push_back(indexCounter);

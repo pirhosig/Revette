@@ -18,8 +18,8 @@ public:
 		const char* settingRainfall,
 		const char* settingBiomeEdge
 	) : noiseHeight(settingHeight, freqHeight, seed),
-		noiseTemperature(settingTemperature, freqTemperature, seed + 1),
-		noiseRainfall(settingRainfall, freqRainfall, seed + 2),
+		noiseTemperature(settingTemperature, freqTemperature, seed + 0x57),
+		noiseRainfall(settingRainfall, freqRainfall, seed + 0x63),
 		noiseBiomeEdge(settingBiomeEdge, 1.0, seed)
 	{}
 

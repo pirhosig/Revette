@@ -80,6 +80,9 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters)
 			case BIOME::FOREST:
 				defaultBlock = Block(1);
 				break;
+			case BIOME::RAINFOREST:
+				defaultBlock = Block(8);
+				break;
 			case BIOME::TUNDRA:
 				defaultBlock = Block(7);
 				break;
@@ -106,15 +109,13 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters)
 
 void Chunk::PopulateChunk(const GeneratorChunkParameters& generatorParameters, const NoiseSource2D& noiseFoliage, World& world)
 {
-	return;
 	const int _chunkHeightMin = position.y * CHUNK_SIZE;
 	const int _chunkHeightMax = _chunkHeightMin + CHUNK_SIZE - 1;
 
-	// Return if chunk is entirely below surface
-	if (_chunkHeightMax <=  generatorParameters.heightMap.heightMin) return;
-
-	// Return if all the surface air blocks are also below this chunk
-	if (generatorParameters.heightMap.heightMax + 1 < _chunkHeightMin) return;
+	// Return if chunk is entirely below surface or if all the surface air blocks are also below this chunk
+	if (_chunkHeightMax <=  generatorParameters.heightMap.heightMin ||
+		generatorParameters.heightMap.heightMax + 1 < _chunkHeightMin
+	) return;
 
 	std::array<float, CHUNK_AREA> foliageValues = noiseFoliage.GenChunkNoise(ChunkPos2D(position));
 
@@ -124,17 +125,16 @@ void Chunk::PopulateChunk(const GeneratorChunkParameters& generatorParameters, c
 		{
 			int _index = lZ * CHUNK_SIZE + lX;
 			int _surfaceLevel = generatorParameters.heightMap.heightArray[_index];
-			// Continue if surface air block is below chunk
-			if (_surfaceLevel + 1 < _chunkHeightMin) continue;
-
-			// Continue if the topmost block is above the chunk
-			if (_surfaceLevel + 1 > _chunkHeightMax) continue;
+			// Continue if surface air block is below chunk OR if the topmost block is above the chunk
+			if (_surfaceLevel + 1 < _chunkHeightMin ||
+				_surfaceLevel + 1 > _chunkHeightMax
+			) continue;
 
 			int _worldX = position.x * CHUNK_SIZE + lX;
 			int _worldZ = position.z * CHUNK_SIZE + lZ;
 
 			// Check if the topmost block needs a tree
-			if (generatorParameters.biomeMap.biomeArray[_index] == BIOME::FOREST && foliageValues[_index] > 0.984)
+			if (_surfaceLevel >= 0 && generatorParameters.biomeMap.biomeArray[_index] == BIOME::FOREST && foliageValues[_index] > 0.984)
 			{
 				for (int lH = 0; lH < 5; ++lH)
 				{
