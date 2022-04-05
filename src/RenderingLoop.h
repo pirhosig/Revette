@@ -5,8 +5,9 @@
 #include <GLFW/glfw3.h>
 
 #include "LoopTimer.h"
+#include "Rendering/Mesh/MeshDataChunk.h"
 #include "Rendering/ShaderProgram.h"
-#include "Threading/ThreadQueueMeshes.h"
+#include "Threading/ThreadPointerQueue.h"
 #include "World/Entities/EntityPosition.h"
 
 
@@ -17,7 +18,7 @@ public:
 	RenderingLoop();
 	~RenderingLoop();
 
-	void runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes);
+	void runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes);
 
 	static void cursorPositionCallbackWrapper(GLFWwindow* window, double xpos, double ypos);
 private:

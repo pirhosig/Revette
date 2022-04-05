@@ -13,7 +13,7 @@ const char* NOISE_FOLIAGE = "AQA=";
 
 
 
-void GameLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes)
+void GameLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes)
 {
 	World zaWarudo(std::move(threadQueueMeshes), NOISE_HEIGHTMAP, NOISE_FOLIAGE);
 

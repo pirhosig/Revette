@@ -6,10 +6,10 @@
 
 #include "GameLoop.h"
 #include "RenderingLoop.h"
-#include "Threading/ThreadQueueMeshes.h"
+#include "Threading/ThreadPointerQueue.h"
 
 
-void runGameLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes) try
+void runGameLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes) try
 {
 	GameLoop mainLoop;
 	mainLoop.runLoop(gameShouldClose, std::move(threadQueueMeshes));
@@ -27,7 +27,7 @@ catch (...)
 
 
 
-void runRenderingLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes) try
+void runRenderingLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes) try
 {
 	RenderingLoop mainLoop;
 	mainLoop.runLoop(gameShouldClose, std::move(threadQueueMeshes));
@@ -48,7 +48,7 @@ catch (...)
 int main()
 {
 	std::shared_ptr<std::atomic<bool>> gameShouldClose = std::make_shared<std::atomic<bool>>(false);
-	std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes = std::make_shared<ThreadQueueMeshes>();
+	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes = std::make_shared<ThreadPointerQueue<MeshDataChunk>>();
 	
 	std::jthread gameThread(runGameLoop, gameShouldClose, threadQueueMeshes);
 	std::jthread renderingThread(runRenderingLoop, gameShouldClose, threadQueueMeshes);

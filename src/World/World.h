@@ -9,7 +9,7 @@
 #include "Generation/GeneratorChunkParameters.h"
 #include "Generation/GeneratorChunkNoise.h"
 #include "../Rendering/Mesh/MeshDataChunk.h"
-#include "../Threading/ThreadQueueMeshes.h"
+#include "../Threading/ThreadPointerQueue.h"
 
 
 
@@ -33,7 +33,7 @@ public:
 class World
 {
 public:
-	World(std::shared_ptr<ThreadQueueMeshes> meshQueue, const char* settingNoiseHeightmap, const char* settingNoiseFoliage);
+	World(std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> meshQueue, const char* settingNoiseHeightmap, const char* settingNoiseFoliage);
 	World(const World&) = delete;
 	void tick();
 
@@ -71,6 +71,6 @@ private:
 	NoiseSource2D noiseFoliage;
 
 	// Chunk mesh container
-	std::shared_ptr<ThreadQueueMeshes> threadQueueMeshes;
+	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes;
 	friend MeshDataChunk;
 };

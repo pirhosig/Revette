@@ -11,7 +11,7 @@ constexpr int SEED = 44;
 
 
 
-World::World(std::shared_ptr<ThreadQueueMeshes> meshQueue, const char* settingNoiseHeightmap, const char* settingNoiseFoliage) :
+World::World(std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> meshQueue, const char* settingNoiseHeightmap, const char* settingNoiseFoliage) :
 	loadCentre(0, 0, 0),
 	threadQueueMeshes(meshQueue),
 	generatorChunkNoise(
