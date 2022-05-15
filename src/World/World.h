@@ -8,6 +8,7 @@
 #include "ChunkStatusMap.h"
 #include "Generation/GeneratorChunkParameters.h"
 #include "Generation/GeneratorChunkNoise.h"
+#include "Generation/Structures/Structure.h"
 #include "../Rendering/Mesh/MeshDataChunk.h"
 #include "../Threading/ThreadPointerQueue.h"
 
@@ -39,6 +40,9 @@ public:
 
 	Block getBlock(BlockPos blockPos) const;
 	void setBlock(BlockPos blockPos, Block block) const;
+	const std::unique_ptr<Chunk>& getChunk(const ChunkPos chunkPos) const;
+	void addStructure(const BlockPos _blockPos, std::unique_ptr<Structure> _structure);
+	const std::unique_ptr<Structure>& getStructure(const BlockPos blockPos) const;
 
 private:
 
@@ -47,7 +51,6 @@ private:
 	void populateChunks();
 	void meshChunks();
 
-	const std::unique_ptr<Chunk>& getChunk(const ChunkPos chunkPos) const;
 
 	void queueChunkMeshing(const ChunkPos chunkPos);
 	void queueChunkPopulation(const ChunkPos chunkPos);
@@ -56,6 +59,7 @@ private:
 
 	// Chunk storage
 	std::map<ChunkPos, std::unique_ptr<Chunk>> chunkMap;
+	std::map<BlockPos, std::unique_ptr<Structure>> structureMap;
 
 	// Chunk loading information
 	ChunkPos loadCentre;
@@ -70,7 +74,5 @@ private:
 	GeneratorChunkNoise generatorChunkNoise;
 	NoiseSource2D noiseFoliage;
 
-	// Chunk mesh container
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes;
-	friend MeshDataChunk;
 };

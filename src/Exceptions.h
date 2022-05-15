@@ -21,6 +21,13 @@ namespace EXCEPTION_WORLD
 		ChunkNonExistence(const std::string& message) : std::exception(message.c_str()) {};
 	};
 
+	class StructureNonExistence : public std::exception
+	{
+	public:
+		StructureNonExistence(const char* message) : std::exception(message) {};
+		StructureNonExistence(const std::string& message) : std::exception(message.c_str()) {};
+	};
+
 
 	class ChunkRegeneration : public std::exception
 	{

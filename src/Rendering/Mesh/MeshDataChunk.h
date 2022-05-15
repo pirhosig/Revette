@@ -1,8 +1,8 @@
 #pragma once
+#include <memory>
 #include <vector>
 
-#include "../../World/ChunkPos.h"
-class World;
+#include "../../World/Chunk.h"
 
 
 
@@ -24,7 +24,16 @@ struct Vertex
 class MeshDataChunk
 {
 public:
-	MeshDataChunk(const World& world, ChunkPos chunkPos);
+	MeshDataChunk(
+		ChunkPos chunkPos,
+		const std::unique_ptr<Chunk>& chunkCentre,
+		const std::unique_ptr<Chunk>& chunkUp,
+		const std::unique_ptr<Chunk>& chunkDown,
+		const std::unique_ptr<Chunk>& chunkNorth,
+		const std::unique_ptr<Chunk>& chunkSouth,
+		const std::unique_ptr<Chunk>& chunkEast,
+		const std::unique_ptr<Chunk>& chunkWest
+	);
 	MeshDataChunk(const MeshDataChunk&) = delete;
 
 	ChunkPos position;

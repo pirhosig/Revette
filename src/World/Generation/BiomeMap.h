@@ -1,18 +1,10 @@
 #pragma once
 #include <array>
-
+#include "Biomes/Biomes.h"
 #include "../ChunkPos.h"
 #include "../../Constants.h"
 class NoiseSource2D;
 
-
-enum class BIOME
-{
-	DESERT,
-	FOREST,
-	RAINFOREST,
-	TUNDRA
-};
 
 
 

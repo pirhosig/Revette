@@ -6,7 +6,7 @@
 
 
 
-constexpr int SEED = 44;
+constexpr int SEED = 70;
 
 
 
@@ -81,7 +81,7 @@ void World::addLoadQueue()
 
 void World::loadChunks()
 {
-	constexpr int MAX_LOAD_COUNT = 200;
+	constexpr int MAX_LOAD_COUNT = 400;
 	for (int i = 0; i < MAX_LOAD_COUNT; ++i)
 	{
 		if (loadQueue.empty()) break;
@@ -96,7 +96,7 @@ void World::loadChunks()
 		chunkStatusMap.setChunkStatusLoad(lPos, StatusChunkLoad::LOADED);
 
 		// Generate the chunk
-		insertRes.first->second->GenerateChunk(getGeneratorChunkParameters(ChunkPos2D(lPos)));
+		insertRes.first->second->GenerateChunk(getGeneratorChunkParameters(ChunkPos2D(lPos)), (*this));
 		chunkStatusMap.setChunkStatusLoad(lPos, StatusChunkLoad::GENERATED);
 		// Check if it, or it's neighbours can populate
 		for (int ni = -1; ni < 2; ++ni)
@@ -117,7 +117,7 @@ void World::loadChunks()
 
 void World::populateChunks()
 {
-	constexpr int MAX_POPULATE_COUNT = 200;
+	constexpr int MAX_POPULATE_COUNT = 400;
 	for (int i = 0; i < MAX_POPULATE_COUNT; ++i)
 	{
 		if (populateQueue.empty()) break;
@@ -173,7 +173,16 @@ void World::meshChunks()
 
 		// Create a mesh if the chunk is not empty
 		if (!getChunk(mPos)->isEmpty()) {
-			std::unique_ptr<MeshDataChunk> meshData = std::make_unique<MeshDataChunk>((*this), mPos);
+			std::unique_ptr<MeshDataChunk> meshData = std::make_unique<MeshDataChunk>(
+				mPos,
+				getChunk(mPos),
+				getChunk(mPos.direction(AxisDirection::Up)),
+				getChunk(mPos.direction(AxisDirection::Down)),
+				getChunk(mPos.direction(AxisDirection::North)),
+				getChunk(mPos.direction(AxisDirection::South)),
+				getChunk(mPos.direction(AxisDirection::East)),
+				getChunk(mPos.direction(AxisDirection::West))
+				);
 			if (meshData->triangleCount > 0) meshDataQueue.push(std::move(meshData));
 		}
 		chunkStatusMap.setChunkStatusMesh(mPos, StatusChunkMesh::MESHED);
@@ -184,7 +193,7 @@ void World::meshChunks()
 
 
 
-// More convenient access to a chunk object, the returned value is not intended to be stored beyond local scope.
+// Returns a reference to a chunk
 const std::unique_ptr<Chunk>& World::getChunk(const ChunkPos chunkPos) const
 {
 	try
@@ -196,6 +205,30 @@ const std::unique_ptr<Chunk>& World::getChunk(const ChunkPos chunkPos) const
 		std::string error = "Attempted to access non-existent chunk at ";
 		error += std::to_string(chunkPos.x) + " " + std::to_string(chunkPos.y) + " " + std::to_string(chunkPos.z);
 		throw EXCEPTION_WORLD::ChunkNonExistence(error);
+	}
+}
+
+
+
+void World::addStructure(const BlockPos _blockPos, std::unique_ptr<Structure> _structure)
+{
+	structureMap[_blockPos] = std::move(_structure);
+}
+
+
+
+// Returns a reference to the structure at the location
+const std::unique_ptr<Structure>& World::getStructure(const BlockPos blockPos) const
+{
+	try
+	{
+		return structureMap.at(blockPos);
+	}
+	catch (std::out_of_range)
+	{
+		std::string error = "Attempted to access non-existent chunk at ";
+		error += std::to_string(blockPos.x) + " " + std::to_string(blockPos.y) + " " + std::to_string(blockPos.z);
+		throw EXCEPTION_WORLD::StructureNonExistence(error);
 	}
 }
 

@@ -35,7 +35,7 @@ Chunk::Chunk(ChunkPos _pos) : position(_pos), generated(false), blockArrayType(B
 
 
 
-void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters)
+void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters, World& world)
 {
 	if (generated) throw EXCEPTION_WORLD::ChunkRegeneration("Attempted to re-generate chunk");
 	generated = true;
@@ -113,9 +113,7 @@ void Chunk::PopulateChunk(const GeneratorChunkParameters& generatorParameters, c
 	const int _chunkHeightMax = _chunkHeightMin + CHUNK_SIZE - 1;
 
 	// Return if chunk is entirely below surface or if all the surface air blocks are also below this chunk
-	if (_chunkHeightMax <=  generatorParameters.heightMap.heightMin ||
-		generatorParameters.heightMap.heightMax + 1 < _chunkHeightMin
-	) return;
+	if (_chunkHeightMax <= generatorParameters.heightMap.heightMin || generatorParameters.heightMap.heightMax + 1 < _chunkHeightMin) return;
 
 	std::array<float, CHUNK_AREA> foliageValues = noiseFoliage.GenChunkNoise(ChunkPos2D(position));
 
@@ -126,9 +124,7 @@ void Chunk::PopulateChunk(const GeneratorChunkParameters& generatorParameters, c
 			int _index = lZ * CHUNK_SIZE + lX;
 			int _surfaceLevel = generatorParameters.heightMap.heightArray[_index];
 			// Continue if surface air block is below chunk OR if the topmost block is above the chunk
-			if (_surfaceLevel + 1 < _chunkHeightMin ||
-				_surfaceLevel + 1 > _chunkHeightMax
-			) continue;
+			if (_surfaceLevel + 1 < _chunkHeightMin || _surfaceLevel + 1 > _chunkHeightMax) continue;
 
 			int _worldX = position.x * CHUNK_SIZE + lX;
 			int _worldZ = position.z * CHUNK_SIZE + lZ;
@@ -136,20 +132,36 @@ void Chunk::PopulateChunk(const GeneratorChunkParameters& generatorParameters, c
 			// Check if the topmost block needs a tree
 			if (_surfaceLevel >= 0 && generatorParameters.biomeMap.biomeArray[_index] == BIOME::FOREST && foliageValues[_index] > 0.984)
 			{
-				for (int lH = 0; lH < 5; ++lH)
+				int treeHeight = 6;
+				unsigned long long treeAge = 0;
+
+				// Idk, readability ig?
+				const int _cX = _worldX;
+				const int _cY = _surfaceLevel + 1;
+				const int _cZ = _worldZ;
+
+				// Build tree trunk
+				for (int i = 0; i < treeHeight - 2; ++i)
 				{
-					int currentHeight = _surfaceLevel + 1 - position.y * CHUNK_SIZE + lH;
-					if (blockPositionIsInside(lX, currentHeight, lZ)) setBlock(ChunkLocalBlockPos(lX, currentHeight, lZ), Block(3));
-					else world.setBlock(BlockPos(lX + position.x * CHUNK_SIZE, _surfaceLevel + 1 + lH, lZ + position.z * CHUNK_SIZE), Block(3));
+					setBlockPopulation(BlockPos(_cX, _cY + i, _cZ), Block(3), treeAge);
 				}
-				world.setBlock(BlockPos(_worldX,     _surfaceLevel + 6, _worldZ), Block(4));
-				world.setBlock(BlockPos(_worldX,     _surfaceLevel + 7, _worldZ), Block(4));
-				world.setBlock(BlockPos(_worldX + 1, _surfaceLevel + 6, _worldZ), Block(4));
-				world.setBlock(BlockPos(_worldX - 1, _surfaceLevel + 6, _worldZ), Block(4));
-				world.setBlock(BlockPos(_worldX,     _surfaceLevel + 6, _worldZ + 1), Block(4));
-				world.setBlock(BlockPos(_worldX,     _surfaceLevel + 6, _worldZ - 1), Block(4));
+
+				const int leafBase = _cY + treeHeight - 2;
+
+				// Add the leaves
+				setBlockPopulation(BlockPos(_cX, leafBase, _cZ), Block(4), treeAge);
+				setBlockPopulation(BlockPos(_cX, leafBase + 1, _cZ), Block(4), treeAge);
+				setBlockPopulation(BlockPos(_cX - 1, leafBase, _cZ), Block(4), treeAge);
+				setBlockPopulation(BlockPos(_cX + 1, leafBase, _cZ), Block(4), treeAge);
+				setBlockPopulation(BlockPos(_cX, leafBase, _cZ - 1), Block(4), treeAge);
+				setBlockPopulation(BlockPos(_cX, leafBase, _cZ + 1), Block(4), treeAge);
 			}
 		}
+	}
+
+	for (auto& change : populationChanges)
+	{
+		world.setBlock(change.first, change.second.block);
 	}
 }
 
@@ -193,6 +205,28 @@ bool Chunk::isEmpty() const
 
 
 
+bool Chunk::isGenerated() const
+{
+	return generated;
+}
+
+
+
+bool Chunk::containsPosition(BlockPos blockPos) const
+{
+	return ChunkPos(blockPos) == position;
+}
+
+
+
+void Chunk::setBlockPopulation(BlockPos blockPos, Block block, unsigned long long age)
+{
+	if (containsPosition(blockPos)) setBlock(ChunkLocalBlockPos(blockPos), block);
+	else if ((!populationChanges.contains(blockPos)) || (populationChanges.at(blockPos).age < age)) populationChanges[blockPos] = {block, age};
+}
+
+
+
 void Chunk::blockArrayCreate()
 {
 	assert(blockArrayType == BlockArrayType::NONE);
@@ -228,7 +262,6 @@ void Chunk::blockArrayExtend()
 // Directly sets the value in the block array
 void Chunk::setBlockRaw(int arrayIndex, int blockIndex)
 {
-	assert(blockArrayType != BlockArrayType::NONE);
 	if (blockArrayType == BlockArrayType::COMPACT) blockArrayCompact[arrayIndex] = blockIndex;
 	else blockArrayExtended[arrayIndex] = blockIndex;
 }

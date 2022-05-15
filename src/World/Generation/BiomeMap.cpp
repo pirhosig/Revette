@@ -5,12 +5,15 @@
 
 
 
-int BIOME_TABLE[5][5] = {
-	{  0,  0,  3,  3,  3 },
-	{  0,  0,  1,  1,  1 },
-	{  0,  0,  1,  1,  2 },
-	{  0,  0,  0,  2,  2 },
-	{  0,  0,  0,  0,  2 }
+int BIOME_TABLE[8][8] = {
+	{ 0, 0, 3, 3, 3, 3, 3, 3 },
+	{ 0, 0, 1, 1, 1, 3, 3, 3 },
+	{ 0, 0, 1, 1, 1, 1, 1, 1 },
+	{ 0, 0, 0, 1, 1, 1, 1, 1 },
+	{ 0, 0, 0, 0, 1, 2, 2, 2 },
+	{ 0, 0, 0, 0, 0, 2, 2, 2 },
+	{ 0, 0, 0, 0, 0, 0, 2, 2 },
+	{ 0, 0, 0, 0, 0, 0, 0, 2 }
 };
 
 
@@ -49,8 +52,8 @@ BiomeMap::BiomeMap(ChunkPos2D noisePos, NoiseSource2D& noiseTemperature, NoiseSo
 
 	for (int i = 0; i < CHUNK_AREA; ++i)
 	{
-		int _indexTemperature = distributeEdges(temperature[i] * 4.0f, i, edges);
-		int _indexHumidity = std::min(distributeEdges(humidity[i] * 4.0f, i, edges), _indexTemperature);
+		int _indexTemperature = distributeEdges(temperature[i] * 8.0f, i, edges);
+		int _indexHumidity = std::min(distributeEdges(humidity[i] * 8.0f, i, edges), _indexTemperature);
 		double _biomeType = BIOME_TABLE[_indexHumidity][_indexTemperature];
 		int _biomeInt = static_cast<int>(_biomeType);
 		biomeArray[i] = static_cast<BIOME>(_biomeInt);

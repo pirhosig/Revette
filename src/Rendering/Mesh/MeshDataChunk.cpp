@@ -54,22 +54,22 @@ const uint8_t LIGHT[6] = {
 
 
 
-MeshDataChunk::MeshDataChunk(const World& world, ChunkPos chunkPos) : position(chunkPos)
+MeshDataChunk::MeshDataChunk(
+	ChunkPos chunkPos,
+	const std::unique_ptr<Chunk>& chunkCentre,
+	const std::unique_ptr<Chunk>& chunkUp,
+	const std::unique_ptr<Chunk>& chunkDown,
+	const std::unique_ptr<Chunk>& chunkNorth,
+	const std::unique_ptr<Chunk>& chunkSouth,
+	const std::unique_ptr<Chunk>& chunkEast,
+	const std::unique_ptr<Chunk>& chunkWest
+) : position(chunkPos)
 {
 	triangleCount = 0;
 	int indexCounter = 0;
 
-	const std::unique_ptr<Chunk>& chunkCurrent = world.getChunk(position);
-
 	// Skip loop if chunk is empty
-	if (chunkCurrent->isEmpty()) return;
-
-	const std::unique_ptr<Chunk>& chunkUp    = world.getChunk(position.direction(AxisDirection::Up));
-	const std::unique_ptr<Chunk>& chunkDown  = world.getChunk(position.direction(AxisDirection::Down));
-	const std::unique_ptr<Chunk>& chunkNorth = world.getChunk(position.direction(AxisDirection::North));
-	const std::unique_ptr<Chunk>& chunkSouth = world.getChunk(position.direction(AxisDirection::South));
-	const std::unique_ptr<Chunk>& chunkEast  = world.getChunk(position.direction(AxisDirection::East));
-	const std::unique_ptr<Chunk>& chunkWest  = world.getChunk(position.direction(AxisDirection::West));
+	if (chunkCentre->isEmpty()) return;
 
 	// Loop and check for each block whether it is solid, and so whether it needs to be added
 	for (int i = 0; i < CHUNK_SIZE; ++i)
@@ -81,7 +81,7 @@ MeshDataChunk::MeshDataChunk(const World& world, ChunkPos chunkPos) : position(c
 				ChunkLocalBlockPos localPos(i, j, k);
 				BlockPos worldPos = localPos.asBlockPos(chunkPos);
 
-				Block block = chunkCurrent->getBlock(worldPos);
+				Block block = chunkCentre->getBlock(worldPos);
 				// Skip if air block
 				if (block.blockType == 0) continue;
 
@@ -92,7 +92,7 @@ MeshDataChunk::MeshDataChunk(const World& world, ChunkPos chunkPos) : position(c
 					BlockPos neighborBlock = worldPos.direction(neighborDirection);
 					ChunkLocalBlockPos neighborLocal(neighborBlock);
 					Block neighbor;
-					if (ChunkPos(neighborBlock) == position) neighbor = chunkCurrent->getBlock(neighborLocal);
+					if (ChunkPos(neighborBlock) == position) neighbor = chunkCentre->getBlock(neighborLocal);
 					else
 					{
 						switch (neighborDirection)
