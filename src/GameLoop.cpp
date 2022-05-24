@@ -13,11 +13,11 @@ const char* NOISE_FOLIAGE = "AQA=";
 
 
 
-void GameLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes)
+void GameLoop::runLoop(std::atomic<bool>& gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes)
 {
 	World zaWarudo(std::move(threadQueueMeshes), NOISE_HEIGHTMAP, NOISE_FOLIAGE);
 
-	while (!gameShouldClose->load())
+	while (!gameShouldClose.load())
 	{
 		auto tickTimeBegin = std::chrono::steady_clock::now();
 		const auto tickTimeEnd = tickTimeBegin + std::chrono::milliseconds(TICK_TIME);

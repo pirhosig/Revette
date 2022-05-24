@@ -66,6 +66,7 @@ private:
 	bool loadPosUpdated;
 	ChunkStatusMap chunkStatusMap;
 	std::priority_queue<ChunkPriorityTicket> loadQueue;
+	std::priority_queue<ChunkPriorityTicket> unloadQueue;
 	std::priority_queue<ChunkPriorityTicket> populateQueue;
 	std::priority_queue<ChunkPriorityTicket> meshQueue;
 

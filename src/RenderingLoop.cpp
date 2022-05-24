@@ -7,7 +7,7 @@
 
 #include "Rendering/Renderer.h"
 
-constexpr double PLAYER_SPEED = 10.0;
+constexpr double PLAYER_SPEED_DEFAULT = 10.0;
 
 
 
@@ -55,12 +55,12 @@ RenderingLoop::~RenderingLoop()
 
 
 
-void RenderingLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes)
+void RenderingLoop::runLoop(std::atomic<bool>& gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes)
 {
 	Renderer gameRenderer(mainWindow, std::move(threadQueueMeshes));
 	auto lastFrame = std::chrono::steady_clock::now();
 
-	while (!gameShouldClose->load())
+	while (!gameShouldClose.load())
 	{
 		const auto frameBegin = std::chrono::steady_clock::now();
 		const auto frameEnd = frameBegin + std::chrono::milliseconds(15);
@@ -71,7 +71,7 @@ void RenderingLoop::runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, 
 		// Exit if escape key is pressed
 		if (glfwGetKey(mainWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		{
-			gameShouldClose->store(true);
+			gameShouldClose.store(true);
 			break;
 		}
 
@@ -103,12 +103,14 @@ void RenderingLoop::cursorPositionCallbackWrapper(GLFWwindow* window, double xpo
 void RenderingLoop::processInput(const double deltaTime)
 {
 	glfwPollEvents();
-	if (glfwGetKey(mainWindow, GLFW_KEY_W) == GLFW_PRESS) playerPos.moveForward(deltaTime * PLAYER_SPEED);
-	if (glfwGetKey(mainWindow, GLFW_KEY_S) == GLFW_PRESS) playerPos.moveForward(deltaTime * -PLAYER_SPEED);
-	if (glfwGetKey(mainWindow, GLFW_KEY_A) == GLFW_PRESS) playerPos.moveSideways(deltaTime * -PLAYER_SPEED);
-	if (glfwGetKey(mainWindow, GLFW_KEY_D) == GLFW_PRESS) playerPos.moveSideways(deltaTime * PLAYER_SPEED);
-	if (glfwGetKey(mainWindow, GLFW_KEY_SPACE) == GLFW_PRESS) playerPos.moveVertical(deltaTime * PLAYER_SPEED);
-	if (glfwGetKey(mainWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) playerPos.moveVertical(deltaTime * -PLAYER_SPEED);
+	double _playerSpeed = PLAYER_SPEED_DEFAULT;
+	if (glfwGetKey(mainWindow, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) _playerSpeed *= 10.0;
+	if (glfwGetKey(mainWindow, GLFW_KEY_W) == GLFW_PRESS) playerPos.moveForward(deltaTime * _playerSpeed);
+	if (glfwGetKey(mainWindow, GLFW_KEY_S) == GLFW_PRESS) playerPos.moveForward(deltaTime * -_playerSpeed);
+	if (glfwGetKey(mainWindow, GLFW_KEY_A) == GLFW_PRESS) playerPos.moveSideways(deltaTime * -_playerSpeed);
+	if (glfwGetKey(mainWindow, GLFW_KEY_D) == GLFW_PRESS) playerPos.moveSideways(deltaTime * _playerSpeed);
+	if (glfwGetKey(mainWindow, GLFW_KEY_SPACE) == GLFW_PRESS) playerPos.moveVertical(deltaTime * _playerSpeed);
+	if (glfwGetKey(mainWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) playerPos.moveVertical(deltaTime * -_playerSpeed);
 }
 
 

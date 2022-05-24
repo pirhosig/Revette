@@ -11,6 +11,6 @@ void main()
 	vec4 textureColour = texture(tileAtlas, TextureCoords);
 	if (textureColour.a < 0.1)
 		discard;
-	vec4 colourAdjusted = vec4(textureColour.xyz * Light, textureColour.w);
+	vec4 colourAdjusted = vec4(textureColour.xyz * Light, 1.0);
 	FragColor = colourAdjusted;
 }

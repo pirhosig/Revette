@@ -18,7 +18,7 @@ public:
 	RenderingLoop();
 	~RenderingLoop();
 
-	void runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes);
+	void runLoop(std::atomic<bool>& gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes);
 
 	static void cursorPositionCallbackWrapper(GLFWwindow* window, double xpos, double ypos);
 private:

@@ -6,6 +6,7 @@
 enum class StatusChunkLoad
 {
 	NON_EXISTENT,
+	QUEUED_UNLOAD,
 	QUEUED_LOAD,
 	LOADED,
 	GENERATED,
@@ -40,6 +41,6 @@ private:
 	StatusChunkLoad loadStatus{ StatusChunkLoad::NON_EXISTENT };
 	StatusChunkMesh hasMesh{ StatusChunkMesh::NON_EXISTENT };
 	std::array<StatusChunkLoad, 26> neighboursLoaded{};
-	std::array<int, 6> neighbourLoadCountCardinal{ 6 };
-	std::array<int, 6> neighbourLoadCountCubic{ 20 };
+	std::array<int, 7> neighbourLoadCountCardinal{ 6 };
+	std::array<int, 7> neighbourLoadCountCubic{ 20 };
 };

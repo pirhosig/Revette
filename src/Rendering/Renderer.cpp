@@ -25,7 +25,7 @@ void Renderer::render(const EntityPosition& playerPos)
 	double rotationY = glm::radians(fmax(fmin(playerPos.yRotation, 89.5), -89.5));
 	double rotationX = glm::radians(playerPos.xRotation);
 
-	const glm::mat4 projection = glm::perspective(glm::radians(45.0), 1920.0 / 1080.0, 0.1, 1000.0);
+	const glm::mat4 projection = glm::perspective(glm::radians(45.0), 1920.0 / 1080.0, 0.1, 2048.0);
 	const glm::vec3 pos(playerPos.X, playerPos.Y, playerPos.Z);
 	const glm::vec3 front = glm::normalize(glm::vec3(
 		cos(rotationX) * cos(rotationY),

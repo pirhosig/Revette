@@ -7,9 +7,12 @@
 #include "GameLoop.h"
 #include "RenderingLoop.h"
 #include "Threading/ThreadPointerQueue.h"
+#include "World/Block.h"
 
-
-void runGameLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes) try
+void runGameLoop(
+	std::atomic<bool>& gameShouldClose,
+	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes
+	) try
 {
 	GameLoop mainLoop;
 	mainLoop.runLoop(gameShouldClose, std::move(threadQueueMeshes));
@@ -17,17 +20,17 @@ void runGameLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared
 catch (const std::exception& error)
 {
 	std::cout << "Game exception: " << error.what() << std::endl;
-	gameShouldClose->store(true);
+	gameShouldClose.store(true);
 }
 catch (...)
 {
 	std::cout << "What the fuck." << std::endl;
-	gameShouldClose->store(true);
+	gameShouldClose.store(true);
 }
 
 
 
-void runRenderingLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes) try
+void runRenderingLoop(std::atomic<bool>& gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes) try
 {
 	RenderingLoop mainLoop;
 	mainLoop.runLoop(gameShouldClose, std::move(threadQueueMeshes));
@@ -35,23 +38,23 @@ void runRenderingLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::s
 catch (const std::exception& error)
 {
 	std::cout << "Rendering exception: " << error.what() << std::endl;
-	gameShouldClose->store(true);
+	gameShouldClose.store(true);
 }
 catch (...)
 {
 	std::cout << "What the fuck." << std::endl;
-	gameShouldClose->store(true);
+	gameShouldClose.store(true);
 }
 
 
 
 int main()
 {
-	std::shared_ptr<std::atomic<bool>> gameShouldClose = std::make_shared<std::atomic<bool>>(false);
+	std::atomic<bool> gameShouldClose{};
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes = std::make_shared<ThreadPointerQueue<MeshDataChunk>>();
 	
-	std::jthread gameThread(runGameLoop, gameShouldClose, threadQueueMeshes);
-	std::jthread renderingThread(runRenderingLoop, gameShouldClose, threadQueueMeshes);
+	std::jthread gameThread(runGameLoop, std::ref(gameShouldClose), threadQueueMeshes);
+	std::jthread renderingThread(runRenderingLoop, std::ref(gameShouldClose), threadQueueMeshes);
 
 	gameThread.join();
 	renderingThread.join();

@@ -83,6 +83,9 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters, W
 			case BIOME::RAINFOREST:
 				defaultBlock = Block(8);
 				break;
+			case BIOME::SHRUBLAND:
+				defaultBlock = Block(1);
+				break;
 			case BIOME::TUNDRA:
 				defaultBlock = Block(7);
 				break;
@@ -121,40 +124,93 @@ void Chunk::PopulateChunk(const GeneratorChunkParameters& generatorParameters, c
 	{
 		for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ)
 		{
-			int _index = lZ * CHUNK_SIZE + lX;
-			int _surfaceLevel = generatorParameters.heightMap.heightArray[_index];
+			const int _index = lZ * CHUNK_SIZE + lX;
+			const int _surfaceLevel = generatorParameters.heightMap.heightArray[_index];
 			// Continue if surface air block is below chunk OR if the topmost block is above the chunk
 			if (_surfaceLevel + 1 < _chunkHeightMin || _surfaceLevel + 1 > _chunkHeightMax) continue;
 
-			int _worldX = position.x * CHUNK_SIZE + lX;
-			int _worldZ = position.z * CHUNK_SIZE + lZ;
+			const int _worldX = position.x * CHUNK_SIZE + lX;
+			const int _worldZ = position.z * CHUNK_SIZE + lZ;
+			const int _bottomAir = _surfaceLevel + 1;
+			const bool _aboveSeaLevel = (_surfaceLevel >= 0);
+			const auto _foliageValue = foliageValues[_index];
 
-			// Check if the topmost block needs a tree
-			if (_surfaceLevel >= 0 && generatorParameters.biomeMap.biomeArray[_index] == BIOME::FOREST && foliageValues[_index] > 0.984)
+			switch (generatorParameters.biomeMap.biomeArray[_index])
 			{
-				int treeHeight = 6;
-				unsigned long long treeAge = 0;
-
-				// Idk, readability ig?
-				const int _cX = _worldX;
-				const int _cY = _surfaceLevel + 1;
-				const int _cZ = _worldZ;
-
-				// Build tree trunk
-				for (int i = 0; i < treeHeight - 2; ++i)
+			case BIOME::DESERT:
+				// Cactus
+				if (_aboveSeaLevel && _foliageValue > 0.9952)
 				{
-					setBlockPopulation(BlockPos(_cX, _cY + i, _cZ), Block(3), treeAge);
+					setBlockPopulation(BlockPos(_worldX, _bottomAir, _worldZ), Block(9), 0);
+					setBlockPopulation(BlockPos(_worldX, _bottomAir + 1, _worldZ), Block(9), 0);
 				}
+				break;
+			case BIOME::FOREST:
+				// Basic bitch tree
+				if (_aboveSeaLevel && _foliageValue > 0.982)
+				{
+					int _treeHeight = 6;
+					unsigned long long _treeAge = 0;
 
-				const int leafBase = _cY + treeHeight - 2;
+					// Build tree trunk
+					for (int i = 0; i < _treeHeight - 2; ++i)
+					{
+						setBlockPopulation(BlockPos(_worldX, _bottomAir + i, _worldZ), Block(3), _treeAge);
+					}
 
-				// Add the leaves
-				setBlockPopulation(BlockPos(_cX, leafBase, _cZ), Block(4), treeAge);
-				setBlockPopulation(BlockPos(_cX, leafBase + 1, _cZ), Block(4), treeAge);
-				setBlockPopulation(BlockPos(_cX - 1, leafBase, _cZ), Block(4), treeAge);
-				setBlockPopulation(BlockPos(_cX + 1, leafBase, _cZ), Block(4), treeAge);
-				setBlockPopulation(BlockPos(_cX, leafBase, _cZ - 1), Block(4), treeAge);
-				setBlockPopulation(BlockPos(_cX, leafBase, _cZ + 1), Block(4), treeAge);
+					const int leafBase = _bottomAir + _treeHeight - 2;
+					// Add the leaves
+					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ), Block(4), _treeAge);
+					setBlockPopulation(BlockPos(_worldX, leafBase + 1, _worldZ), Block(4), _treeAge);
+					setBlockPopulation(BlockPos(_worldX - 1, leafBase, _worldZ), Block(4), _treeAge);
+					setBlockPopulation(BlockPos(_worldX + 1, leafBase, _worldZ), Block(4), _treeAge);
+					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ - 1), Block(4), _treeAge);
+					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ + 1), Block(4), _treeAge);
+				}
+				break;
+			case BIOME::RAINFOREST:
+				// Rainforests are pretty bland like this ngl
+				if (!_aboveSeaLevel) break;
+				if (_foliageValue > 0.86)
+				{
+					int _treeHeight = 8;
+					unsigned long long _treeAge = 0;
+
+					// Build tree trunk
+					for (int i = 0; i < _treeHeight - 2; ++i)
+					{
+						setBlockPopulation(BlockPos(_worldX, _bottomAir + i, _worldZ), Block(3), _treeAge);
+					}
+
+					const int leafBase = _bottomAir + _treeHeight - 2;
+					// Add the leaves
+					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ), Block(4), _treeAge);
+					setBlockPopulation(BlockPos(_worldX, leafBase + 1, _worldZ), Block(4), _treeAge);
+					setBlockPopulation(BlockPos(_worldX - 1, leafBase, _worldZ), Block(4), _treeAge);
+					setBlockPopulation(BlockPos(_worldX + 1, leafBase, _worldZ), Block(4), _treeAge);
+					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ - 1), Block(4), _treeAge);
+					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ + 1), Block(4), _treeAge);
+				}
+				else if (_foliageValue > 0.65)
+				{
+					setBlockPopulation(BlockPos(_worldX, _bottomAir, _worldZ), Block(4), 0);
+				}
+				else if (_foliageValue > 0.50)
+				{
+					setBlockPopulation(BlockPos(_worldX, _bottomAir, _worldZ), Block(10), 0);
+				}
+				break;
+			case BIOME::SHRUBLAND:
+				if (!_aboveSeaLevel) break;
+				if (_foliageValue > 0.80)
+				{
+					setBlockPopulation(BlockPos(_worldX, _bottomAir, _worldZ), Block(10), 0);
+				}
+				break;
+			case BIOME::TUNDRA:
+				break;
+			default:
+				break;
 			}
 		}
 	}

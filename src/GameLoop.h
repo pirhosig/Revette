@@ -12,7 +12,7 @@ class GameLoop
 {
 public:
 	GameLoop() : tickTime(75) {}
-	void runLoop(std::shared_ptr<std::atomic<bool>> gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes);
+	void runLoop(std::atomic<bool>& gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes);
 
 private:
 	LoopTimer tickTime;
