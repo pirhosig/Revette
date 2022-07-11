@@ -4,7 +4,9 @@
 #include <vector>
 
 #include "Block.h"
+#include "BlockContainter.h"
 #include "ChunkPos.h"
+
 class GeneratorChunkParameters;
 class NoiseSource2D;
 class World;
@@ -12,19 +14,10 @@ class Structure;
 
 
 
-enum class BlockArrayType
-{
-	NONE,
-	COMPACT,
-	EXTENDED
-};
-
-
-
 struct BlockChange
 {
-	Block block;
-	unsigned long long age;
+	Block block{Block(0)};
+	unsigned long long age{0};
 };
 
 
@@ -35,8 +28,8 @@ public:
 	Chunk(ChunkPos _pos);
 	Chunk(const Chunk&) = delete;
 
-	void GenerateChunk(const GeneratorChunkParameters& generatorParameters, World& world);
-	void PopulateChunk(const GeneratorChunkParameters& generatorParameters, const NoiseSource2D& noiseFoliage, World& world);
+	void GenerateChunk(const GeneratorChunkParameters& generatorParameters, const NoiseSource2D& noiseFoliage);
+	void PopulateChunk(World& world);
 
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
@@ -48,23 +41,10 @@ public:
 private:
 	bool containsPosition(BlockPos blockPos) const;
 	void setBlockPopulation(BlockPos blockPos, Block block, unsigned long long age);
-
-	void blockArrayCreate();
-	void blockArrayDelete();
-	void blockArrayExtend();
-
-	void setBlockRaw(int arrayIndex, int blockIndex);
+	void addAdjacentPopulationChanges(Chunk& _chunk) const;
 
 	bool generated;
-
-	// Block storage
-	std::unique_ptr<uint8_t[]> blockArrayCompact;
-	std::unique_ptr<uint16_t[]> blockArrayExtended;
-	BlockArrayType blockArrayType;
-	std::vector<Block> blockArrayBlocksByIndex;
-	std::map<Block, uint16_t, blockComparator> blockArrayIndicesByBlock;
-	uint16_t currentIndex;
-
+	BlockContainer blockContainer;
 	std::map<BlockPos, BlockChange> populationChanges;
 
 	friend class Structure;

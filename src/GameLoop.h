@@ -4,6 +4,7 @@
 
 #include "LoopTimer.h"
 #include "Rendering/Mesh/MeshDataChunk.h"
+#include "Threading/PlayerState.h"
 #include "Threading/ThreadPointerQueue.h"
 
 
@@ -12,7 +13,11 @@ class GameLoop
 {
 public:
 	GameLoop() : tickTime(75) {}
-	void runLoop(std::atomic<bool>& gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes);
+	void runLoop(
+		std::atomic<bool>& gameShouldClose,
+		std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes,
+		std::atomic<PlayerState>& playerState
+	);
 
 private:
 	LoopTimer tickTime;

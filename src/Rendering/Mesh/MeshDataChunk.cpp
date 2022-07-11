@@ -212,12 +212,12 @@ MeshDataChunk::MeshDataChunk(
 				// Cross shaped plant
 				else
 				{
-					uint16_t _dU = localPos.y + 1;
-					uint16_t _dD = localPos.y;
-					uint16_t _dN = localPos.x + 1;
-					uint16_t _dS = localPos.x;
-					uint16_t _dE = localPos.z + 1;
-					uint16_t _dW = localPos.z;
+					uint16_t _dU = static_cast<uint16_t>(localPos.y) + 1;
+					uint16_t _dD = static_cast<uint16_t>(localPos.y);
+					uint16_t _dN = static_cast<uint16_t>(localPos.x) + 1;
+					uint16_t _dS = static_cast<uint16_t>(localPos.x);
+					uint16_t _dE = static_cast<uint16_t>(localPos.z) + 1;
+					uint16_t _dW = static_cast<uint16_t>(localPos.z);
 					uint16_t _tex = BLOCK_TEXUTRES[block.blockType - 1][0];
 
 					verticies.push_back({ _dS, _dU, _dE, _tex,   0,   0, 255 });

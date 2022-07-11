@@ -55,7 +55,11 @@ RenderingLoop::~RenderingLoop()
 
 
 
-void RenderingLoop::runLoop(std::atomic<bool>& gameShouldClose, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes)
+void RenderingLoop::runLoop(
+	std::atomic<bool>& gameShouldClose,
+	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes,
+	std::atomic<PlayerState>& playerState
+)
 {
 	Renderer gameRenderer(mainWindow, std::move(threadQueueMeshes));
 	auto lastFrame = std::chrono::steady_clock::now();
@@ -77,8 +81,11 @@ void RenderingLoop::runLoop(std::atomic<bool>& gameShouldClose, std::shared_ptr<
 
 		processInput(deltaTime);
 
+		gameRenderer.unloadMeshes(playerPos);
 		gameRenderer.unqueueMeshes();
 		gameRenderer.render(playerPos);
+
+		playerState.store(PlayerState(playerPos));
 
 		// Limit framerate
 		std::this_thread::sleep_until(frameEnd);

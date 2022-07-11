@@ -16,7 +16,7 @@ inline int convertIndex(int xOffset, int yOffset, int zOffset)
 
 
 
-void StatusChunk::setNeighbourLoadStatus(int xOffset, int yOffset, int zOffset, StatusChunkLoad loadStatus)
+void StatusChunk::setNeighbourLoadStatus(int xOffset, int yOffset, int zOffset, StatusChunkLoad _loadStatus)
 {
 	const int index = convertIndex(xOffset, yOffset, zOffset);
 	bool isCardinal = (
@@ -30,14 +30,14 @@ void StatusChunk::setNeighbourLoadStatus(int xOffset, int yOffset, int zOffset, 
 	if (isCardinal)
 	{
 		neighbourLoadCountCardinal[static_cast<int>(neighboursLoaded[index])]--;
-		neighbourLoadCountCardinal[static_cast<int>(loadStatus)]++;
+		neighbourLoadCountCardinal[static_cast<int>(_loadStatus)]++;
 	}
 	else
 	{
 		neighbourLoadCountCubic[static_cast<int>(neighboursLoaded[index])]--;
-		neighbourLoadCountCubic[static_cast<int>(loadStatus)]++;
+		neighbourLoadCountCubic[static_cast<int>(_loadStatus)]++;
 	}
-	neighboursLoaded[index] = loadStatus;
+	neighboursLoaded[index] = _loadStatus;
 }
 
 

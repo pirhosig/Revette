@@ -6,7 +6,6 @@
 enum class StatusChunkLoad
 {
 	NON_EXISTENT,
-	QUEUED_UNLOAD,
 	QUEUED_LOAD,
 	LOADED,
 	GENERATED,
@@ -33,7 +32,7 @@ public:
 	StatusChunkMesh getMeshStatus() const { return hasMesh; }
 	void setHasMesh(StatusChunkMesh _hasMesh) { hasMesh = _hasMesh; }
 
-	void setNeighbourLoadStatus(int xOffset, int yOffset, int zOffset, StatusChunkLoad loadStatus);
+	void setNeighbourLoadStatus(int xOffset, int yOffset, int zOffset, StatusChunkLoad _loadStatus);
 	bool canMesh() const;
 	bool canPopulate() const;
 
@@ -41,6 +40,6 @@ private:
 	StatusChunkLoad loadStatus{ StatusChunkLoad::NON_EXISTENT };
 	StatusChunkMesh hasMesh{ StatusChunkMesh::NON_EXISTENT };
 	std::array<StatusChunkLoad, 26> neighboursLoaded{};
-	std::array<int, 7> neighbourLoadCountCardinal{ 6 };
-	std::array<int, 7> neighbourLoadCountCubic{ 20 };
+	std::array<int, 6> neighbourLoadCountCardinal{ 6 };
+	std::array<int, 6> neighbourLoadCountCubic{ 20 };
 };

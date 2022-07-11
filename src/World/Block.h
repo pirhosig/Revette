@@ -1,5 +1,6 @@
 #pragma once
 #include "AxisDirection.h"
+#include "Entities/EntityPosition.h"
 
 
 
@@ -11,6 +12,7 @@ public:
 	int z;
 
 	BlockPos(int x, int y, int z) : x(x), y(y), z(z) {}
+	BlockPos(EntityPosition position) : x(static_cast<int>(position.X)), y(static_cast<int>(position.Y)), z(static_cast<int>(position.Z)) {}
 	BlockPos direction(AxisDirection direction) const;
 
 	bool operator<(const BlockPos& other) const;

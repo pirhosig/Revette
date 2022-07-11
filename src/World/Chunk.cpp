@@ -26,16 +26,11 @@ inline int flattenIndex(const ChunkLocalBlockPos blockPos)
 
 
 
-Chunk::Chunk(ChunkPos _pos) : position(_pos), generated(false), blockArrayType(BlockArrayType::NONE)
-{
-	blockArrayBlocksByIndex.push_back(Block(0));
-	blockArrayIndicesByBlock[Block(0)] = 0;
-	currentIndex = 1;
-}
+Chunk::Chunk(ChunkPos _pos) : position(_pos), generated(false) {}
 
 
 
-void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters, World& world)
+void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters, const NoiseSource2D& noiseFoliage)
 {
 	if (generated) throw EXCEPTION_WORLD::ChunkRegeneration("Attempted to re-generate chunk");
 	generated = true;
@@ -46,7 +41,7 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters, W
 	// Return if all of the chunk falls above the terrain height
 	if (generatorParameters.heightMap.heightMax < _chunkBottom && _chunkBottom > 0) return;
 
-	blockArrayCreate();
+	blockContainer.blockArrayCreate();
 
 	// Fill the chunk if all of the chunk falls below the terrain height
 	if (_chunkTop <= generatorParameters.heightMap.heightMin)
@@ -106,17 +101,11 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters, W
 			}
 		}
 	}
-}
 
 
-
-void Chunk::PopulateChunk(const GeneratorChunkParameters& generatorParameters, const NoiseSource2D& noiseFoliage, World& world)
-{
-	const int _chunkHeightMin = position.y * CHUNK_SIZE;
-	const int _chunkHeightMax = _chunkHeightMin + CHUNK_SIZE - 1;
-
+	// Create population features
 	// Return if chunk is entirely below surface or if all the surface air blocks are also below this chunk
-	if (_chunkHeightMax <= generatorParameters.heightMap.heightMin || generatorParameters.heightMap.heightMax + 1 < _chunkHeightMin) return;
+	if (_chunkTop <= generatorParameters.heightMap.heightMin || generatorParameters.heightMap.heightMax + 1 < _chunkBottom) return;
 
 	std::array<float, CHUNK_AREA> foliageValues = noiseFoliage.GenChunkNoise(ChunkPos2D(position));
 
@@ -127,7 +116,7 @@ void Chunk::PopulateChunk(const GeneratorChunkParameters& generatorParameters, c
 			const int _index = lZ * CHUNK_SIZE + lX;
 			const int _surfaceLevel = generatorParameters.heightMap.heightArray[_index];
 			// Continue if surface air block is below chunk OR if the topmost block is above the chunk
-			if (_surfaceLevel + 1 < _chunkHeightMin || _surfaceLevel + 1 > _chunkHeightMax) continue;
+			if (_surfaceLevel + 1 < _chunkBottom || _surfaceLevel + 1 > _chunkTop) continue;
 
 			const int _worldX = position.x * CHUNK_SIZE + lX;
 			const int _worldZ = position.z * CHUNK_SIZE + lZ;
@@ -214,10 +203,28 @@ void Chunk::PopulateChunk(const GeneratorChunkParameters& generatorParameters, c
 			}
 		}
 	}
+}
+
+
+
+void Chunk::PopulateChunk(World& world)
+{
+	for (int lX = -1; lX < 2; ++lX)
+	{
+		for (int lY = -1; lY < 2; ++lY)
+		{
+			for (int lZ = -1; lZ < 2; ++lZ)
+			{
+				auto& _chunk = world.getChunk(ChunkPos(position.x + lX, position.y + lY, position.z + lZ));
+				_chunk->addAdjacentPopulationChanges(*this);
+			}
+		}
+	}
 
 	for (auto& change : populationChanges)
 	{
-		world.setBlock(change.first, change.second.block);
+		auto& _pos = change.first;
+		if (ChunkPos(_pos) == position) setBlock(ChunkLocalBlockPos(_pos), change.second.block);
 	}
 }
 
@@ -225,38 +232,21 @@ void Chunk::PopulateChunk(const GeneratorChunkParameters& generatorParameters, c
 
 Block Chunk::getBlock(ChunkLocalBlockPos blockPos) const
 {
-	if (isEmpty()) return blockArrayBlocksByIndex[0];
-	int _index = flattenIndex(blockPos);
-	int _blockIndex{};
-	if (blockArrayType == BlockArrayType::COMPACT) _blockIndex = blockArrayCompact[_index];
-	else _blockIndex = blockArrayExtended[_index];
-	return blockArrayBlocksByIndex.at(_blockIndex);
+	return blockContainer.getBlock(blockPos);
 }
 
 
 
 void Chunk::setBlock(ChunkLocalBlockPos blockPos, Block block)
 {
-	if (isEmpty()) blockArrayCreate();
-	auto it = blockArrayIndicesByBlock.find(block);
-	int _blockIndex;
-	if (it != blockArrayIndicesByBlock.end()) _blockIndex = it->second;
-	else
-	{
-		blockArrayBlocksByIndex.push_back(block);
-		blockArrayIndicesByBlock[block] = currentIndex;
-		_blockIndex = currentIndex;
-		if (currentIndex > 255) blockArrayExtend();
-		currentIndex++;
-	}
-	setBlockRaw(flattenIndex(blockPos), _blockIndex);
+	blockContainer.setBlock(blockPos, block);
 }
 
 
 
 bool Chunk::isEmpty() const
 {
-	return (blockArrayType == BlockArrayType::NONE);
+	return blockContainer.isEmpty();
 }
 
 
@@ -277,49 +267,18 @@ bool Chunk::containsPosition(BlockPos blockPos) const
 
 void Chunk::setBlockPopulation(BlockPos blockPos, Block block, unsigned long long age)
 {
-	if (containsPosition(blockPos)) setBlock(ChunkLocalBlockPos(blockPos), block);
-	else if ((!populationChanges.contains(blockPos)) || (populationChanges.at(blockPos).age < age)) populationChanges[blockPos] = {block, age};
+	if ((!populationChanges.contains(blockPos)) || (populationChanges.at(blockPos).age < age)) populationChanges[blockPos] = {block, age};
 }
 
 
 
-void Chunk::blockArrayCreate()
+void Chunk::addAdjacentPopulationChanges(Chunk& _chunk) const
 {
-	assert(blockArrayType == BlockArrayType::NONE);
-	blockArrayCompact = std::make_unique<uint8_t[]>(CHUNK_VOLUME);
-	blockArrayType = BlockArrayType::COMPACT;
-}
-
-
-
-void Chunk::blockArrayDelete()
-{
-	blockArrayCompact.reset();
-	blockArrayExtended.reset();
-	blockArrayType = BlockArrayType::NONE;
-}
-
-
-
-void Chunk::blockArrayExtend()
-{
-	assert(blockArrayType == BlockArrayType::COMPACT);
-	blockArrayExtended = std::make_unique<uint16_t[]>(CHUNK_VOLUME);
-	for (int i = 0; i < CHUNK_VOLUME; ++i)
+	for (auto& change : populationChanges)
 	{
-		blockArrayExtended[i] = blockArrayCompact[i];
+		auto& _pos = change.first;
+		if (ChunkPos(_pos) == _chunk.position) _chunk.setBlockPopulation(_pos, change.second.block, change.second.age);
 	}
-	blockArrayCompact.reset();
-	blockArrayType = BlockArrayType::EXTENDED;
-}
-
-
-
-// Directly sets the value in the block array
-void Chunk::setBlockRaw(int arrayIndex, int blockIndex)
-{
-	if (blockArrayType == BlockArrayType::COMPACT) blockArrayCompact[arrayIndex] = blockIndex;
-	else blockArrayExtended[arrayIndex] = blockIndex;
 }
 
 

@@ -58,3 +58,24 @@ void Renderer::unqueueMeshes()
 		queue.pop();
 	}
 }
+
+
+
+void Renderer::unloadMeshes(const EntityPosition& playerPos)
+{
+	ChunkPos _playerChunk{ playerPos };
+
+	std::unordered_set<std::unique_ptr<MeshChunk>>::iterator it = meshesChunk.begin();
+	while (it != meshesChunk.end())
+	{
+		auto _pos = (*it)->getPosition();
+		if (!((_playerChunk.x - LOAD_DISTANCE) <= _pos.x && _pos.x <= (_playerChunk.x + LOAD_DISTANCE) &&
+			(_playerChunk.y - LOAD_DISTANCE_VERTICAL) <= _pos.y && _pos.y <= (_playerChunk.y + LOAD_DISTANCE_VERTICAL) &&
+			(_playerChunk.z - LOAD_DISTANCE) <= _pos.z && _pos.z <= (_playerChunk.z + LOAD_DISTANCE)
+			))
+		{
+			it = meshesChunk.erase(it);
+		}
+		else it++;
+	}
+}

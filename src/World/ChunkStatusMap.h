@@ -17,6 +17,5 @@ public:
 	void setChunkStatusLoad(const ChunkPos chunkPos, StatusChunkLoad status);
 	void setChunkStatusMesh(const ChunkPos chunkPos, StatusChunkMesh status);
 
-private:
 	std::map<ChunkPos, StatusChunk> statusMap;
 };

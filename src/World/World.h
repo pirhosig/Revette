@@ -10,6 +10,7 @@
 #include "Generation/GeneratorChunkNoise.h"
 #include "Generation/Structures/Structure.h"
 #include "../Rendering/Mesh/MeshDataChunk.h"
+#include "../Threading/PlayerState.h"
 #include "../Threading/ThreadPointerQueue.h"
 
 
@@ -36,7 +37,7 @@ class World
 public:
 	World(std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> meshQueue, const char* settingNoiseHeightmap, const char* settingNoiseFoliage);
 	World(const World&) = delete;
-	void tick();
+	void tick(std::atomic<PlayerState>& playerState);
 
 	Block getBlock(BlockPos blockPos) const;
 	void setBlock(BlockPos blockPos, Block block) const;
@@ -45,8 +46,9 @@ public:
 	const std::unique_ptr<Structure>& getStructure(const BlockPos blockPos) const;
 
 private:
+	void onLoadCentreChange();
 
-	void addLoadQueue();
+	void updateLoadQueue();
 	void loadChunks();
 	void populateChunks();
 	void meshChunks();
@@ -63,10 +65,8 @@ private:
 
 	// Chunk loading information
 	ChunkPos loadCentre;
-	bool loadPosUpdated;
 	ChunkStatusMap chunkStatusMap;
 	std::priority_queue<ChunkPriorityTicket> loadQueue;
-	std::priority_queue<ChunkPriorityTicket> unloadQueue;
 	std::priority_queue<ChunkPriorityTicket> populateQueue;
 	std::priority_queue<ChunkPriorityTicket> meshQueue;
 

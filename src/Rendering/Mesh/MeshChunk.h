@@ -18,6 +18,7 @@ public:
 	~MeshChunk();
 
 	void draw(const ShaderProgram& shader, const glm::mat4& transformMatrix) const;
+	ChunkPos getPosition() const { return position; }
 
 private:
 	ChunkPos position;
