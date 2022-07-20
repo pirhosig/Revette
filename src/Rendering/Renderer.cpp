@@ -26,7 +26,13 @@ void Renderer::render(const EntityPosition& playerPos)
 	double rotationX = glm::radians(playerPos.xRotation);
 
 	const glm::mat4 projection = glm::perspective(glm::radians(45.0), 1920.0 / 1080.0, 0.1, 2048.0);
-	const glm::vec3 pos(playerPos.X, playerPos.Y, playerPos.Z);
+	ChunkPos _playerChunk(playerPos);
+	EntityPosition _playerLocalPos(
+		playerPos.X - _playerChunk.x * CHUNK_SIZE,
+		playerPos.Y - _playerChunk.y * CHUNK_SIZE,
+		playerPos.Z - _playerChunk.z * CHUNK_SIZE
+	);
+	const glm::vec3 pos(_playerLocalPos.X, _playerLocalPos.Y, _playerLocalPos.Z);
 	const glm::vec3 front = glm::normalize(glm::vec3(
 		cos(rotationX) * cos(rotationY),
 		sin(rotationY),
@@ -40,7 +46,7 @@ void Renderer::render(const EntityPosition& playerPos)
 	chunkShader.setInt("tileAtlas", 0);
 	for (const auto& mesh : meshesChunk)
 	{
-		mesh->draw(chunkShader, projectionView);
+		mesh->draw(chunkShader, projectionView, _playerChunk);
 	}
 
 	glfwSwapBuffers(mainWindow);

@@ -1,4 +1,6 @@
 #include "ChunkPos.h"
+#include <cmath>
+
 
 
 inline int ChunkFloor(int x)
@@ -6,6 +8,25 @@ inline int ChunkFloor(int x)
 	if (x < 0) return ((x - CHUNK_SIZE + 1) / CHUNK_SIZE);
 	else return (x / CHUNK_SIZE);
 }
+
+
+
+inline int wrapCoordinate(int x)
+{
+	if (-WORLD_RADIUS_CHUNK <= x && x < WORLD_RADIUS_CHUNK) return x;
+	x %= WORLD_DIAMETER_CHUNK;
+	if (x < -WORLD_RADIUS_CHUNK)      x += WORLD_DIAMETER_CHUNK;
+	else if (WORLD_RADIUS_CHUNK <= x) x -= WORLD_DIAMETER_CHUNK;
+	return x;
+}
+
+
+
+ChunkOffset::ChunkOffset(int _x, int _y, int _z) : x(wrapCoordinate(_x)), y(_y), z(wrapCoordinate(_z)) {}
+
+
+
+ChunkPos::ChunkPos(int _x, int _y, int _z) : x(_x), y(_y), z(_z) {}
 
 
 
@@ -39,6 +60,25 @@ ChunkPos ChunkPos::direction(AxisDirection direction) const
 
 
 
+double ChunkPos::distance(ChunkPos other) const
+{
+	int dX = std::abs(x - other.x);
+	int dZ = std::abs(z - other.z);
+	if (dX < WORLD_RADIUS_CHUNK && dZ < WORLD_RADIUS_CHUNK) return std::hypot(dX, y - other.y, dZ);
+	if (dX >= WORLD_RADIUS_CHUNK) dX = WORLD_DIAMETER_CHUNK - dX;
+	if (dZ >= WORLD_RADIUS_CHUNK) dZ = WORLD_DIAMETER_CHUNK - dZ;
+	return std::hypot(dX, y - other.y, dZ);
+}
+
+
+
+ChunkOffset ChunkPos::offset(ChunkPos other) const
+{
+	return ChunkOffset(other.x - x, other.y - y, other.z - z);
+}
+
+
+
 bool ChunkPos::operator<(const ChunkPos& other) const
 {
 	if (x != other.x) return x < other.x;
@@ -64,3 +104,4 @@ BlockPos ChunkLocalBlockPos::asBlockPos(ChunkPos chunkPos) const
 		chunkPos.z * CHUNK_SIZE + z
 	);
 }
+

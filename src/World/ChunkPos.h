@@ -4,6 +4,19 @@
 
 
 
+class ChunkOffset
+{
+public:
+	int x;
+	int y;
+	int z;
+
+	ChunkOffset(int _x, int _y, int _z);
+};
+
+
+
+
 class ChunkPos
 {
 public:
@@ -11,9 +24,11 @@ public:
 	int y;
 	int z;
 
-	ChunkPos(int _x, int _y, int _z) : x(_x), y(_y), z(_z) {}
+	ChunkPos(int _x, int _y, int _z);
 	ChunkPos(BlockPos blockPos);
 	ChunkPos direction(AxisDirection direction) const;
+	double distance(ChunkPos other) const;
+	ChunkOffset offset(ChunkPos other) const;
 
 	bool operator<(const ChunkPos& other) const;
 	bool operator==(const ChunkPos& other) const { return ((x == other.x) && (y == other.y) && (z == other.z)); }

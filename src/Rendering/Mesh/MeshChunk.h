@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
+#include "../../World/Entities/EntityPosition.h"
 #include "../../World/ChunkPos.h"
 #include "../ShaderProgram.h"
 #include "MeshDataChunk.h"
@@ -17,7 +18,7 @@ public:
 	MeshChunk(const MeshChunk&) = delete;
 	~MeshChunk();
 
-	void draw(const ShaderProgram& shader, const glm::mat4& transformMatrix) const;
+	void draw(const ShaderProgram& shader, const glm::mat4& transformMatrix, ChunkPos playerPosition) const;
 	ChunkPos getPosition() const { return position; }
 
 private:

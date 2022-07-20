@@ -43,7 +43,7 @@ World::World(std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> meshQueue, const
 	threadQueueMeshes(meshQueue),
 	generatorChunkNoise(
 		SEED,
-		0.0078125f,
+		0.00390625f,
 		0.000625f,
 		0.000625f,
 		settingNoiseHeightmap,
@@ -133,8 +133,7 @@ void World::onLoadCentreChange()
 			{
 				auto _pos = ChunkPos(lX, lY, lZ);
 				auto _status = chunkStatusMap.getChunkStatusLoad(_pos);
-				int _dist = static_cast<int>(std::hypot(lX - loadCentre.x, lY - loadCentre.y, lZ - loadCentre.z));
-				int _priority = std::max(100 - _dist, 0);
+				int _priority = std::max(100 - static_cast<int>(loadCentre.distance(_pos)), 0);
 				if (_status == StatusChunkLoad::NON_EXISTENT)
 				{
 					// Queue for loading
@@ -159,8 +158,7 @@ void World::onLoadCentreChange()
 			{
 				auto _pos = ChunkPos(lX, lY, lZ);
 				auto _status = chunkStatusMap.getChunkStatusLoad(_pos);
-				int _dist = static_cast<int>(std::hypot(lX - loadCentre.x, lY - loadCentre.y, lZ - loadCentre.z));
-				int _priority = std::max(100 - _dist, 0);
+				int _priority = std::max(100 - static_cast<int>(loadCentre.distance(_pos)), 0);
 				if (_status == StatusChunkLoad::GENERATED)
 				{
 					// Check if population is possible
@@ -194,8 +192,7 @@ void World::onLoadCentreChange()
 				}
 				else
 				{
-					int _dist = static_cast<int>(std::hypot(lX - loadCentre.x, lY - loadCentre.y, lZ - loadCentre.z));
-					int _priority = std::max(100 - _dist, 0);
+					int _priority = std::max(100 - static_cast<int>(loadCentre.distance(_pos)), 0);
 					switch (_status)
 					{
 					case StatusChunkMesh::NON_EXISTENT:
@@ -237,8 +234,7 @@ void World::updateLoadQueue()
 			if (withinGenerationDistance(_pos, loadCentre))
 			{
 				// Add chunk back with updated priority
-				int dist = static_cast<int>(std::hypot(_pos.x - loadCentre.x, _pos.y - loadCentre.y, _pos.z - loadCentre.z));
-				int priority = std::max(100 - dist, 0);
+				int priority = std::max(100 - static_cast<int>(loadCentre.distance(_pos)), 0);
 				updatedQueue.push(ChunkPriorityTicket(priority, _pos));
 			}
 			else
@@ -260,8 +256,7 @@ void World::updateLoadQueue()
 				ChunkPos loadPos(x, y, z);
 				// Make sure chunks queued to be loaded do not exist yet
 				if (chunkStatusMap.getChunkStatusLoad(loadPos) != StatusChunkLoad::NON_EXISTENT) continue;
-				int dist = static_cast<int>(std::hypot(loadPos.x - loadCentre.x, loadPos.y - loadCentre.y, loadPos.z - loadCentre.z));
-				int priority = std::max(100 - dist, 0);
+				int priority = std::max(100 - static_cast<int>(loadCentre.distance(loadPos)), 0);
 				// Update chunk state
 				chunkStatusMap.setChunkStatusLoad(loadPos, StatusChunkLoad::QUEUED_LOAD);
 				loadQueue.push(ChunkPriorityTicket(priority, loadPos));
@@ -424,8 +419,7 @@ const std::unique_ptr<Structure>& World::getStructure(const BlockPos blockPos) c
 void World::queueChunkMeshing(const ChunkPos chunkPos)
 {
 	assert(chunkStatusMap.getChunkStatusCanMesh(chunkPos) && "Attempted to queue mesh that cannot be meshed");
-	int dist = static_cast<int>(std::hypot(chunkPos.x - loadCentre.x, chunkPos.y - loadCentre.y, chunkPos.z - loadCentre.z));
-	int meshPriority = std::max(100 - dist, 0);
+	int meshPriority = std::max(100 - static_cast<int>(loadCentre.distance(chunkPos)), 0);
 	meshQueue.push(ChunkPriorityTicket(meshPriority, chunkPos));
 	chunkStatusMap.setChunkStatusMesh(chunkPos, StatusChunkMesh::QUEUED);
 }
@@ -435,8 +429,7 @@ void World::queueChunkMeshing(const ChunkPos chunkPos)
 void World::queueChunkPopulation(const ChunkPos chunkPos)
 {
 	assert(chunkStatusMap.getChunkStatusCanPopulate(chunkPos) && "Attempted to populate chunk that cannot be populated");
-	int dist = static_cast<int>(std::hypot(chunkPos.x - loadCentre.x, chunkPos.y - loadCentre.y, chunkPos.z - loadCentre.z));
-	int priority = std::max(100 - dist, 0);
+	int priority = std::max(100 - static_cast<int>(loadCentre.distance(chunkPos)), 0);
 	populateQueue.push(ChunkPriorityTicket(priority, chunkPos));
 	chunkStatusMap.setChunkStatusLoad(chunkPos, StatusChunkLoad::QUEUED_POPULATE);
 }

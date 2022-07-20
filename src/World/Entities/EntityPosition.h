@@ -23,4 +23,7 @@ public:
 	double Z;
 	double xRotation;
 	double yRotation;
+
+private:
+	void wrapCoordinates();
 };

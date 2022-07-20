@@ -60,10 +60,10 @@ MeshChunk::~MeshChunk()
 
 
 // Draws the mesh, the shader program should already be active when this function is called
-void MeshChunk::draw(const ShaderProgram& shader, const glm::mat4& transformMatrix) const
+void MeshChunk::draw(const ShaderProgram& shader, const glm::mat4& transformMatrix, ChunkPos playerPosition) const
 {
-	BlockPos worldPosition = ChunkLocalBlockPos(0, 0, 0).asBlockPos(position);
-	glm::vec3 chunkVector(worldPosition.x, worldPosition.y, worldPosition.z);
+	ChunkOffset offset = playerPosition.offset(position);
+	glm::vec3 chunkVector(offset.x * CHUNK_SIZE, offset.y * CHUNK_SIZE, offset.z * CHUNK_SIZE);
 	glm::mat4 modelViewProjection = transformMatrix * glm::translate(glm::mat4(1.0f), chunkVector);
 	shader.setMat4("transform", modelViewProjection);
 

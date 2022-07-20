@@ -1,4 +1,21 @@
 #include "Block.h"
+#include "../Constants.h"
+
+
+
+inline int wrapCoordinate(int x)
+{
+	if (-WORLD_RADIUS_BLOCK <= x && x < WORLD_RADIUS_BLOCK) return x;
+	x %= WORLD_DIAMETER_BLOCK;
+	if (x < -WORLD_RADIUS_BLOCK)      x += WORLD_DIAMETER_BLOCK;
+	else if (WORLD_RADIUS_BLOCK <= x) x -= WORLD_DIAMETER_BLOCK;
+	return x;
+}
+
+
+
+BlockPos::BlockPos(int x, int y, int z) : x(wrapCoordinate(x)), y(y), z(wrapCoordinate(z)) {}
+
 
 
 BlockPos BlockPos::direction(AxisDirection direction) const

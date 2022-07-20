@@ -44,7 +44,7 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters, c
 	blockContainer.blockArrayCreate();
 
 	// Fill the chunk if all of the chunk falls below the terrain height
-	if (_chunkTop <= generatorParameters.heightMap.heightMin)
+	if (_chunkTop < generatorParameters.heightMap.heightMin)
 	{
 		for (int lX = 0; lX < CHUNK_SIZE; ++lX)
 		{
