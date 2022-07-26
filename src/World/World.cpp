@@ -43,7 +43,7 @@ World::World(std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> meshQueue, const
 	threadQueueMeshes(meshQueue),
 	generatorChunkNoise(
 		SEED,
-		0.00390625f,
+		0.03125f,
 		0.000625f,
 		0.000625f,
 		settingNoiseHeightmap,
@@ -51,7 +51,8 @@ World::World(std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> meshQueue, const
 		"HAABGQANAAIAAAAAAABACQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==",
 		"HAABBgAAAABAQA=="
 	),
-	noiseFoliage(settingNoiseFoliage, 1.0f, SEED)
+	noiseFoliage(settingNoiseFoliage, 1.0f, SEED),
+	noiseFoliageSecondary(settingNoiseFoliage, 1.0f, SEED + 0xB745)
 {
 	updateLoadQueue();
 }
@@ -284,7 +285,7 @@ void World::loadChunks()
 		chunkStatusMap.setChunkStatusLoad(lPos, StatusChunkLoad::LOADED);
 
 		// Generate the chunk
-		insertRes.first->second->GenerateChunk(getGeneratorChunkParameters(ChunkPos2D(lPos)), noiseFoliage);
+		insertRes.first->second->GenerateChunk(getGeneratorChunkParameters(ChunkPos2D(lPos)), noiseFoliage, noiseFoliageSecondary);
 		chunkStatusMap.setChunkStatusLoad(lPos, StatusChunkLoad::GENERATED);
 		// Check if it, or its neighbours can populate
 		for (int ni = -1; ni < 2; ++ni)

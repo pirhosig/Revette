@@ -28,7 +28,7 @@ public:
 	Chunk(ChunkPos _pos);
 	Chunk(const Chunk&) = delete;
 
-	void GenerateChunk(const GeneratorChunkParameters& generatorParameters, const NoiseSource2D& noiseFoliage);
+	void GenerateChunk(const GeneratorChunkParameters& generatorParameters, const NoiseSource2D& noiseFoliage, const NoiseSource2D& noiseFoliageSecondary);
 	void PopulateChunk(World& world);
 
 	Block getBlock(ChunkLocalBlockPos blockPos) const;

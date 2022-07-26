@@ -53,42 +53,19 @@ void ChunkStatusMap::setChunkStatusLoad(const ChunkPos chunkPos, StatusChunkLoad
 	{
 		if (exists) statusMap.erase(it);
 	}
-	else if (exists)
-	{
-		statusMap[chunkPos].setLoadStatus(status);
-		for (int i = -1; i < 2; ++i)
-		{
-			for (int j = -1; j < 2; ++j)
-			{
-				for (int k = -1; k < 2; ++k)
-				{
-					if (i == 0 && j == 0 && k == 0) continue;
-					ChunkPos pos(chunkPos.x + i, chunkPos.y + j, chunkPos.z + k);
-					if (chunkExists(pos)) statusMap[pos].setNeighbourLoadStatus(-i, -j, -k, status);
-				}
-			}
-		}
-	}
-	else
-	{
-		statusMap[chunkPos].setLoadStatus(status);
-		auto iter = statusMap.find(chunkPos);
+	else if (exists) statusMap.at(chunkPos).setLoadStatus(status);
+	else statusMap[chunkPos].setLoadStatus(status);
 
-		for (int i = -1; i < 2; ++i)
+	// Update the neighbouring chunk statuses, if they exist
+	for (int i = -1; i < 2; ++i)
+	{
+		for (int j = -1; j < 2; ++j)
 		{
-			for (int j = -1; j < 2; ++j)
+			for (int k = -1; k < 2; ++k)
 			{
-				for (int k = -1; k < 2; ++k)
-				{
-					if (i == 0 && j == 0 && k == 0) continue;
-					ChunkPos pos(chunkPos.x + i, chunkPos.y + j, chunkPos.z + k);
-					auto neighbourIt = statusMap.find(pos);
-					if (neighbourIt != statusMap.end())
-					{
-						iter->second.setNeighbourLoadStatus(i, j, k, neighbourIt->second.getLoadStatus());
-						neighbourIt->second.setNeighbourLoadStatus(-i, -j, -k, status);
-					}
-				}
+				if (i == 0 && j == 0 && k == 0) continue;
+				ChunkPos pos(chunkPos.x + i, chunkPos.y + j, chunkPos.z + k);
+				if (chunkExists(pos)) statusMap[pos].setNeighbourLoadStatus(-i, -j, -k, status);
 			}
 		}
 	}

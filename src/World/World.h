@@ -74,6 +74,7 @@ private:
 	std::map<ChunkPos2D, GeneratorChunkParameters> generatorChunkCache;
 	GeneratorChunkNoise generatorChunkNoise;
 	NoiseSource2D noiseFoliage;
+	NoiseSource2D noiseFoliageSecondary;
 
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes;
 };
