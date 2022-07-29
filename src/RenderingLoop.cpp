@@ -58,10 +58,11 @@ RenderingLoop::~RenderingLoop()
 void RenderingLoop::runLoop(
 	std::atomic<bool>& gameShouldClose,
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes,
+	std::shared_ptr<ThreadQueue<ChunkPos>> threadQueueMeshDeletion,
 	std::atomic<PlayerState>& playerState
 )
 {
-	Renderer gameRenderer(mainWindow, std::move(threadQueueMeshes));
+	Renderer gameRenderer(mainWindow, std::move(threadQueueMeshes), std::move(threadQueueMeshDeletion));
 	auto lastFrame = std::chrono::steady_clock::now();
 
 	while (!gameShouldClose.load())
@@ -112,11 +113,11 @@ void RenderingLoop::processInput(const double deltaTime)
 	glfwPollEvents();
 	double _playerSpeed = PLAYER_SPEED_DEFAULT;
 	if (glfwGetKey(mainWindow, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) _playerSpeed *= 10.0;
-	if (glfwGetKey(mainWindow, GLFW_KEY_W) == GLFW_PRESS) playerPos.moveForward(deltaTime * _playerSpeed);
-	if (glfwGetKey(mainWindow, GLFW_KEY_S) == GLFW_PRESS) playerPos.moveForward(deltaTime * -_playerSpeed);
-	if (glfwGetKey(mainWindow, GLFW_KEY_A) == GLFW_PRESS) playerPos.moveSideways(deltaTime * -_playerSpeed);
-	if (glfwGetKey(mainWindow, GLFW_KEY_D) == GLFW_PRESS) playerPos.moveSideways(deltaTime * _playerSpeed);
-	if (glfwGetKey(mainWindow, GLFW_KEY_SPACE) == GLFW_PRESS) playerPos.moveVertical(deltaTime * _playerSpeed);
+	if (glfwGetKey(mainWindow, GLFW_KEY_W)          == GLFW_PRESS) playerPos.moveForward(deltaTime * _playerSpeed);
+	if (glfwGetKey(mainWindow, GLFW_KEY_S)          == GLFW_PRESS) playerPos.moveForward(deltaTime * -_playerSpeed);
+	if (glfwGetKey(mainWindow, GLFW_KEY_A)          == GLFW_PRESS) playerPos.moveSideways(deltaTime * -_playerSpeed);
+	if (glfwGetKey(mainWindow, GLFW_KEY_D)          == GLFW_PRESS) playerPos.moveSideways(deltaTime * _playerSpeed);
+	if (glfwGetKey(mainWindow, GLFW_KEY_SPACE)      == GLFW_PRESS) playerPos.moveVertical(deltaTime * _playerSpeed);
 	if (glfwGetKey(mainWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) playerPos.moveVertical(deltaTime * -_playerSpeed);
 }
 

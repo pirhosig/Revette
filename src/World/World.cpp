@@ -12,43 +12,52 @@ constexpr int SEED = 69;
 
 inline bool withinGenerationDistance(ChunkPos _pos, ChunkPos _centre)
 {
-	return ((_centre.x - LOAD_DISTANCE) <= _pos.x && _pos.x <= (_centre.x + LOAD_DISTANCE) &&
-		(_centre.y - LOAD_DISTANCE_VERTICAL) <= _pos.y && _pos.y <= (_centre.y + LOAD_DISTANCE_VERTICAL) &&
-		(_centre.z - LOAD_DISTANCE) <= _pos.z && _pos.z <= (_centre.z + LOAD_DISTANCE)
-	);
+	auto _offset = _pos.offset(_centre);
+	return (std::abs(_offset.x) <= LOAD_DISTANCE &&
+			std::abs(_offset.y) <= LOAD_DISTANCE_VERTICAL &&
+			std::abs(_offset.z) <= LOAD_DISTANCE);
 }
 
 
 
 inline bool withinPopulationDistance(ChunkPos _pos, ChunkPos _centre)
 {
-	return ((_centre.x - LOAD_DISTANCE) < _pos.x && _pos.x < (_centre.x + LOAD_DISTANCE) &&
-		(_centre.y - LOAD_DISTANCE_VERTICAL) < _pos.y && _pos.y < (_centre.y + LOAD_DISTANCE_VERTICAL) &&
-		(_centre.z - LOAD_DISTANCE) < _pos.z && _pos.z < (_centre.z + LOAD_DISTANCE)
-	);
+	auto _offset = _pos.offset(_centre);
+	return (std::abs(_offset.x) < LOAD_DISTANCE &&
+			std::abs(_offset.y) < LOAD_DISTANCE_VERTICAL &&
+			std::abs(_offset.z) < LOAD_DISTANCE);
 }
 
 
 
 inline bool withinMeshingDistance(ChunkPos _pos, ChunkPos _centre)
 {
-	return withinPopulationDistance(_pos, _centre);
+	auto _offset = _pos.offset(_centre);
+	return (std::abs(_offset.x) < LOAD_DISTANCE - 1 &&
+		std::abs(_offset.y) < LOAD_DISTANCE_VERTICAL - 1 &&
+		std::abs(_offset.z) < LOAD_DISTANCE - 1);
 }
 
 
 
 
-World::World(std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> meshQueue, const char* settingNoiseHeightmap, const char* settingNoiseFoliage) :
+World::World(
+	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> queueMesh,
+	std::shared_ptr<ThreadQueue<ChunkPos>> queueMeshDeletion,
+	const char* settingNoiseHeightmap,
+	const char* settingNoiseFoliage
+) :
 	loadCentre(0, 0, 0),
-	threadQueueMeshes(meshQueue),
+	threadQueueMeshes(queueMesh),
+	threadQueueMeshDeletion(queueMeshDeletion),
 	generatorChunkNoise(
 		SEED,
 		0.03125f,
-		0.000625f,
-		0.000625f,
+		0.015625f,
+		0.015625f,
 		settingNoiseHeightmap,
-		"HAABGQANAAIAAAAAAABACQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==",
-		"HAABGQANAAIAAAAAAABACQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==",
+		"HAABGQANAAIAAAAAAABAEwAK16M8CQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==",
+		"HAABGQANAAIAAAAAAABAEwAK16M8CQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==",
 		"HAABBgAAAABAQA=="
 	),
 	noiseFoliage(settingNoiseFoliage, 1.0f, SEED),
@@ -69,6 +78,16 @@ void World::tick(std::atomic<PlayerState>& playerState)
 		onLoadCentreChange();
 	}
 
+	{
+		std::queue<ChunkPos> meshUnloadQueue;
+		threadQueueMeshDeletion->getQueue(meshUnloadQueue);
+		while (!meshUnloadQueue.empty())
+		{
+			ChunkPos _pos = meshUnloadQueue.front();
+			meshUnloadQueue.pop();
+			if (chunkStatusMap.chunkExists(_pos)) chunkStatusMap.setChunkStatusMesh(_pos, StatusChunkMesh::NON_EXISTENT);
+		}
+	}
 
 	loadChunks();
 	populateChunks();
@@ -295,7 +314,7 @@ void World::loadChunks()
 				for (int nk = -1; nk < 2; ++nk)
 				{
 					ChunkPos _pos(lPos.x + ni, lPos.y + nj, lPos.z + nk);
-					if (chunkStatusMap.getChunkStatusCanPopulate(_pos)) queueChunkPopulation(_pos);
+					if (withinPopulationDistance(_pos, loadCentre) && chunkStatusMap.getChunkStatusCanPopulate(_pos)) queueChunkPopulation(_pos);
 				}
 			}
 		}
@@ -313,7 +332,7 @@ void World::populateChunks()
 		populateQueue.pop();
 
 		// Make sure that the chunk is queued for population
-		assert((chunkStatusMap.getChunkStatusLoad(_pos) == StatusChunkLoad::QUEUED_POPULATE) && "Attempted to populate already populated chunk.");
+		assert(withinPopulationDistance(_pos, loadCentre) && (chunkStatusMap.getChunkStatusLoad(_pos) == StatusChunkLoad::QUEUED_POPULATE) && "Attempted to populate already populated chunk.");
 
 		getChunk(_pos)->PopulateChunk(*this);
 
@@ -371,7 +390,8 @@ void World::meshChunks()
 		chunkStatusMap.setChunkStatusMesh(mPos, StatusChunkMesh::MESHED);
 	}
 
-	threadQueueMeshes->mergeQueue(meshDataQueue);
+	// Push meshes, if any were created
+	if (meshDataQueue.size()) threadQueueMeshes->mergeQueue(meshDataQueue);
 }
 
 
@@ -429,7 +449,7 @@ void World::queueChunkMeshing(const ChunkPos chunkPos)
 
 void World::queueChunkPopulation(const ChunkPos chunkPos)
 {
-	assert(chunkStatusMap.getChunkStatusCanPopulate(chunkPos) && "Attempted to populate chunk that cannot be populated");
+	assert(withinPopulationDistance(chunkPos, loadCentre) && chunkStatusMap.getChunkStatusCanPopulate(chunkPos) && "Attempted to populate chunk that cannot be populated");
 	int priority = std::max(100 - static_cast<int>(loadCentre.distance(chunkPos)), 0);
 	populateQueue.push(ChunkPriorityTicket(priority, chunkPos));
 	chunkStatusMap.setChunkStatusLoad(chunkPos, StatusChunkLoad::QUEUED_POPULATE);

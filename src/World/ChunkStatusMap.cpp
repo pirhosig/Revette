@@ -54,8 +54,23 @@ void ChunkStatusMap::setChunkStatusLoad(const ChunkPos chunkPos, StatusChunkLoad
 		if (exists) statusMap.erase(it);
 	}
 	else if (exists) statusMap.at(chunkPos).setLoadStatus(status);
-	else statusMap[chunkPos].setLoadStatus(status);
-
+	else
+	{
+		statusMap[chunkPos].setLoadStatus(status);
+		for (int i = -1; i < 2; ++i)
+		{
+			for (int j = -1; j < 2; ++j)
+			{
+				for (int k = -1; k < 2; ++k)
+				{
+					if (i == 0 && j == 0 && k == 0) continue;
+					ChunkPos pos(chunkPos.x + i, chunkPos.y + j, chunkPos.z + k);
+					statusMap[chunkPos].setNeighbourLoadStatus(i, j, k, getChunkStatusLoad(pos));
+				}
+			}
+		}
+	}
+	
 	// Update the neighbouring chunk statuses, if they exist
 	for (int i = -1; i < 2; ++i)
 	{

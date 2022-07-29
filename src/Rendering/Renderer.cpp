@@ -4,9 +4,24 @@
 
 
 
-Renderer::Renderer(GLFWwindow* window, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> chunkMeshQueue) :
+inline bool withinRenderingDistance(ChunkPos _pos, ChunkPos _centre)
+{
+	auto _offset = _pos.offset(_centre);
+	return (std::abs(_offset.x) < LOAD_DISTANCE - 1 &&
+		std::abs(_offset.y) < LOAD_DISTANCE_VERTICAL - 1 &&
+		std::abs(_offset.z) < LOAD_DISTANCE - 1);
+}
+
+
+
+Renderer::Renderer(
+	GLFWwindow* window,
+	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> chunkMeshQueue,
+	std::shared_ptr<ThreadQueue<ChunkPos>> chunkMeshQueueDeletion
+) :
 	chunkShader("shader/chunkShader.vs", "shader/chunkShader.fs"),
 	tileTextureAtlas("res/texture_atlas.png"),
+	threadQueueMeshDeletion(chunkMeshQueueDeletion),
 	threadQueueMeshes(chunkMeshQueue),
 	mainWindow(window)
 {}
@@ -71,17 +86,20 @@ void Renderer::unloadMeshes(const EntityPosition& playerPos)
 {
 	ChunkPos _playerChunk{ playerPos };
 
+	std::queue<ChunkPos> removeQueue;
+
 	std::unordered_set<std::unique_ptr<MeshChunk>>::iterator it = meshesChunk.begin();
 	while (it != meshesChunk.end())
 	{
 		auto _pos = (*it)->getPosition();
-		if (!((_playerChunk.x - LOAD_DISTANCE) <= _pos.x && _pos.x <= (_playerChunk.x + LOAD_DISTANCE) &&
-			(_playerChunk.y - LOAD_DISTANCE_VERTICAL) <= _pos.y && _pos.y <= (_playerChunk.y + LOAD_DISTANCE_VERTICAL) &&
-			(_playerChunk.z - LOAD_DISTANCE) <= _pos.z && _pos.z <= (_playerChunk.z + LOAD_DISTANCE)
-			))
+		if (!withinRenderingDistance(_pos, _playerChunk))
 		{
 			it = meshesChunk.erase(it);
+			removeQueue.push(_pos);
 		}
 		else it++;
 	}
+
+	// Add the removed chunks if any were removed
+	if (removeQueue.size()) threadQueueMeshDeletion->mergeQueue(removeQueue);
 }

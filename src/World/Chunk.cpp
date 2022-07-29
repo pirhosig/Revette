@@ -6,6 +6,7 @@
 #include "World.h"
 #include "Generation/GeneratorChunkParameters.h"
 #include "Generation/NoiseSource.h"
+#include "Generation/Structures/StructurePlants.h"
 #include "../Constants.h"
 #include "../Exceptions.h"
 
@@ -30,7 +31,11 @@ Chunk::Chunk(ChunkPos _pos) : position(_pos), generated(false) {}
 
 
 
-void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters, const NoiseSource2D& noiseFoliage, const NoiseSource2D& noiseFoliageSecondary)
+void Chunk::GenerateChunk(
+	const GeneratorChunkParameters& generatorParameters,
+	const NoiseSource2D& noiseFoliage,
+	const NoiseSource2D& noiseFoliageSecondary
+)
 {
 	if (generated) throw EXCEPTION_WORLD::ChunkRegeneration("Attempted to re-generate chunk");
 	generated = true;
@@ -72,7 +77,10 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters, c
 			case BIOME::DESERT:
 				defaultBlock = Block(5);
 				break;
-			case BIOME::FOREST:
+			case BIOME::FOREST_BOREAL:
+				defaultBlock = Block(11);
+				break;
+			case BIOME::FOREST_TEMPERATE:
 				defaultBlock = Block(1);
 				break;
 			case BIOME::RAINFOREST:
@@ -92,8 +100,9 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters, c
 			{
 				ChunkLocalBlockPos blockPos(lX, lY, lZ);
 				const auto _worldHeight = _chunkBottom + lY;
+				const auto _surfaceHeight = generatorParameters.heightMap.heightArray[index];
 
-				if (generatorParameters.heightMap.heightArray[index] < _worldHeight)
+				if (_surfaceHeight < _worldHeight)
 				{
 					if (_worldHeight <= 0) setBlock(blockPos, Block(6));
 				}
@@ -122,6 +131,7 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters, c
 			const int _worldX = position.x * CHUNK_SIZE + lX;
 			const int _worldZ = position.z * CHUNK_SIZE + lZ;
 			const int _bottomAir = _surfaceLevel + 1;
+			const BlockPos _centre(_worldX, _bottomAir, _worldZ);
 			const bool _aboveSeaLevel = (_surfaceLevel >= 0);
 			const auto _foliageValue = foliageValues[_index];
 			const auto _foliageValueSecondary = foliageValuesSecondary[_index];
@@ -132,14 +142,31 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters, c
 				// Cactus
 				if (_aboveSeaLevel && _foliageValue > 0.9956)
 				{
-					int _cactusHeight = static_cast<int>(2.65 + _foliageValueSecondary);
+					int _cactusHeight = static_cast<int>(2.67 + _foliageValueSecondary);
 					for (int i = 0; i < _cactusHeight; ++i)
 					{
 						setBlockPopulation(BlockPos(_worldX, _bottomAir + i, _worldZ), Block(9), 0);
 					}
 				}
 				break;
-			case BIOME::FOREST:
+			case BIOME::FOREST_BOREAL:
+				// Basic pine tree
+				if (_aboveSeaLevel && _foliageValue > 0.987)
+				{
+					int _treeHeight = static_cast<int>(8.6 + _foliageValueSecondary * 2.4);
+					unsigned long long _treeAge = 0;
+					const auto _treeBlocks = getStructureTreePine(_treeHeight);
+					for (const auto& _change : _treeBlocks)
+					{
+						setBlockPopulation(
+							BlockPos(_worldX + _change.xOffset, _bottomAir + _change.yOffset, _worldZ + _change.zOffset),
+							_change.block,
+							_treeAge + _change.ageOffset
+						);
+					}
+				}
+				break;
+			case BIOME::FOREST_TEMPERATE:
 				// Basic bitch tree
 				if (_aboveSeaLevel && _foliageValue > 0.973)
 				{
@@ -185,16 +212,17 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters, c
 					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ - 1), Block(4), _treeAge);
 					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ + 1), Block(4), _treeAge);
 				}
-				else if (_foliageValue > 0.68) setBlockPopulation(BlockPos(_worldX, _bottomAir, _worldZ), Block(4), 0);
-				else if (_foliageValue > 0.52) setBlockPopulation(BlockPos(_worldX, _bottomAir, _worldZ), Block(10), 0);
+				else if (_foliageValue > 0.68) setBlockPopulation(_centre, Block(4), 0);
+				else if (_foliageValue > 0.52) setBlockPopulation(_centre, Block(10), 0);
 				break;
 			case BIOME::SHRUBLAND:
 				if (!_aboveSeaLevel) break;
-				if (_foliageValue > 0.80) setBlockPopulation(BlockPos(_worldX, _bottomAir, _worldZ), Block(10), 0);
+				if (_foliageValue > 0.80) setBlockPopulation(_centre, Block(10), 0);
+				else if (_foliageValue > 0.7993) setBlockPopulation(_centre, Block(4), 0);
 				break;
 			case BIOME::TUNDRA:
 				if (!_aboveSeaLevel) break;
-				if (_foliageValue > 0.997) setBlockPopulation(BlockPos(_worldX, _bottomAir, _worldZ), Block(2), 0);
+				if (_foliageValue > 0.9976) setBlockPopulation(_centre, Block(2), 0);
 				break;
 			default:
 				break;

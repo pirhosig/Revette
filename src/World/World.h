@@ -35,7 +35,12 @@ public:
 class World
 {
 public:
-	World(std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> meshQueue, const char* settingNoiseHeightmap, const char* settingNoiseFoliage);
+	World(
+		std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> queueMesh,
+		std::shared_ptr<ThreadQueue<ChunkPos>> queueMeshDeletion,
+		const char* settingNoiseHeightmap,
+		const char* settingNoiseFoliage
+	);
 	World(const World&) = delete;
 	void tick(std::atomic<PlayerState>& playerState);
 
@@ -77,4 +82,5 @@ private:
 	NoiseSource2D noiseFoliageSecondary;
 
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes;
+	std::shared_ptr<ThreadQueue<ChunkPos>> threadQueueMeshDeletion;
 };

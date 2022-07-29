@@ -16,6 +16,7 @@ public:
 	void runLoop(
 		std::atomic<bool>& gameShouldClose,
 		std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes,
+		std::shared_ptr<ThreadQueue<ChunkPos>> threadQueueMeshDeletion,
 		std::atomic<PlayerState>& playerState
 	);
 

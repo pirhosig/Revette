@@ -16,10 +16,11 @@ const char* NOISE_FOLIAGE = "AQA=";
 void GameLoop::runLoop(
 	std::atomic<bool>& gameShouldClose,
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes,
+	std::shared_ptr<ThreadQueue<ChunkPos>> threadQueueMeshDeletion,
 	std::atomic<PlayerState>& playerState
 )
 {
-	World zaWarudo(std::move(threadQueueMeshes), NOISE_HEIGHTMAP, NOISE_FOLIAGE);
+	World zaWarudo(std::move(threadQueueMeshes), std::move(threadQueueMeshDeletion), NOISE_HEIGHTMAP, NOISE_FOLIAGE);
 
 	while (!gameShouldClose.load())
 	{

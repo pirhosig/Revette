@@ -1,6 +1,5 @@
 #include <atomic>
 #include <exception>
-#include <functional>
 #include <iostream>
 #include <mutex>
 #include <thread>
@@ -9,16 +8,23 @@
 #include "RenderingLoop.h"
 #include "Threading/PlayerState.h"
 #include "Threading/ThreadPointerQueue.h"
-#include "World/Block.h"
+
+
 
 void runGameLoop(
 	std::atomic<bool>& gameShouldClose,
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes,
+	std::shared_ptr<ThreadQueue<ChunkPos>> threadQueueMeshDeletion,
 	std::atomic<PlayerState>& playerState
 ) try
 {
 	GameLoop mainLoop;
-	mainLoop.runLoop(gameShouldClose, std::move(threadQueueMeshes), playerState);
+	mainLoop.runLoop(
+		gameShouldClose,
+		std::move(threadQueueMeshes),
+		std::move(threadQueueMeshDeletion),
+		playerState
+	);
 }
 catch (const std::exception& error)
 {
@@ -36,11 +42,17 @@ catch (...)
 void runRenderingLoop(
 	std::atomic<bool>& gameShouldClose,
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes,
+	std::shared_ptr<ThreadQueue<ChunkPos>> threadQueueMeshDeletion,
 	std::atomic<PlayerState>& playerState
 ) try
 {
 	RenderingLoop mainLoop;
-	mainLoop.runLoop(gameShouldClose, std::move(threadQueueMeshes), playerState);
+	mainLoop.runLoop(
+		gameShouldClose,
+		std::move(threadQueueMeshes),
+		std::move(threadQueueMeshDeletion),
+		playerState
+	);
 }
 catch (const std::exception& error)
 {
@@ -59,10 +71,23 @@ int main()
 {
 	std::atomic<bool> gameShouldClose{};
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes = std::make_shared<ThreadPointerQueue<MeshDataChunk>>();
+	std::shared_ptr<ThreadQueue<ChunkPos>> threadQueueMeshDeletion = std::make_shared<ThreadQueue<ChunkPos>>();
 	std::atomic<PlayerState> playerState{PlayerState(EntityPosition())};
 
-	std::jthread gameThread(runGameLoop, std::ref(gameShouldClose), threadQueueMeshes, std::ref(playerState));
-	std::jthread renderingThread(runRenderingLoop, std::ref(gameShouldClose), threadQueueMeshes, std::ref(playerState));
+	std::jthread gameThread(
+		runGameLoop,
+		std::ref(gameShouldClose),
+		threadQueueMeshes,
+		threadQueueMeshDeletion,
+		std::ref(playerState)
+	);
+	std::jthread renderingThread(
+		runRenderingLoop,
+		std::ref(gameShouldClose),
+		threadQueueMeshes,
+		threadQueueMeshDeletion,
+		std::ref(playerState)
+	);
 
 	gameThread.join();
 	renderingThread.join();

@@ -15,7 +15,11 @@
 class Renderer
 {
 public:
-	Renderer(GLFWwindow* window, std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> chunkMeshQueue);
+	Renderer(
+		GLFWwindow* window,
+		std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> chunkMeshQueue,
+		std::shared_ptr<ThreadQueue<ChunkPos>> chunkMeshQueueDeletion
+	);
 
 	void render(const EntityPosition& playerPos);
 	void unqueueMeshes();
@@ -24,6 +28,7 @@ public:
 private:
 	// Mesh queue and storage
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes;
+	std::shared_ptr<ThreadQueue<ChunkPos>> threadQueueMeshDeletion;
 	std::unordered_set<std::unique_ptr<MeshChunk>> meshesChunk;
 
 	TileTexture tileTextureAtlas;
