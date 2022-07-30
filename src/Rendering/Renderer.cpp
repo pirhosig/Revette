@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include <stdio.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -20,7 +21,9 @@ Renderer::Renderer(
 	std::shared_ptr<ThreadQueue<ChunkPos>> chunkMeshQueueDeletion
 ) :
 	chunkShader("shader/chunkShader.vs", "shader/chunkShader.fs"),
-	tileTextureAtlas("res/texture_atlas.png"),
+	textShader("shader/textShader.vs", "shader/textShader.fs"),
+	tileTextureAtlas("res/texture_atlas.png", 16, 16, true),
+	textureAtlasCharacters("res/character_set.png", 6, 8, false),
 	threadQueueMeshDeletion(chunkMeshQueueDeletion),
 	threadQueueMeshes(chunkMeshQueue),
 	mainWindow(window)
@@ -30,39 +33,65 @@ Renderer::Renderer(
 
 void Renderer::render(const EntityPosition& playerPos)
 {
+	// Draw chunks
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-	glFrontFace(GL_CCW);
 	glClearColor(0.53f, 0.52f, 0.83f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	double rotationY = glm::radians(fmax(fmin(playerPos.yRotation, 89.5), -89.5));
-	double rotationX = glm::radians(playerPos.xRotation);
-
-	const glm::mat4 projection = glm::perspective(glm::radians(45.0), 1920.0 / 1080.0, 0.1, 2048.0);
-	ChunkPos _playerChunk(playerPos);
-	EntityPosition _playerLocalPos(
-		playerPos.X - _playerChunk.x * CHUNK_SIZE,
-		playerPos.Y - _playerChunk.y * CHUNK_SIZE,
-		playerPos.Z - _playerChunk.z * CHUNK_SIZE
-	);
-	const glm::vec3 pos(_playerLocalPos.X, _playerLocalPos.Y, _playerLocalPos.Z);
-	const glm::vec3 front = glm::normalize(glm::vec3(
-		cos(rotationX) * cos(rotationY),
-		sin(rotationY),
-		sin(rotationX) * cos(rotationY)
-	));
-	const glm::mat4 view = glm::lookAt(pos, pos + front, glm::vec3(0.0, 1.0, 0.0));
-	const glm::mat4 projectionView = projection * view;
-
-	chunkShader.use();
-	tileTextureAtlas.bindTexture();
-	chunkShader.setInt("tileAtlas", 0);
-	for (const auto& mesh : meshesChunk)
 	{
-		mesh->draw(chunkShader, projectionView, _playerChunk);
+		double rotationY = glm::radians(fmax(fmin(playerPos.yRotation, 89.5), -89.5));
+		double rotationX = glm::radians(playerPos.xRotation);
+
+		const glm::mat4 projection = glm::perspective(glm::radians(45.0), 1920.0 / 1080.0, 0.1, 2048.0);
+		ChunkPos _playerChunk(playerPos);
+		EntityPosition _playerLocalPos(
+			playerPos.X - _playerChunk.x * CHUNK_SIZE,
+			playerPos.Y - _playerChunk.y * CHUNK_SIZE,
+			playerPos.Z - _playerChunk.z * CHUNK_SIZE
+		);
+		const glm::vec3 pos(_playerLocalPos.X, _playerLocalPos.Y, _playerLocalPos.Z);
+		const glm::vec3 front = glm::normalize(glm::vec3(
+			cos(rotationX) * cos(rotationY),
+			sin(rotationY),
+			sin(rotationX) * cos(rotationY)
+		));
+		const glm::mat4 view = glm::lookAt(pos, pos + front, glm::vec3(0.0, 1.0, 0.0));
+		const glm::mat4 projectionView = projection * view;
+
+		chunkShader.use();
+		tileTextureAtlas.bindTexture();
+		chunkShader.setInt("tileAtlas", 0);
+		for (const auto& mesh : meshesChunk)
+		{
+			mesh->draw(chunkShader, projectionView, _playerChunk);
+		}
 	}
+
+	// Draw GUI
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+
+	textShader.use();
+	textureAtlasCharacters.bindTexture();
+	textShader.setInt("characterArray", 0);
+	textShader.setVec2("characterSize", glm::vec2(24.0 / 1920.0, 32.0 / 1080.0));
+
+	// Update coordinates
+	{
+		char coordinateString[32]{};
+		int _length = sprintf_s(
+			&coordinateString[0],
+			32,
+			"%5d %5d %5d",
+			static_cast<int>(playerPos.X),
+			static_cast<int>(playerPos.Y),
+			static_cast<int>(playerPos.Z)
+		);
+
+		meshGUI.update(&coordinateString[0], _length);
+	}
+
+	meshGUI.draw();
 
 	glfwSwapBuffers(mainWindow);
 }

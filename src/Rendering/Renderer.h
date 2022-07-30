@@ -7,6 +7,7 @@
 #include "ShaderProgram.h"
 #include "TileTexture.h"
 #include "Mesh/MeshChunk.h"
+#include "Mesh/MeshText.h"
 #include "../Threading/ThreadPointerQueue.h"
 #include "../World/Entities/EntityPosition.h"
 
@@ -30,8 +31,13 @@ private:
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes;
 	std::shared_ptr<ThreadQueue<ChunkPos>> threadQueueMeshDeletion;
 	std::unordered_set<std::unique_ptr<MeshChunk>> meshesChunk;
+	MeshText meshGUI;
 
 	TileTexture tileTextureAtlas;
+	TileTexture textureAtlasCharacters;
+
 	ShaderProgram chunkShader;
+	ShaderProgram textShader;
+
 	GLFWwindow* mainWindow;
 };

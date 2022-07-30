@@ -24,7 +24,7 @@ RenderingLoop::RenderingLoop() : framerateCounter(1024), cursorLastX(0.0), curso
 	const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
 
 	// Create a window and verify that it was created, then set it as the current opengl context on this thread
-	mainWindow = glfwCreateWindow(videoMode->width, videoMode->height, "Revette-3D", NULL, NULL);
+	mainWindow = glfwCreateWindow(videoMode->width, videoMode->height, "Revette-3D", primaryMonitor, NULL);
 	if (mainWindow == NULL) throw std::runtime_error("Unable to create window");
 	glfwMakeContextCurrent(mainWindow);
 
