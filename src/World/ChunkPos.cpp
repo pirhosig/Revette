@@ -26,7 +26,7 @@ ChunkOffset::ChunkOffset(int _x, int _y, int _z) : x(wrapCoordinate(_x)), y(_y),
 
 
 
-ChunkPos::ChunkPos(int _x, int _y, int _z) : x(_x), y(_y), z(_z) {}
+ChunkPos::ChunkPos(int _x, int _y, int _z) : x(wrapCoordinate(_x)), y(_y), z(wrapCoordinate(_z)) {}
 
 
 

@@ -40,6 +40,14 @@ BlockPos BlockPos::direction(AxisDirection direction) const
 }
 
 
+
+BlockPos BlockPos::offset(int _x, int _y, int _z)
+{
+	return BlockPos(x + _x, y + _y, z + _z);
+}
+
+
+
 bool BlockPos::operator<(const BlockPos& other) const
 {
 	if (x != other.x) return x < other.x;

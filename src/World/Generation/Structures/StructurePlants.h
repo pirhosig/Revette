@@ -1,18 +1,17 @@
 #pragma once
-#include <vector>
 #include "../../Block.h"
 
+class Chunk;
 
 
-struct BlockPlace
+namespace Structures
 {
-	int xOffset;
-	int yOffset;
-	int zOffset;
-	Block block;
-	unsigned long long ageOffset;
-};
+	// Boreal Forest
+	void placeTreePine(Chunk& chunk, BlockPos base, unsigned long long age, int height);
+	void placeTreePineMassive(Chunk& chunk, BlockPos base, unsigned long long age, int height);
 
 
-
-std::vector<BlockPlace> getStructureTreePine(int height);
+	// Rainforest
+	void placeTreeRainforestShrub(Chunk& chunk, BlockPos base, unsigned long long age);
+	void placeTreeRainforestTall(Chunk& chunk, BlockPos base, unsigned long long age, int height);
+}

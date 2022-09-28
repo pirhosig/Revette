@@ -150,20 +150,19 @@ void Chunk::GenerateChunk(
 				}
 				break;
 			case BIOME::FOREST_BOREAL:
+				if (!_aboveSeaLevel) break;
 				// Basic pine tree
-				if (_aboveSeaLevel && _foliageValue > 0.987)
+				if (_foliageValue > 0.9910)
 				{
-					int _treeHeight = static_cast<int>(8.6 + _foliageValueSecondary * 2.4);
+					int _treeHeight = static_cast<int>(6.6 + _foliageValueSecondary * 2.4);
 					unsigned long long _treeAge = 0;
-					const auto _treeBlocks = getStructureTreePine(_treeHeight);
-					for (const auto& _change : _treeBlocks)
-					{
-						setBlockPopulation(
-							BlockPos(_worldX + _change.xOffset, _bottomAir + _change.yOffset, _worldZ + _change.zOffset),
-							_change.block,
-							_treeAge + _change.ageOffset
-						);
-					}
+					Structures::placeTreePine((*this), BlockPos(_worldX, _bottomAir, _worldZ), _treeAge, _treeHeight);
+				}
+				else if (_foliageValue > 0.9893)
+				{
+					int _treeHeight = static_cast<int>(15.7 + _foliageValueSecondary * 4.7);
+					unsigned long long _treeAge = 0;
+					Structures::placeTreePineMassive((*this), BlockPos(_worldX, _bottomAir, _worldZ), _treeAge, _treeHeight);
 				}
 				break;
 			case BIOME::FOREST_TEMPERATE:
@@ -190,11 +189,11 @@ void Chunk::GenerateChunk(
 				}
 				break;
 			case BIOME::RAINFOREST:
-				// Rainforests are pretty bland like this ngl
+				// Rainforests are pretty bland like this ngl (slightly better now)
 				if (!_aboveSeaLevel) break;
-				if (_foliageValue > 0.89)
+				if (_foliageValue > 0.92)
 				{
-					int _treeHeight = static_cast<int>(7.2 + _foliageValueSecondary * 3.2);
+					int _treeHeight = static_cast<int>(9.9 + _foliageValueSecondary * 3.2);
 					unsigned long long _treeAge = 0;
 
 					// Build tree trunk
@@ -205,15 +204,27 @@ void Chunk::GenerateChunk(
 
 					const int leafBase = _bottomAir + _treeHeight - 2;
 					// Add the leaves
-					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ), Block(4), _treeAge);
+					for (int i = -1; i < 2; ++i)
+					{
+						for (int j = -1; j < 2; ++j)
+						{
+							setBlockPopulation(BlockPos(_worldX + i, leafBase, _worldZ + j), Block(4), _treeAge);
+						}
+					}
 					setBlockPopulation(BlockPos(_worldX, leafBase + 1, _worldZ), Block(4), _treeAge);
-					setBlockPopulation(BlockPos(_worldX - 1, leafBase, _worldZ), Block(4), _treeAge);
-					setBlockPopulation(BlockPos(_worldX + 1, leafBase, _worldZ), Block(4), _treeAge);
-					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ - 1), Block(4), _treeAge);
-					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ + 1), Block(4), _treeAge);
+					setBlockPopulation(BlockPos(_worldX - 2, leafBase, _worldZ), Block(4), _treeAge);
+					setBlockPopulation(BlockPos(_worldX + 2, leafBase, _worldZ), Block(4), _treeAge);
+					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ - 2), Block(4), _treeAge);
+					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ + 2), Block(4), _treeAge);
 				}
-				else if (_foliageValue > 0.68) setBlockPopulation(_centre, Block(4), 0);
-				else if (_foliageValue > 0.52) setBlockPopulation(_centre, Block(10), 0);
+				else if (_foliageValue > 0.914)
+				{
+					int _treeHeight = static_cast<int>(15.7 + _foliageValueSecondary * 4.3);
+					unsigned long long _treeAge = 0;
+					Structures::placeTreeRainforestTall((*this), BlockPos(_worldX, _bottomAir, _worldZ), _treeAge, _treeHeight);
+				}
+				else if (_foliageValue > 0.74) Structures::placeTreeRainforestShrub((*this), BlockPos(_worldX, _bottomAir, _worldZ), 0);
+				else if (_foliageValue > 0.55) setBlockPopulation(_centre, Block(10), 0);
 				break;
 			case BIOME::SHRUBLAND:
 				if (!_aboveSeaLevel) break;

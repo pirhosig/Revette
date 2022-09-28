@@ -33,6 +33,7 @@ public:
 
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
+	void setBlockPopulation(BlockPos blockPos, Block block, unsigned long long age);
 	bool isEmpty() const;
 	bool isGenerated() const;
 
@@ -40,7 +41,6 @@ public:
 
 private:
 	bool containsPosition(BlockPos blockPos) const;
-	void setBlockPopulation(BlockPos blockPos, Block block, unsigned long long age);
 	void addAdjacentPopulationChanges(Chunk& _chunk) const;
 
 	bool generated;

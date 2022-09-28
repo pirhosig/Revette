@@ -82,10 +82,10 @@ void Renderer::render(const EntityPosition& playerPos)
 		int _length = sprintf_s(
 			&coordinateString[0],
 			32,
-			"%5d %5d %5d",
-			static_cast<int>(playerPos.X),
-			static_cast<int>(playerPos.Y),
-			static_cast<int>(playerPos.Z)
+			"%8.1lf %8.1lf %8.1lf",
+			playerPos.X,
+			playerPos.Y,
+			playerPos.Z
 		);
 
 		meshGUI.update(&coordinateString[0], _length);

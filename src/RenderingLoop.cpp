@@ -113,6 +113,7 @@ void RenderingLoop::processInput(const double deltaTime)
 	glfwPollEvents();
 	double _playerSpeed = PLAYER_SPEED_DEFAULT;
 	if (glfwGetKey(mainWindow, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) _playerSpeed *= 10.0;
+	else if (glfwGetKey(mainWindow, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) _playerSpeed *= 250.0;
 	if (glfwGetKey(mainWindow, GLFW_KEY_W)          == GLFW_PRESS) playerPos.moveForward(deltaTime * _playerSpeed);
 	if (glfwGetKey(mainWindow, GLFW_KEY_S)          == GLFW_PRESS) playerPos.moveForward(deltaTime * -_playerSpeed);
 	if (glfwGetKey(mainWindow, GLFW_KEY_A)          == GLFW_PRESS) playerPos.moveSideways(deltaTime * -_playerSpeed);
