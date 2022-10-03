@@ -13,14 +13,13 @@ inline int blockPositionIsInside(int x, int y, int z)
 
 inline int flattenIndex(const ChunkLocalBlockPos blockPos)
 {
-	assert(blockPositionIsInside(blockPos.x, blockPos.y, blockPos.z) && "Block outside chunk.");
+	// assert(blockPositionIsInside(blockPos.x, blockPos.y, blockPos.z) && "Block outside chunk.");
 	return blockPos.x * CHUNK_SIZE * CHUNK_SIZE + blockPos.y * CHUNK_SIZE + blockPos.z;
 }
 
 
 
-BlockContainer::BlockContainer() :
-	blockArrayType(BlockArrayType::NONE)
+BlockContainer::BlockContainer()
 {
 	blockArrayBlocksByIndex.push_back(Block(0));
 	blockArrayIndicesByBlock[Block(0)] = 0;
@@ -31,51 +30,57 @@ BlockContainer::BlockContainer() :
 
 void BlockContainer::blockArrayCreate()
 {
-	assert(blockArrayType == BlockArrayType::NONE);
-	blockArrayCompact = std::make_unique<uint8_t[]>(CHUNK_VOLUME);
-	blockArrayType = BlockArrayType::COMPACT;
+	assert(std::holds_alternative<std::monostate>(blockArray));
+	blockArray = std::make_unique<uint8_t[]>(CHUNK_VOLUME);
 }
 
 
 
 void BlockContainer::blockArrayDelete()
 {
-	blockArrayCompact.reset();
-	blockArrayExtended.reset();
-	blockArrayType = BlockArrayType::NONE;
+	blockArray = std::monostate();
 }
 
 
 
 void BlockContainer::blockArrayExtend()
 {
-	assert(blockArrayType == BlockArrayType::COMPACT);
-	blockArrayExtended = std::make_unique<uint16_t[]>(CHUNK_VOLUME);
+	assert(std::holds_alternative<std::unique_ptr<uint8_t[]>>(blockArray));
+	std::unique_ptr<uint16_t[]> replaceArray = std::make_unique<uint16_t[]>(CHUNK_VOLUME);
 	for (int i = 0; i < CHUNK_VOLUME; ++i)
 	{
-		blockArrayExtended[i] = blockArrayCompact[i];
+		replaceArray[i] = std::get<std::unique_ptr<uint8_t[]>>(blockArray)[i];
 	}
-	blockArrayCompact.reset();
-	blockArrayType = BlockArrayType::EXTENDED;
+	blockArray = std::move(replaceArray);
 }
 
 
 
-Block BlockContainer::getBlock(ChunkLocalBlockPos blockPos) const
+Block BlockContainer::getBlock(ChunkLocalBlockPos blockPos) const try
 {
-	if (isEmpty()) return blockArrayBlocksByIndex[0];
-	int _index = flattenIndex(blockPos);
 	int _blockIndex{};
-	if (blockArrayType == BlockArrayType::COMPACT) _blockIndex = blockArrayCompact[_index];
-	else _blockIndex = blockArrayExtended[_index];
-	try
+	int _index = flattenIndex(blockPos);
+	switch (blockArray.index())
 	{
-		return blockArrayBlocksByIndex.at(_blockIndex);
+	case 1:
+		_blockIndex = std::get<std::unique_ptr<uint8_t[]>>(blockArray)[_index];
+		break;
+	case 2:
+		_blockIndex = std::get<std::unique_ptr<uint16_t[]>>(blockArray)[_index];
+		break;
+	default:
+		return Block(0);
+		break;
 	}
-	catch (std::out_of_range)
-	{
-		throw EXCEPTION_WORLD::BlockIndexOutOfRange("Block index out of range");
-	}
+	return blockArrayBlocksByIndex.at(_blockIndex);
+}
+catch (std::out_of_range)
+{
+	throw EXCEPTION_WORLD::BlockIndexOutOfRange("Block index out of range");
+}
+catch (...)
+{
+	throw;
 }
 
 
@@ -102,13 +107,14 @@ void BlockContainer::setBlock(ChunkLocalBlockPos blockPos, Block block)
 // Directly sets the value in the block array, without any safety checks
 void BlockContainer::setBlockRaw(int arrayIndex, int blockIndex)
 {
-	if (blockArrayType == BlockArrayType::COMPACT) blockArrayCompact[arrayIndex] = static_cast<uint8_t>(blockIndex);
-	else blockArrayExtended[arrayIndex] = static_cast<uint16_t>(blockIndex);
+	if (std::holds_alternative<std::unique_ptr<uint8_t[]>>(blockArray))
+		std::get<std::unique_ptr<uint8_t[]>>(blockArray)[arrayIndex] = static_cast<uint8_t>(blockIndex);
+	else std::get<std::unique_ptr<uint16_t[]>>(blockArray)[arrayIndex] = static_cast<uint16_t>(blockIndex);
 }
 
 
 
 bool BlockContainer::isEmpty() const
 {
-	return (blockArrayType == BlockArrayType::NONE);
+	return std::holds_alternative<std::monostate>(blockArray);
 }

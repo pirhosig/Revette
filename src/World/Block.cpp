@@ -16,6 +16,12 @@ inline int wrapCoordinate(int x)
 
 BlockPos::BlockPos(int x, int y, int z) : x(wrapCoordinate(x)), y(y), z(wrapCoordinate(z)) {}
 
+BlockPos::BlockPos(EntityPosition position) :
+	x(wrapCoordinate(static_cast<int>(position.X))),
+	y(static_cast<int>(position.Y)),
+	z(wrapCoordinate(static_cast<int>(position.Z)))
+{}
+
 
 
 BlockPos BlockPos::direction(AxisDirection direction) const

@@ -155,4 +155,37 @@ namespace Structures
 		chunk.setBlockPopulation(base.offset(0, _leafBase + 1, -1), LEAF, age);
 		chunk.setBlockPopulation(base.offset(0, _leafBase + 1, 1), LEAF, age);
 	}
+
+
+
+	void placeTreeAspen(Chunk& chunk, BlockPos base, unsigned long long age, int height)
+	{
+		const Block LEAF(12);
+		const Block LOG(13);
+
+		// Trunk
+		for (int i = 0; i < height; ++i) {
+			chunk.setBlockPopulation(base.offset(0, i, 0), LOG, age + 1);
+		}
+
+		// Leaves
+		for (int lX = -1; lX <= 1; ++lX) {
+			for (int lZ = -1; lZ <= 1; ++lZ) {
+				if (!lX && !lZ) continue;
+				chunk.setBlockPopulation(base.offset(lX, height - 1, lZ), LEAF, age);
+			}
+		}
+
+		chunk.setBlockPopulation(base.offset( 0, height - 2,  0), LEAF, age);
+		chunk.setBlockPopulation(base.offset(-1, height - 2,  0), LEAF, age);
+		chunk.setBlockPopulation(base.offset( 1, height - 2,  0), LEAF, age);
+		chunk.setBlockPopulation(base.offset( 0, height - 2, -1), LEAF, age);
+		chunk.setBlockPopulation(base.offset( 0, height - 2,  1), LEAF, age);
+
+		chunk.setBlockPopulation(base.offset( 0, height,  0), LEAF, age);
+		chunk.setBlockPopulation(base.offset(-1, height,  0), LEAF, age);
+		chunk.setBlockPopulation(base.offset( 1, height,  0), LEAF, age);
+		chunk.setBlockPopulation(base.offset( 0, height, -1), LEAF, age);
+		chunk.setBlockPopulation(base.offset( 0, height,  1), LEAF, age);
+	}
 }

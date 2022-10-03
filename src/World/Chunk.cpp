@@ -55,8 +55,7 @@ void Chunk::GenerateChunk(
 		{
 			for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ)
 			{
-				for (int lY = 0; lY < CHUNK_SIZE; ++lY)
-				{
+				for (int lY = 0; lY < CHUNK_SIZE; ++lY) {
 					setBlock(ChunkLocalBlockPos(lX, lY, lZ), Block(2));
 				}
 			}
@@ -102,8 +101,7 @@ void Chunk::GenerateChunk(
 				const auto _worldHeight = _chunkBottom + lY;
 				const auto _surfaceHeight = generatorParameters.heightMap.heightArray[index];
 
-				if (_surfaceHeight < _worldHeight)
-				{
+				if (_surfaceHeight < _worldHeight) {
 					if (_worldHeight <= 0) setBlock(blockPos, Block(6));
 				}
 				else setBlock(blockPos, defaultBlock);
@@ -140,14 +138,16 @@ void Chunk::GenerateChunk(
 			{
 			case BIOME::DESERT:
 				// Cactus
-				if (_aboveSeaLevel && _foliageValue > 0.9956)
+				if (!_aboveSeaLevel) break;
+				if (_foliageValue > 0.9956)
 				{
 					int _cactusHeight = static_cast<int>(2.67 + _foliageValueSecondary);
-					for (int i = 0; i < _cactusHeight; ++i)
-					{
+					for (int i = 0; i < _cactusHeight; ++i) {
 						setBlockPopulation(BlockPos(_worldX, _bottomAir + i, _worldZ), Block(9), 0);
 					}
 				}
+				// Desert Flower
+				else if (_foliageValue > 0.9942) setBlockPopulation(_centre, Block(14), 0);
 				break;
 			case BIOME::FOREST_BOREAL:
 				if (!_aboveSeaLevel) break;
@@ -156,28 +156,26 @@ void Chunk::GenerateChunk(
 				{
 					int _treeHeight = static_cast<int>(6.6 + _foliageValueSecondary * 2.4);
 					unsigned long long _treeAge = 0;
-					Structures::placeTreePine((*this), BlockPos(_worldX, _bottomAir, _worldZ), _treeAge, _treeHeight);
+					Structures::placeTreePine(*this, BlockPos(_worldX, _bottomAir, _worldZ), _treeAge, _treeHeight);
 				}
 				else if (_foliageValue > 0.9893)
 				{
 					int _treeHeight = static_cast<int>(15.7 + _foliageValueSecondary * 4.7);
 					unsigned long long _treeAge = 0;
-					Structures::placeTreePineMassive((*this), BlockPos(_worldX, _bottomAir, _worldZ), _treeAge, _treeHeight);
+					Structures::placeTreePineMassive(*this, BlockPos(_worldX, _bottomAir, _worldZ), _treeAge, _treeHeight);
 				}
 				break;
 			case BIOME::FOREST_TEMPERATE:
 				// Basic bitch tree
-				if (_aboveSeaLevel && _foliageValue > 0.973)
+				if (!_aboveSeaLevel) break;
+				if (_foliageValue > 0.9840)
 				{
-					int _treeHeight = static_cast<int>(7.3 + _foliageValueSecondary * 2.4);
+					int _treeHeight = static_cast<int>(10.1 + _foliageValueSecondary * 5.3);
 					unsigned long long _treeAge = 0;
-
 					// Build tree trunk
-					for (int i = 0; i < _treeHeight - 2; ++i)
-					{
+					for (int i = 0; i < _treeHeight - 2; ++i) {
 						setBlockPopulation(BlockPos(_worldX, _bottomAir + i, _worldZ), Block(3), _treeAge + 1);
 					}
-
 					const int leafBase = _bottomAir + _treeHeight - 2;
 					// Add the leaves
 					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ), Block(4), _treeAge);
@@ -187,6 +185,12 @@ void Chunk::GenerateChunk(
 					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ - 1), Block(4), _treeAge);
 					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ + 1), Block(4), _treeAge);
 				}
+				else if (_foliageValue > 0.9815)
+				{
+					int _treeHeight = static_cast<int>(12.7 + _foliageValueSecondary * 6.2);
+					unsigned long long _treeAge = 0;
+					Structures::placeTreeAspen(*this, BlockPos(_worldX, _bottomAir, _worldZ), _treeAge, _treeHeight);
+				}
 				break;
 			case BIOME::RAINFOREST:
 				// Rainforests are pretty bland like this ngl (slightly better now)
@@ -195,19 +199,14 @@ void Chunk::GenerateChunk(
 				{
 					int _treeHeight = static_cast<int>(9.9 + _foliageValueSecondary * 3.2);
 					unsigned long long _treeAge = 0;
-
 					// Build tree trunk
-					for (int i = 0; i < _treeHeight - 2; ++i)
-					{
+					for (int i = 0; i < _treeHeight - 2; ++i) {
 						setBlockPopulation(BlockPos(_worldX, _bottomAir + i, _worldZ), Block(3), _treeAge + 1);
 					}
-
 					const int leafBase = _bottomAir + _treeHeight - 2;
 					// Add the leaves
-					for (int i = -1; i < 2; ++i)
-					{
-						for (int j = -1; j < 2; ++j)
-						{
+					for (int i = -1; i < 2; ++i) {
+						for (int j = -1; j < 2; ++j) {
 							setBlockPopulation(BlockPos(_worldX + i, leafBase, _worldZ + j), Block(4), _treeAge);
 						}
 					}
@@ -229,7 +228,7 @@ void Chunk::GenerateChunk(
 			case BIOME::SHRUBLAND:
 				if (!_aboveSeaLevel) break;
 				if (_foliageValue > 0.80) setBlockPopulation(_centre, Block(10), 0);
-				else if (_foliageValue > 0.7993) setBlockPopulation(_centre, Block(4), 0);
+				else if (_foliageValue > 0.7991) setBlockPopulation(_centre, Block(4), 0);
 				break;
 			case BIOME::TUNDRA:
 				if (!_aboveSeaLevel) break;

@@ -1,17 +1,10 @@
 #pragma once
 #include <map>
 #include <memory>
+#include <variant>
 #include <vector>
 #include "ChunkPos.h"
 #include "Block.h"
-
-
-enum class BlockArrayType
-{
-	NONE,
-	COMPACT,
-	EXTENDED
-};
 
 
 
@@ -32,9 +25,7 @@ public:
 
 	bool isEmpty() const;
 
-	std::unique_ptr<uint8_t[]> blockArrayCompact;
-	std::unique_ptr<uint16_t[]> blockArrayExtended;
-	BlockArrayType blockArrayType;
+	std::variant<std::monostate, std::unique_ptr<uint8_t[]>, std::unique_ptr<uint16_t[]>> blockArray;
 	std::vector<Block> blockArrayBlocksByIndex;
 	std::map<Block, uint16_t, blockComparator> blockArrayIndicesByBlock;
 	uint16_t currentIndex;

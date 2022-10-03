@@ -62,12 +62,8 @@ ChunkPos ChunkPos::direction(AxisDirection direction) const
 
 double ChunkPos::distance(ChunkPos other) const
 {
-	int dX = std::abs(x - other.x);
-	int dZ = std::abs(z - other.z);
-	if (dX < WORLD_RADIUS_CHUNK && dZ < WORLD_RADIUS_CHUNK) return std::hypot(dX, y - other.y, dZ);
-	if (dX >= WORLD_RADIUS_CHUNK) dX = WORLD_DIAMETER_CHUNK - dX;
-	if (dZ >= WORLD_RADIUS_CHUNK) dZ = WORLD_DIAMETER_CHUNK - dZ;
-	return std::hypot(dX, y - other.y, dZ);
+	ChunkOffset _offset = offset(other);
+	return std::hypot(_offset.x, _offset.y, _offset.z);
 }
 
 
@@ -85,6 +81,9 @@ bool ChunkPos::operator<(const ChunkPos& other) const
 	else if (y != other.y) return y < other.y;
 	else return z < other.z;
 }
+
+
+ChunkPos2D::ChunkPos2D(int _x, int _z) : x(wrapCoordinate(_x)), z(wrapCoordinate(_z)) {}
 
 
 

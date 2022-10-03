@@ -14,4 +14,8 @@ namespace Structures
 	// Rainforest
 	void placeTreeRainforestShrub(Chunk& chunk, BlockPos base, unsigned long long age);
 	void placeTreeRainforestTall(Chunk& chunk, BlockPos base, unsigned long long age, int height);
+
+
+	// Temperate Forest
+	void placeTreeAspen(Chunk& chunk, BlockPos base, unsigned long long age, int height);
 }

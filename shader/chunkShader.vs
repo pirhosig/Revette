@@ -12,6 +12,6 @@ uniform mat4 transform;
 void main()
 {
 	gl_Position = transform * vec4(vertexPos, 1.0);
-	TextureCoords = vec3(vertexTextureCoords / 255.0, vertexTextureIndex);
-	Light = vertexLight / 255.0;
+	TextureCoords = vec3(vertexTextureCoords, vertexTextureIndex);
+	Light = vertexLight;
 }

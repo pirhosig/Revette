@@ -42,7 +42,7 @@ public:
 	int x;
 	int z;
 
-	ChunkPos2D(int _x, int _z) : x(_x), z(_z) {}
+	ChunkPos2D(int _x, int _z);
 	ChunkPos2D(ChunkPos chunkPos) : x(chunkPos.x), z(chunkPos.z) {}
 
 	bool operator<(const ChunkPos2D& other) const;

@@ -12,7 +12,7 @@ public:
 	int z;
 
 	BlockPos(int x, int y, int z);
-	BlockPos(EntityPosition position) : x(static_cast<int>(position.X)), y(static_cast<int>(position.Y)), z(static_cast<int>(position.Z)) {}
+	BlockPos(EntityPosition position);
 	BlockPos direction(AxisDirection direction) const;
 	BlockPos offset(int _x, int _y, int _z);
 

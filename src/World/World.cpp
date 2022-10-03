@@ -20,6 +20,14 @@ inline bool withinGenerationDistance(ChunkPos _pos, ChunkPos _centre)
 
 
 
+inline bool withinGenerationDistance2D(ChunkPos _pos, ChunkPos _centre)
+{
+	auto _offset = _pos.offset(_centre);
+	return (std::abs(_offset.x) <= LOAD_DISTANCE && std::abs(_offset.z) <= LOAD_DISTANCE);
+}
+
+
+
 inline bool withinPopulationDistance(ChunkPos _pos, ChunkPos _centre)
 {
 	auto _offset = _pos.offset(_centre);
@@ -115,6 +123,7 @@ void World::onLoadCentreChange()
 	// Jesus christ this function might just be hands down one of the worst pieces of code I have ever written
 	// There is an unbelievable amount of things that could be optimised, done better or probably done without
 	// I pray to god that this never breaks because I sure as hell do not know how it works.
+	// Update: well fuck, it doesn't quite work
 
 	// Clear all chunk queues
 	loadQueue = std::priority_queue<ChunkPriorityTicket>();
@@ -136,12 +145,7 @@ void World::onLoadCentreChange()
 		chunkMap.erase(_pos);
 
 		// Check if cached generation data can be cleared
-		if (!((loadCentre.x - LOAD_DISTANCE) <= _pos.x && _pos.x <= (loadCentre.x + LOAD_DISTANCE) &&
-			(loadCentre.z - LOAD_DISTANCE) <= _pos.z && _pos.z <= (loadCentre.z + LOAD_DISTANCE)
-			))
-		{
-			generatorChunkCache.erase(ChunkPos2D(_pos));
-		}
+		if (!withinGenerationDistance2D(_pos, loadCentre)) generatorChunkCache.erase(ChunkPos2D(_pos));
 	}
 
 	// Figure out which chunks need loading
@@ -160,11 +164,8 @@ void World::onLoadCentreChange()
 					chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::QUEUED_LOAD);
 					loadQueue.push(ChunkPriorityTicket(_priority, _pos));
 				}
-				else if (_status == StatusChunkLoad::QUEUED_LOAD)
-				{
-					// Add back to load queue
-					loadQueue.push(ChunkPriorityTicket(_priority, _pos));
-				}
+				// Add back to load queue
+				else if (_status == StatusChunkLoad::QUEUED_LOAD) loadQueue.push(ChunkPriorityTicket(_priority, _pos));
 			}
 		}
 	}
@@ -188,11 +189,8 @@ void World::onLoadCentreChange()
 						populateQueue.push(ChunkPriorityTicket(_priority, _pos));
 					}
 				}
-				else if (_status == StatusChunkLoad::QUEUED_POPULATE)
-				{
-					// Add back to population queue
-					populateQueue.push(ChunkPriorityTicket(_priority, _pos));
-				}
+				// Add back to population queue
+				else if (_status == StatusChunkLoad::QUEUED_POPULATE) populateQueue.push(ChunkPriorityTicket(_priority, _pos));
 			}
 		}
 	}
@@ -257,11 +255,8 @@ void World::updateLoadQueue()
 				int priority = std::max(100 - static_cast<int>(loadCentre.distance(_pos)), 0);
 				updatedQueue.push(ChunkPriorityTicket(priority, _pos));
 			}
-			else
-			{
-				// Skip chunk and remove queued status
-				chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::NON_EXISTENT);
-			}
+			// Skip chunk and remove queued status
+			else chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::NON_EXISTENT);
 		}
 
 		std::swap(loadQueue, updatedQueue);

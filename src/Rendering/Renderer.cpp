@@ -36,10 +36,10 @@ void Renderer::render(const EntityPosition& playerPos)
 	// Draw chunks
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	glClearColor(0.53f, 0.52f, 0.83f, 1.0f);
+	glClearColor(0.33f, 0.60f, 0.88f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	{
-		double rotationY = glm::radians(fmax(fmin(playerPos.yRotation, 89.5), -89.5));
+		double rotationY = glm::radians(fmax(fmin(playerPos.yRotation, 89.9), -89.9));
 		double rotationX = glm::radians(playerPos.xRotation);
 
 		const glm::mat4 projection = glm::perspective(glm::radians(45.0), 1920.0 / 1080.0, 0.1, 2048.0);
@@ -49,14 +49,14 @@ void Renderer::render(const EntityPosition& playerPos)
 			playerPos.Y - _playerChunk.y * CHUNK_SIZE,
 			playerPos.Z - _playerChunk.z * CHUNK_SIZE
 		);
-		const glm::vec3 pos(_playerLocalPos.X, _playerLocalPos.Y, _playerLocalPos.Z);
+		const glm::vec3 pos = glm::vec3(_playerLocalPos.X, _playerLocalPos.Y, _playerLocalPos.Z) * 0.5f;
 		const glm::vec3 front = glm::normalize(glm::vec3(
 			cos(rotationX) * cos(rotationY),
 			sin(rotationY),
 			sin(rotationX) * cos(rotationY)
 		));
 		const glm::mat4 view = glm::lookAt(pos, pos + front, glm::vec3(0.0, 1.0, 0.0));
-		const glm::mat4 projectionView = projection * view;
+		const glm::mat4 projectionView = glm::scale(projection * view, glm::vec3(0.5f));
 
 		chunkShader.use();
 		tileTextureAtlas.bindTexture();

@@ -30,11 +30,11 @@ MeshChunk::MeshChunk(std::unique_ptr<MeshDataChunk> meshData) : triangleCount(me
 		2,
 		2,
 		GL_UNSIGNED_BYTE,
-		GL_FALSE,
+		GL_TRUE,
 		sizeof(Vertex),
 		(void*)(8)
 	);
-	glVertexAttribPointer(3, 1, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Vertex), (void*)(10));
+	glVertexAttribPointer(3, 1, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void*)(10));
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
@@ -63,7 +63,7 @@ MeshChunk::~MeshChunk()
 void MeshChunk::draw(const ShaderProgram& shader, const glm::mat4& transformMatrix, ChunkPos playerPosition) const
 {
 	ChunkOffset offset = playerPosition.offset(position);
-	glm::vec3 chunkVector(offset.x * CHUNK_SIZE, offset.y * CHUNK_SIZE, offset.z * CHUNK_SIZE);
+	glm::vec3 chunkVector = glm::vec3(offset.x * CHUNK_SIZE, offset.y * CHUNK_SIZE, offset.z * CHUNK_SIZE);
 	glm::mat4 modelViewProjection = transformMatrix * glm::translate(glm::mat4(1.0f), chunkVector);
 	shader.setMat4("transform", modelViewProjection);
 
