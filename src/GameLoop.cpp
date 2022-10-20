@@ -1,7 +1,6 @@
 #include "GameLoop.h"
 
 #include <chrono>
-#include <iostream>
 #include <thread>
 
 #include "World/World.h"

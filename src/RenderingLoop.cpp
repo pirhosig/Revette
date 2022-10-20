@@ -3,7 +3,6 @@
 #include <chrono>
 #include <stdexcept>
 #include <thread>
-#include <iostream>
 
 #include "Rendering/Renderer.h"
 

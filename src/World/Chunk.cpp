@@ -126,11 +126,13 @@ void Chunk::GenerateChunk(
 			// Continue if surface air block is below chunk OR if the topmost block is above the chunk
 			if (_surfaceLevel + 1 < _chunkBottom || _surfaceLevel + 1 > _chunkTop) continue;
 
+			// Currently no features generate below sea level, so this is sort of a hack until those features exist
+			if (_surfaceLevel < 0) continue;
+
 			const int _worldX = position.x * CHUNK_SIZE + lX;
 			const int _worldZ = position.z * CHUNK_SIZE + lZ;
 			const int _bottomAir = _surfaceLevel + 1;
 			const BlockPos _centre(_worldX, _bottomAir, _worldZ);
-			const bool _aboveSeaLevel = (_surfaceLevel >= 0);
 			const auto _foliageValue = foliageValues[_index];
 			const auto _foliageValueSecondary = foliageValuesSecondary[_index];
 
@@ -138,7 +140,6 @@ void Chunk::GenerateChunk(
 			{
 			case BIOME::DESERT:
 				// Cactus
-				if (!_aboveSeaLevel) break;
 				if (_foliageValue > 0.9956)
 				{
 					int _cactusHeight = static_cast<int>(2.67 + _foliageValueSecondary);
@@ -150,24 +151,14 @@ void Chunk::GenerateChunk(
 				else if (_foliageValue > 0.9942) setBlockPopulation(_centre, Block(14), 0);
 				break;
 			case BIOME::FOREST_BOREAL:
-				if (!_aboveSeaLevel) break;
 				// Basic pine tree
 				if (_foliageValue > 0.9910)
-				{
-					int _treeHeight = static_cast<int>(6.6 + _foliageValueSecondary * 2.4);
-					unsigned long long _treeAge = 0;
-					Structures::placeTreePine(*this, BlockPos(_worldX, _bottomAir, _worldZ), _treeAge, _treeHeight);
-				}
+					Structures::placeTreePine(*this, _centre, 0, static_cast<int>(6.6 + _foliageValueSecondary * 2.4));
 				else if (_foliageValue > 0.9893)
-				{
-					int _treeHeight = static_cast<int>(15.7 + _foliageValueSecondary * 4.7);
-					unsigned long long _treeAge = 0;
-					Structures::placeTreePineMassive(*this, BlockPos(_worldX, _bottomAir, _worldZ), _treeAge, _treeHeight);
-				}
+					Structures::placeTreePineMassive(*this, _centre, 0, static_cast<int>(15.7 + _foliageValueSecondary * 4.7));
 				break;
 			case BIOME::FOREST_TEMPERATE:
 				// Basic bitch tree
-				if (!_aboveSeaLevel) break;
 				if (_foliageValue > 0.9840)
 				{
 					int _treeHeight = static_cast<int>(10.1 + _foliageValueSecondary * 5.3);
@@ -186,15 +177,10 @@ void Chunk::GenerateChunk(
 					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ + 1), Block(4), _treeAge);
 				}
 				else if (_foliageValue > 0.9815)
-				{
-					int _treeHeight = static_cast<int>(12.7 + _foliageValueSecondary * 6.2);
-					unsigned long long _treeAge = 0;
-					Structures::placeTreeAspen(*this, BlockPos(_worldX, _bottomAir, _worldZ), _treeAge, _treeHeight);
-				}
+					Structures::placeTreeAspen(*this, _centre, 0, static_cast<int>(12.7 + _foliageValueSecondary * 6.2));
 				break;
 			case BIOME::RAINFOREST:
 				// Rainforests are pretty bland like this ngl (slightly better now)
-				if (!_aboveSeaLevel) break;
 				if (_foliageValue > 0.92)
 				{
 					int _treeHeight = static_cast<int>(9.9 + _foliageValueSecondary * 3.2);
@@ -217,21 +203,15 @@ void Chunk::GenerateChunk(
 					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ + 2), Block(4), _treeAge);
 				}
 				else if (_foliageValue > 0.914)
-				{
-					int _treeHeight = static_cast<int>(15.7 + _foliageValueSecondary * 4.3);
-					unsigned long long _treeAge = 0;
-					Structures::placeTreeRainforestTall((*this), BlockPos(_worldX, _bottomAir, _worldZ), _treeAge, _treeHeight);
-				}
+					Structures::placeTreeRainforestTall((*this), _centre, 0, static_cast<int>(15.7 + _foliageValueSecondary * 4.3));
 				else if (_foliageValue > 0.74) Structures::placeTreeRainforestShrub((*this), BlockPos(_worldX, _bottomAir, _worldZ), 0);
 				else if (_foliageValue > 0.55) setBlockPopulation(_centre, Block(10), 0);
 				break;
 			case BIOME::SHRUBLAND:
-				if (!_aboveSeaLevel) break;
 				if (_foliageValue > 0.80) setBlockPopulation(_centre, Block(10), 0);
 				else if (_foliageValue > 0.7991) setBlockPopulation(_centre, Block(4), 0);
 				break;
 			case BIOME::TUNDRA:
-				if (!_aboveSeaLevel) break;
 				if (_foliageValue > 0.9976) setBlockPopulation(_centre, Block(2), 0);
 				break;
 			default:

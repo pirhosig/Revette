@@ -49,14 +49,14 @@ void Renderer::render(const EntityPosition& playerPos)
 			playerPos.Y - _playerChunk.y * CHUNK_SIZE,
 			playerPos.Z - _playerChunk.z * CHUNK_SIZE
 		);
-		const glm::vec3 pos = glm::vec3(_playerLocalPos.X, _playerLocalPos.Y, _playerLocalPos.Z) * 0.5f;
+		const glm::vec3 pos = glm::vec3(_playerLocalPos.X, _playerLocalPos.Y + 2.5, _playerLocalPos.Z) * 0.25f;
 		const glm::vec3 front = glm::normalize(glm::vec3(
 			cos(rotationX) * cos(rotationY),
 			sin(rotationY),
 			sin(rotationX) * cos(rotationY)
 		));
 		const glm::mat4 view = glm::lookAt(pos, pos + front, glm::vec3(0.0, 1.0, 0.0));
-		const glm::mat4 projectionView = glm::scale(projection * view, glm::vec3(0.5f));
+		const glm::mat4 projectionView = glm::scale(projection * view, glm::vec3(0.25f));
 
 		chunkShader.use();
 		tileTextureAtlas.bindTexture();

@@ -1,8 +1,9 @@
 #include "ShaderProgram.h"
-#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+
+#include "../GlobalLog.h"
 
 
 
@@ -35,7 +36,7 @@ GLuint createShader(const char* shaderCode, const int shaderType)
 	{
 		char infoLog[1024]{};
 		glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-		std::cerr << std::string(infoLog, infoLog + 1024) << std::endl;
+		GlobalLog.Write(std::string(infoLog, infoLog + 1024));
 		throw std::runtime_error("Shader creation error");
 	}
 	return shader;
@@ -64,7 +65,7 @@ ShaderProgram::ShaderProgram(const char* shaderVertexPath, const char* shaderFra
 	{
 		char infoLog[1024]{};
 		glGetProgramInfoLog(programID, 1024, NULL, infoLog);
-		std::cerr << std::string(infoLog, infoLog + 1024) << std::endl;
+		GlobalLog.Write(std::string(infoLog, infoLog + 1024));
 	}
 
 	glDeleteShader(shaderVertex);

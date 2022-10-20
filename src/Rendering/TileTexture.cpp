@@ -1,11 +1,12 @@
 #include "TileTexture.h"
-#include <iostream>
 #include <memory>
 #include <vector>
 #include <stdexcept>
 
 #include <glad/glad.h>
 #include <stb_image.h>
+
+#include "../GlobalLog.h"
 
 
 constexpr long long TEXTURE_PIXEL_MEMORY_SIZE = 4;
@@ -21,7 +22,7 @@ TileTexture::TileTexture(const char* textureFilePath, std::size_t textureWidth, 
 	std::unique_ptr<unsigned char[]> imageDataArray(stbi_load(textureFilePath, &imageWidth, &imageHeight, &imageColourChannelCount, 0));
 	if (!imageDataArray)
 	{
-		std::cout << "Failed to load tile texture." << std::endl;
+		GlobalLog.Write("Failed to load tile texture.");
 		throw std::runtime_error("Failed to load tile texture");
 	}
 
