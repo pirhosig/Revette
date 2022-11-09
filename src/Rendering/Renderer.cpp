@@ -111,17 +111,15 @@ void Renderer::unqueueMeshes()
 
 
 
-void Renderer::unloadMeshes(const EntityPosition& playerPos)
+void Renderer::unloadMeshes(const ChunkPos& playerChunk)
 {
-	ChunkPos _playerChunk{ playerPos };
-
 	std::queue<ChunkPos> removeQueue;
 
 	std::unordered_set<std::unique_ptr<MeshChunk>>::iterator it = meshesChunk.begin();
 	while (it != meshesChunk.end())
 	{
 		auto _pos = (*it)->getPosition();
-		if (!withinRenderingDistance(_pos, _playerChunk))
+		if (!withinRenderingDistance(_pos, playerChunk))
 		{
 			it = meshesChunk.erase(it);
 			removeQueue.push(_pos);

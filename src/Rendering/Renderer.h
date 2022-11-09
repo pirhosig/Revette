@@ -24,7 +24,7 @@ public:
 
 	void render(const EntityPosition& playerPos);
 	void unqueueMeshes();
-	void unloadMeshes(const EntityPosition& playerPos);
+	void unloadMeshes(const ChunkPos& playerChunk);
 
 private:
 	// Mesh queue and storage

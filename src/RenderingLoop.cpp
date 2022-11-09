@@ -63,6 +63,7 @@ void RenderingLoop::runLoop(
 {
 	Renderer gameRenderer(mainWindow, std::move(threadQueueMeshes), std::move(threadQueueMeshDeletion));
 	auto lastFrame = std::chrono::steady_clock::now();
+	playerPos = playerState.load().position;
 
 	while (!gameShouldClose.load())
 	{
@@ -81,7 +82,7 @@ void RenderingLoop::runLoop(
 
 		processInput(deltaTime);
 
-		gameRenderer.unloadMeshes(playerPos);
+		gameRenderer.unloadMeshes(ChunkPos(playerPos));
 		gameRenderer.unqueueMeshes();
 		gameRenderer.render(playerPos);
 

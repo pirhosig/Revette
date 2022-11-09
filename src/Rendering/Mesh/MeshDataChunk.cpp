@@ -58,8 +58,7 @@ bool IS_SOLID[] = {
 
 
 
-int MESH_TYPE[] =
-{
+int MESH_TYPE[] = {
 	0,
 	0,
 	0,
@@ -82,6 +81,37 @@ int MESH_TYPE[] =
 	0,
 	0,
 	0
+};
+
+
+
+bool IS_ROTATEABLE[] = {
+	false,
+	true,
+	true,
+	false,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true,
+	false,
+	true,
+	true,
+	false,
+	false,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true
 };
 
 
@@ -121,6 +151,27 @@ const uint8_t LIGHT[6] = {
 	220,
 	220
 };
+
+
+
+inline uint32_t basicHash(uint32_t x)
+{
+	x ^= x >> 16;
+	x *= 0x7feb352dU;
+	x ^= x >> 15;
+	x *= 0x846ca68bU;
+	x ^= x >> 16;
+	return x;
+}
+
+
+
+uint32_t getPositionHash(BlockPos pos, uint32_t seedHash)
+{
+	uint32_t hY = basicHash(static_cast<uint32_t>(pos.y) + 0xe1);
+	uint32_t hZ = basicHash(static_cast<uint32_t>(pos.z) + 0xac83);
+	return seedHash ^ basicHash(static_cast<uint32_t>(pos.x)) ^ hY ^ hZ;
+}
 
 
 
@@ -218,6 +269,9 @@ MeshDataChunk::MeshDataChunk(
 						triangleCount += 2;
 						indexCounter += 4;
 
+						int rotationOffset = 0;
+						if (IS_ROTATEABLE[block.blockType]) rotationOffset = static_cast<int>(getPositionHash(worldPos, basicHash(1)) % 4);
+
 						// Loop through each vertex of the face
 						for (int v = 0; v < 4; ++v)
 						{
@@ -226,8 +280,8 @@ MeshDataChunk::MeshDataChunk(
 								static_cast<uint16_t>(localPos.y + FACE_TABLE[l][v][1]),
 								static_cast<uint16_t>(localPos.z + FACE_TABLE[l][v][2]),
 								BLOCK_TEXUTRES[block.blockType - 1][l],
-								TEXTURE_COORDINATES[v][0],
-								TEXTURE_COORDINATES[v][1],
+								TEXTURE_COORDINATES[(v + rotationOffset) % 4][0],
+								TEXTURE_COORDINATES[(v + rotationOffset) % 4][1],
 								LIGHT[l]
 							};
 							verticies.push_back(vertex);
