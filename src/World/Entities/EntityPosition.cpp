@@ -22,35 +22,35 @@ inline double wrapCoordinate(double x)
 
 
 
-EntityPosition::EntityPosition()
+EntityPosition::EntityPosition() : displacement{ 0.0, 0.0, 0.0 }
 {
-	setPositionRotation(0.0, 0.0, 0.0, 0.0, 0.0);
+	setPositionRotation({ 0.0, 0.0, 0.0 }, 0.0, 0.0);
 }
 
-EntityPosition::EntityPosition(const double x, const double y, const double z)
+EntityPosition::EntityPosition(Math::Vector _pos) : displacement{ 0.0, 0.0, 0.0 }
 {
-	setPositionRotation(x, y, z, 0.0, 0.0);
+	setPositionRotation(_pos, 0.0, 0.0);
 }
 
-EntityPosition::EntityPosition(const double x, const double y, const double z, const double xRot, const double yRot)
+EntityPosition::EntityPosition(Math::Vector _pos, const double xRot, const double yRot) : displacement{ 0.0, 0.0, 0.0 }
 {
-	setPositionRotation(x, y, z, xRot, yRot);
-}
-
-
-
-void EntityPosition::setPosition(const double x, const double y, const double z)
-{
-	X = wrapCoordinate(x);
-	Y = y;
-	Z = wrapCoordinate(z);
+	setPositionRotation(_pos, xRot, yRot);
 }
 
 
 
-void EntityPosition::setPositionRotation(const double x, const double y, const double z, const double xRot, const double yRot)
+void EntityPosition::setPosition(Math::Vector _pos)
 {
-	setPosition(x, y, z);
+	pos.X = wrapCoordinate(_pos.X);
+	pos.Y = _pos.Y;
+	pos.Z = wrapCoordinate(_pos.Z);
+}
+
+
+
+void EntityPosition::setPositionRotation(Math::Vector _pos, const double xRot, const double yRot)
+{
+	setPosition(_pos);
 	setRotation(xRot, yRot);
 }
 
@@ -64,37 +64,33 @@ void EntityPosition::setRotation(const double xRot, const double yRot)
 
 
 
-void EntityPosition::moveAbsolute(const double x, const double y, const double z)
+void EntityPosition::moveAbsolute(Math::Vector _offset)
 {
-	X += x;
-	Y += y;
-	X += z;
+	pos += _offset;
 	wrapCoordinates();
 }
 
 
 
-void EntityPosition::moveForward(const double distance)
+void EntityPosition::displaceForward(const double distance)
 {
-	X += distance * std::cos(degreesToRadians(xRotation));
-	Z += distance * std::sin(degreesToRadians(xRotation));
-	wrapCoordinates();
+	displacement.X += distance * std::cos(degreesToRadians(xRotation));
+	displacement.Z += distance * std::sin(degreesToRadians(xRotation));
 }
 
 
 
-void EntityPosition::moveSideways(const double distance)
+void EntityPosition::displaceSideways(const double distance)
 {
-	X += distance * std::cos(degreesToRadians(xRotation + 90.0));
-	Z += distance * std::sin(degreesToRadians(xRotation + 90.0));
-	wrapCoordinates();
+	displacement.X += distance * std::cos(degreesToRadians(xRotation + 90.0));
+	displacement.Z += distance * std::sin(degreesToRadians(xRotation + 90.0));
 }
 
 
 
-void EntityPosition::moveVertical(const double distance)
+void EntityPosition::displaceVertical(const double distance)
 {
-	Y += distance;
+	displacement.Y += distance;
 }
 
 
@@ -117,6 +113,6 @@ void EntityPosition::rotate(const double xRot, const double yRot)
 
 void EntityPosition::wrapCoordinates()
 {
-	X = wrapCoordinate(X);
-	Z = wrapCoordinate(Z);
+	pos.X = wrapCoordinate(pos.X);
+	pos.Z = wrapCoordinate(pos.Z);
 }

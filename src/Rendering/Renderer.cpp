@@ -24,9 +24,9 @@ Renderer::Renderer(
 	textShader("shader/textShader.vs", "shader/textShader.fs"),
 	tileTextureAtlas("res/texture_atlas.png", 16, 16, true),
 	textureAtlasCharacters("res/character_set.png", 6, 8, false),
-	threadQueueMeshDeletion(chunkMeshQueueDeletion),
-	threadQueueMeshes(chunkMeshQueue),
-	mainWindow(window)
+	threadQueueMeshDeletion{ chunkMeshQueueDeletion },
+	threadQueueMeshes{ chunkMeshQueue },
+	mainWindow{ window }
 {}
 
 
@@ -36,20 +36,23 @@ void Renderer::render(const EntityPosition& playerPos)
 	// Draw chunks
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	glClearColor(0.33f, 0.60f, 0.88f, 1.0f);
+	glClearColor(0.52f, 0.70f, 0.89f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	{
 		double rotationY = glm::radians(fmax(fmin(playerPos.yRotation, 89.9), -89.9));
 		double rotationX = glm::radians(playerPos.xRotation);
 
-		const glm::mat4 projection = glm::perspective(glm::radians(45.0), 1920.0 / 1080.0, 0.1, 2048.0);
+		constexpr double FOV_Y = 45.0;
+		constexpr double ASPECT = 1920.0 / 1080.0;
+
+		const glm::mat4 projection = glm::perspective(glm::radians(FOV_Y), ASPECT, 0.1, 2048.0);
 		ChunkPos _playerChunk(playerPos);
-		EntityPosition _playerLocalPos(
-			playerPos.X - _playerChunk.x * CHUNK_SIZE,
-			playerPos.Y - _playerChunk.y * CHUNK_SIZE,
-			playerPos.Z - _playerChunk.z * CHUNK_SIZE
-		);
-		const glm::vec3 pos = glm::vec3(_playerLocalPos.X, _playerLocalPos.Y + 2.5, _playerLocalPos.Z) * 0.25f;
+		EntityPosition _playerLocalPos({
+			playerPos.pos.X - _playerChunk.x * CHUNK_SIZE,
+			playerPos.pos.Y - _playerChunk.y * CHUNK_SIZE,
+			playerPos.pos.Z - _playerChunk.z * CHUNK_SIZE
+		});
+		const glm::vec3 pos = glm::vec3(_playerLocalPos.pos.X, _playerLocalPos.pos.Y + 2.5, _playerLocalPos.pos.Z) * 0.25f;
 		const glm::vec3 front = glm::normalize(glm::vec3(
 			cos(rotationX) * cos(rotationY),
 			sin(rotationY),
@@ -61,8 +64,7 @@ void Renderer::render(const EntityPosition& playerPos)
 		chunkShader.use();
 		tileTextureAtlas.bindTexture();
 		chunkShader.setInt("tileAtlas", 0);
-		for (const auto& mesh : meshesChunk)
-		{
+		for (const auto& mesh : meshesChunk) {
 			mesh->draw(chunkShader, projectionView, _playerChunk);
 		}
 	}
@@ -83,9 +85,9 @@ void Renderer::render(const EntityPosition& playerPos)
 			&coordinateString[0],
 			32,
 			"%8.1lf %8.1lf %8.1lf",
-			playerPos.X,
-			playerPos.Y,
-			playerPos.Z
+			playerPos.pos.X,
+			playerPos.pos.Y,
+			playerPos.pos.Z
 		);
 
 		meshGUI.update(&coordinateString[0], _length);

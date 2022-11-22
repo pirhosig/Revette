@@ -11,6 +11,7 @@ class GeneratorChunkParameters;
 class NoiseSource2D;
 class World;
 class Structure;
+class MeshDataChunk;
 
 
 
@@ -48,4 +49,5 @@ private:
 	std::map<BlockPos, BlockChange> populationChanges;
 
 	friend class Structure;
+	friend class MeshDataChunk;
 };

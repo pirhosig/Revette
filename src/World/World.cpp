@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cmath>
 
+#include "Physics.h"
 #include "../Exceptions.h"
 
 
@@ -56,8 +57,8 @@ World::World(
 	const char* settingNoiseFoliage
 ) :
 	loadCentre(0, 0, 0),
-	threadQueueMeshes(queueMesh),
-	threadQueueMeshDeletion(queueMeshDeletion),
+	threadQueueMeshes{ queueMesh },
+	threadQueueMeshDeletion{ queueMeshDeletion },
 	generatorChunkNoise(
 		SEED,
 		0.03125f,
@@ -76,10 +77,14 @@ World::World(
 
 
 
-void World::tick(std::atomic<PlayerState>& playerState)
+void World::tick(Entity& player)
 {
-	auto _statePlayer = playerState.load();
-	ChunkPos _playerChunk(_statePlayer.position);
+	
+
+	processEntities(player);
+
+
+	ChunkPos _playerChunk(player);
 	if (_playerChunk != loadCentre)
 	{
 		loadCentre = _playerChunk;
@@ -118,6 +123,164 @@ void World::setBlock(BlockPos blockPos, Block block) const
 
 
 
+void World::processEntities(Entity& player)
+{
+	moveEntity(player);
+
+	for (auto& [UUID, entity] : mapEntities)
+	{
+		moveEntity(entity);
+	}
+}
+
+
+
+inline double getFracAbs(double x)
+{
+	double _pI;
+	return std::abs(std::modf(x, &_pI));
+}
+
+
+
+void World::moveEntity(Entity& entity)
+{
+	constexpr double SMALL = 1e-6;
+
+	// Skip if entity has zero velocity
+	if (entity.displacement.X == 0.0 && entity.displacement.Y == 0 && entity.displacement.Z == 0) return;
+
+	// Try to process the movement this tick
+	double _DX = entity.displacement.X;
+	double _DY = entity.displacement.Y;
+	double _DZ = entity.displacement.Z;
+
+	// Check if the entity is initially pressed against any voxel faces
+	if (std::abs(_DX) > SMALL) {
+		double _rX = getFracAbs(_DX > 0 ? entity.pos.X + 1.0 : entity.pos.X - 1.0);
+		if ((_rX < SMALL) || (_rX > (1.0 - SMALL))) {
+			int _lowZ = static_cast<int>(std::floor(entity.pos.Z - 1.0));
+			int _uppZ = static_cast<int>(std::ceil(entity.pos.Z + 1.0));
+			int _lowY = static_cast<int>(std::floor(entity.pos.Y));
+			int _uppY = static_cast<int>(std::ceil(entity.pos.Y + 4.0));
+			int _pX = _DX > 0.0 ? static_cast<int>(std::floor(entity.pos.X + 1.0)) :
+				static_cast<int>(std::floor(entity.pos.X - 1.0));
+			for (int lZ = _lowZ; lZ < _uppZ; ++lZ) {
+				for (int lY = _lowY; lY < _uppY; ++lY) {
+					if (collides(BlockPos(_pX, lY, lZ))) _DX = 0.0;
+				}
+			}
+		}
+	}
+
+	if (std::abs(_DZ) > SMALL) {
+		double _rZ = getFracAbs(_DX > 0 ? entity.pos.Z + 1.0 : entity.pos.Z - 1.0);
+		if ((_rZ < SMALL) || (_rZ > (1.0 - SMALL))) {
+			int _lowX = static_cast<int>(std::floor(entity.pos.X - 1.0));
+			int _uppX = static_cast<int>(std::ceil(entity.pos.X + 1.0));
+			int _lowY = static_cast<int>(std::floor(entity.pos.Y));
+			int _uppY = static_cast<int>(std::ceil(entity.pos.Y + 4.0));
+			int _pZ = static_cast<int>(_DZ > 0.0 ? std::floor(entity.pos.Z + 1.0) : std::floor(entity.pos.Z - 1.0));
+			for (int lX = _lowX; lX < _uppX; ++lX) {
+				for (int lY = _lowY; lY < _uppY; ++lY)
+					if (collides(BlockPos(lX, lY, _pZ))) _DZ = 0.0;
+			}
+		}
+	}
+
+
+	if (std::abs(_DY) > SMALL) {
+		double _rY = getFracAbs(_DY > 0 ? entity.pos.Y + 4.0 : entity.pos.Y);
+		if ((_rY < SMALL) || (_rY > (1.0 - SMALL))) {
+			int _lowX = static_cast<int>(std::floor(entity.pos.X - 1.0));
+			int _uppX = static_cast<int>(std::ceil(entity.pos.X + 1.0));
+			int _lowZ = static_cast<int>(std::floor(entity.pos.Z - 1.0));
+			int _uppZ = static_cast<int>(std::ceil(entity.pos.Z + 1.0));
+			int _pY = static_cast<int>(_DY > 0.0 ? std::floor(entity.pos.Y + 4.0) : std::floor(entity.pos.Y));
+			for (int lX = _lowX; lX < _uppX; ++lX) {
+				for (int lZ = _lowZ; lZ < _uppZ; ++lZ)
+					if (collides(BlockPos(lX, _pY, lZ))) _DY = 0.0;
+			}
+		}
+	}
+
+	// Loop while movement remains
+	while (std::abs(_DX) > SMALL || std::abs(_DY) > SMALL || std::abs(_DZ) > SMALL)
+	{
+		// Calculate first voxel edge crossing to occur
+		double _collisionTimeX = std::abs(_DX) > SMALL ?
+			(1.0 - getFracAbs(_DX > 0 ? entity.pos.X + 1.0 : entity.pos.X - 1.0)) / std::abs(_DX) : 1.0;
+		double _collisionTimeY = std::abs(_DY) > SMALL ?
+			(1.0 - getFracAbs(_DY > 0 ? entity.pos.Y + 4.0 : entity.pos.Y)) / std::abs(_DY) : 1.0;
+		double _collisionTimeZ = std::abs(_DZ) > SMALL ?
+			(1.0 - getFracAbs(_DZ > 0 ? entity.pos.Z + 1.0 : entity.pos.Z - 1.0)) / std::abs(_DZ) : 1.0;
+		double _minCollisionTime = std::min(std::min(_collisionTimeX, _collisionTimeZ), _collisionTimeY);
+
+		// If no voxel border crossing occurs, simply move all of the remaining velocity
+		if (_minCollisionTime >= 1.0)
+		{
+			entity.moveAbsolute({ _DX, _DY, _DZ });
+			break;
+		}
+		// Handle collision checking
+		else
+		{
+			// Move by time before collision
+			entity.moveAbsolute(Math::Vector{ _DX, _DY, _DZ } *_minCollisionTime);
+			_DX -= _minCollisionTime * _DX;
+			_DY -= _minCollisionTime * _DY;
+			_DZ -= _minCollisionTime * _DZ;
+
+			if (_collisionTimeX == _minCollisionTime && std::abs(_DX) > SMALL) {
+				int _lowZ = static_cast<int>(std::floor(entity.pos.Z - 1.0));
+				int _uppZ = static_cast<int>(std::ceil(entity.pos.Z + 1.0));
+				int _lowY = static_cast<int>(std::floor(entity.pos.Y));
+				int _uppY = static_cast<int>(std::ceil(entity.pos.Y + 4.0));
+				int _pX = static_cast<int>(_DX > 0.0 ? std::ceil(entity.pos.X + 1.0) : std::floor(entity.pos.X - 1.0));
+				for (int lZ = _lowZ; lZ < _uppZ; ++lZ) {
+					for (int lY = _lowY; lY < _uppY; ++lY)
+						if (collides(BlockPos(_pX, lY, lZ))) _DX = 0.0;
+				}
+			}
+			if (_collisionTimeZ == _minCollisionTime && std::abs(_DZ) > SMALL)
+			{
+				int _lowX = static_cast<int>(std::floor(entity.pos.X - 1.0));
+				int _uppX = static_cast<int>(std::ceil(entity.pos.X + 1.0));
+				int _lowY = static_cast<int>(std::floor(entity.pos.Y));
+				int _uppY = static_cast<int>(std::ceil(entity.pos.Y + 4.0));
+				int _pZ = static_cast<int>(_DZ > 0.0 ? std::ceil(entity.pos.Z + 1.0) : std::floor(entity.pos.Z - 1.0));
+				for (int lX = _lowX; lX < _uppX; ++lX) {
+					for (int lY = _lowY; lY < _uppY; ++lY)
+						if (collides(BlockPos(lX, lY, _pZ))) _DZ = 0.0;
+				}
+			}
+			if (_collisionTimeY == _minCollisionTime && std::abs(_DY) > SMALL)
+			{
+				int _lowX = static_cast<int>(std::floor(entity.pos.X - 1.0));
+				int _uppX = static_cast<int>(std::ceil(entity.pos.X + 1.0));
+				int _lowZ = static_cast<int>(std::floor(entity.pos.Z - 1.0));
+				int _uppZ = static_cast<int>(std::ceil(entity.pos.Z + 1.0));
+				int _pY = static_cast<int>(_DY > 0.0 ? std::ceil(entity.pos.Y + 4.0) : std::floor(entity.pos.Y));
+				for (int lX = _lowX; lX < _uppX; ++lX) {
+					for (int lZ = _lowZ; lZ < _uppZ; ++lZ)
+						if (collides(BlockPos(lX, _pY, lZ))) _DY = 0.0;
+				}
+			}
+		}
+	}
+
+	entity.displacement = { 0.0, 0.0, 0.0 };
+}
+
+
+
+bool World::collides(BlockPos blockPos) const
+{
+	return Physics::IS_COLLIDABLE[getBlock(blockPos).blockType];
+}
+
+
+
 void World::onLoadCentreChange()
 {
 	// Jesus christ this function might just be hands down one of the worst pieces of code I have ever written
@@ -142,7 +305,7 @@ void World::onLoadCentreChange()
 	for (auto& _pos : unloadQueue)
 	{
 		chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::NON_EXISTENT);
-		chunkMap.erase(_pos);
+		mapChunks.erase(_pos);
 
 		// Check if cached generation data can be cleared
 		if (!withinGenerationDistance2D(_pos, loadCentre)) generatorChunkCache.erase(ChunkPos2D(_pos));
@@ -284,7 +447,7 @@ void World::updateLoadQueue()
 
 void World::loadChunks()
 {
-	constexpr int MAX_LOAD_COUNT = 400;
+	constexpr int MAX_LOAD_COUNT = 25;
 	for (int i = 0; i < MAX_LOAD_COUNT; ++i)
 	{
 		if (loadQueue.empty()) break;
@@ -295,7 +458,7 @@ void World::loadChunks()
 		assert((chunkStatusMap.getChunkStatusLoad(lPos) == StatusChunkLoad::QUEUED_LOAD) && "Attempted to load already loaded chunk.");
 
 		// Load the chunk
-		auto insertRes = chunkMap.insert({ lPos, std::make_unique<Chunk>(lPos) });
+		auto insertRes = mapChunks.insert({ lPos, std::make_unique<Chunk>(lPos) });
 		chunkStatusMap.setChunkStatusLoad(lPos, StatusChunkLoad::LOADED);
 
 		// Generate the chunk
@@ -320,7 +483,7 @@ void World::loadChunks()
 
 void World::populateChunks()
 {
-	constexpr int MAX_POPULATE_COUNT = 400;
+	constexpr int MAX_POPULATE_COUNT = 25;
 	for (int i = 0; !populateQueue.empty() && i < MAX_POPULATE_COUNT; ++i)
 	{
 		ChunkPos _pos = populateQueue.top().pos;
@@ -357,7 +520,7 @@ void World::meshChunks()
 {
 	std::queue<std::unique_ptr<MeshDataChunk>> meshDataQueue;
 
-	constexpr int MAX_MESH_COUNT = 200;
+	constexpr int MAX_MESH_COUNT = 10;
 	for (int i = 0; i < MAX_MESH_COUNT; ++i)
 	{
 		if (meshQueue.empty()) break;
@@ -396,7 +559,7 @@ const std::unique_ptr<Chunk>& World::getChunk(const ChunkPos chunkPos) const
 {
 	try
 	{
-		return chunkMap.at(chunkPos);
+		return mapChunks.at(chunkPos);
 	}
 	catch (std::out_of_range)
 	{
@@ -410,7 +573,7 @@ const std::unique_ptr<Chunk>& World::getChunk(const ChunkPos chunkPos) const
 
 void World::addStructure(const BlockPos _blockPos, std::unique_ptr<Structure> _structure)
 {
-	structureMap[_blockPos] = std::move(_structure);
+	mapStructures[_blockPos] = std::move(_structure);
 }
 
 
@@ -420,7 +583,7 @@ const std::unique_ptr<Structure>& World::getStructure(const BlockPos blockPos) c
 {
 	try
 	{
-		return structureMap.at(blockPos);
+		return mapStructures.at(blockPos);
 	}
 	catch (std::out_of_range)
 	{

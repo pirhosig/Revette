@@ -49,16 +49,13 @@ void Chunk::GenerateChunk(
 	blockContainer.blockArrayCreate();
 
 	// Fill the chunk if all of the chunk falls below the terrain height
+	// This code is sort of horrible, but it runs hella fast compared to what was here before
 	if (_chunkTop < generatorParameters.heightMap.heightMin)
 	{
-		for (int lX = 0; lX < CHUNK_SIZE; ++lX)
+		int _rawIndex = blockContainer.addBlockToPallete(Block(2));
+		for (int i = 0; i < CHUNK_VOLUME; ++i)
 		{
-			for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ)
-			{
-				for (int lY = 0; lY < CHUNK_SIZE; ++lY) {
-					setBlock(ChunkLocalBlockPos(lX, lY, lZ), Block(2));
-				}
-			}
+			blockContainer.setBlockRaw(i, _rawIndex);
 		}
 		return;
 	}
@@ -203,8 +200,8 @@ void Chunk::GenerateChunk(
 					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ + 2), Block(4), _treeAge);
 				}
 				else if (_foliageValue > 0.914)
-					Structures::placeTreeRainforestTall((*this), _centre, 0, static_cast<int>(15.7 + _foliageValueSecondary * 4.3));
-				else if (_foliageValue > 0.74) Structures::placeTreeRainforestShrub((*this), BlockPos(_worldX, _bottomAir, _worldZ), 0);
+					Structures::placeTreeRainforestTall(*this, _centre, 0, static_cast<int>(15.7 + _foliageValueSecondary * 4.3));
+				else if (_foliageValue > 0.74) Structures::placeTreeRainforestShrub((*this), _centre, 0);
 				else if (_foliageValue > 0.55) setBlockPopulation(_centre, Block(10), 0);
 				break;
 			case BIOME::SHRUBLAND:

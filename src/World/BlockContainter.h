@@ -19,9 +19,11 @@ public:
 	void blockArrayExtend();
 
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
+	std::vector<bool> getSolid() const;
 
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
 	void setBlockRaw(int arrayIndex, int blockIndex);
+	int addBlockToPallete(Block block);
 
 	bool isEmpty() const;
 

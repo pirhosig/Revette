@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Math/Math.h"
 
 
 
@@ -6,21 +7,20 @@ class EntityPosition
 {
 public:
 	EntityPosition();
-	EntityPosition(const double x, const double y, const double z);
-	EntityPosition(const double x, const double y, const double z, const double xRot, const double yRot);
+	EntityPosition(Math::Vector _pos);
+	EntityPosition(Math::Vector _pos, const double xRot, const double yRot);
 
-	void setPosition(const double x, const double y, const double z);
-	void setPositionRotation(const double x, const double y, const double z, const double xRot, const double yRot);
+	void setPosition(Math::Vector _pos);
+	void setPositionRotation(Math::Vector _pos, const double xRot, const double yRot);
 	void setRotation(const double xRot, const double yRot);
-	void moveAbsolute(const double x, const double y, const double z);
-	void moveForward(const double distance);
-	void moveSideways(const double distance);
-	void moveVertical(const double distance);
+	void moveAbsolute(Math::Vector _offset);
+	void displaceForward(const double distance);
+	void displaceSideways(const double distance);
+	void displaceVertical(const double distance);
 	void rotate(const double xRot, const double yRot);
 
-	double X;
-	double Y;
-	double Z;
+	Math::Vector pos;
+	Math::Vector displacement;
 	double xRotation;
 	double yRotation;
 

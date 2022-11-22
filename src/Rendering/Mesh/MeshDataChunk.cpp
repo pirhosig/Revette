@@ -4,7 +4,8 @@
 
 
 
-const uint16_t BLOCK_TEXUTRES[][6] = {
+const uint16_t BLOCK_TEXTURES[][6] = {
+	{0,  0,  0,  0,  0,  0 },
 	{0,  0,  0,  0,  0,  0 },
 	{2,  2,  2,  2,  2,  2 },
 	{3,  3,  3,  3,  3,  3 },
@@ -95,7 +96,7 @@ bool IS_ROTATEABLE[] = {
 	true,
 	true,
 	true,
-	true,
+	false,
 	false,
 	true,
 	true,
@@ -143,14 +144,7 @@ const uint8_t TEXTURE_COORDINATES[4][2] = {
 
 
 
-const uint8_t LIGHT[6] = {
-	255,
-	229,
-	240,
-	240,
-	220,
-	220
-};
+const uint8_t LIGHT[6] = { 255, 229, 240, 240, 220, 220 };
 
 
 
@@ -175,6 +169,42 @@ uint32_t getPositionHash(BlockPos pos, uint32_t seedHash)
 
 
 
+inline int flattenIndex(const ChunkLocalBlockPos blockPos)
+{
+	// assert(blockPositionIsInside(blockPos.x, blockPos.y, blockPos.z) && "Block outside chunk.");
+	return blockPos.x * CHUNK_AREA + blockPos.y * CHUNK_SIZE + blockPos.z;
+}
+
+
+
+inline void addFaceEven(std::vector<uint32_t>& indicies, int& indexCounter, int& triangleCount)
+{
+	indicies.push_back(indexCounter);
+	indicies.push_back(indexCounter + 2);
+	indicies.push_back(indexCounter + 1);
+	indicies.push_back(indexCounter + 2);
+	indicies.push_back(indexCounter);
+	indicies.push_back(indexCounter + 3);
+	indexCounter += 4;
+	triangleCount += 2;
+}
+
+
+
+inline void addFaceOdd(std::vector<uint32_t>& indicies, int& indexCounter, int& triangleCount)
+{
+	indicies.push_back(indexCounter);
+	indicies.push_back(indexCounter + 1);
+	indicies.push_back(indexCounter + 2);
+	indicies.push_back(indexCounter + 2);
+	indicies.push_back(indexCounter + 3);
+	indicies.push_back(indexCounter);
+	indexCounter += 4;
+	triangleCount += 2;
+}
+
+
+
 MeshDataChunk::MeshDataChunk(
 	ChunkPos chunkPos,
 	const std::unique_ptr<Chunk>& chunkCentre,
@@ -192,6 +222,9 @@ MeshDataChunk::MeshDataChunk(
 	// Skip loop if chunk is empty
 	if (chunkCentre->isEmpty()) return;
 
+	// Cache transparency
+	std::vector _transparency = chunkCentre->blockContainer.getSolid();
+
 	// Loop and check for each block whether it is solid, and so whether it needs to be added
 	for (int i = 0; i < CHUNK_SIZE; ++i)
 	{
@@ -199,105 +232,155 @@ MeshDataChunk::MeshDataChunk(
 		{
 			for (int k = 0; k < CHUNK_SIZE; ++k)
 			{
-				ChunkLocalBlockPos localPos(i, j, k);
-				BlockPos worldPos = localPos.asBlockPos(chunkPos);
-
-				Block block = chunkCentre->getBlock(worldPos);
+				Block block = chunkCentre->getBlock(ChunkLocalBlockPos(i, j, k));
 				// Skip if air block
 				if (block.blockType == 0) continue;
 
-				// Solid cube
+				// Solid cube, the most basic and common mesh type
 				if (MESH_TYPE[block.blockType] == 0)
 				{
-					// Loop through all block faces
-					for (int l = 0; l < 6; ++l)
+					// Add each face if the neighbouring block is not solid
+					
+					int _index = flattenIndex(ChunkLocalBlockPos(i, j, k));
+					int rotationOffset = 0;
+					if (IS_ROTATEABLE[block.blockType])
+						rotationOffset = static_cast<int>(getPositionHash(
+							ChunkLocalBlockPos(i, j, k).asBlockPos(position),
+							basicHash(1)) % 4
+						);
+
+					// Top face
+					if (!(j != CHUNK_SIZE - 1 ?
+						_transparency[_index + CHUNK_SIZE] :
+						IS_SOLID[chunkUp->getBlock(ChunkLocalBlockPos(i, 0, k)).blockType]))
 					{
-						AxisDirection neighborDirection = static_cast<AxisDirection>(l);
-						BlockPos neighborBlock = worldPos.direction(neighborDirection);
-						ChunkLocalBlockPos neighborLocal(neighborBlock);
-						Block neighbor;
-						if (ChunkPos(neighborBlock) == position) neighbor = chunkCentre->getBlock(neighborLocal);
-						else
-						{
-							switch (neighborDirection)
-							{
-							case AxisDirection::Up:
-								neighbor = chunkUp->getBlock(neighborLocal);
-								break;
-							case AxisDirection::Down:
-								neighbor = chunkDown->getBlock(neighborLocal);
-								break;
-							case AxisDirection::North:
-								neighbor = chunkNorth->getBlock(neighborLocal);
-								break;
-							case AxisDirection::South:
-								neighbor = chunkSouth->getBlock(neighborLocal);
-								break;
-							case AxisDirection::East:
-								neighbor = chunkEast->getBlock(neighborLocal);
-								break;
-							case AxisDirection::West:
-								neighbor = chunkWest->getBlock(neighborLocal);
-								break;
-							default:
-								break;
-							}
-						}
-
-						// Only add face if the adjacent block is transparent
-						if (IS_SOLID[neighbor.blockType]) continue;
-
-						// Set winding order, to enable GPU based baceface culling
-						if (l % 2)
-						{
-							indicies.push_back(indexCounter);
-							indicies.push_back(indexCounter + 1);
-							indicies.push_back(indexCounter + 2);
-							indicies.push_back(indexCounter + 2);
-							indicies.push_back(indexCounter + 3);
-							indicies.push_back(indexCounter);
-						}
-						else
-						{
-							indicies.push_back(indexCounter);
-							indicies.push_back(indexCounter + 2);
-							indicies.push_back(indexCounter + 1);
-							indicies.push_back(indexCounter + 2);
-							indicies.push_back(indexCounter);
-							indicies.push_back(indexCounter + 3);
-						}
-						triangleCount += 2;
-						indexCounter += 4;
-
-						int rotationOffset = 0;
-						if (IS_ROTATEABLE[block.blockType]) rotationOffset = static_cast<int>(getPositionHash(worldPos, basicHash(1)) % 4);
-
-						// Loop through each vertex of the face
+						addFaceEven(indicies, indexCounter, triangleCount);
 						for (int v = 0; v < 4; ++v)
 						{
-							Vertex vertex{
-								static_cast<uint16_t>(localPos.x + FACE_TABLE[l][v][0]),
-								static_cast<uint16_t>(localPos.y + FACE_TABLE[l][v][1]),
-								static_cast<uint16_t>(localPos.z + FACE_TABLE[l][v][2]),
-								BLOCK_TEXUTRES[block.blockType - 1][l],
+							verticies.push_back({
+								static_cast<uint16_t>(i + FACE_TABLE[0][v][0]),
+								static_cast<uint16_t>(j + FACE_TABLE[0][v][1]),
+								static_cast<uint16_t>(k + FACE_TABLE[0][v][2]),
+								BLOCK_TEXTURES[block.blockType][0],
 								TEXTURE_COORDINATES[(v + rotationOffset) % 4][0],
 								TEXTURE_COORDINATES[(v + rotationOffset) % 4][1],
-								LIGHT[l]
-							};
-							verticies.push_back(vertex);
+								LIGHT[0]
+							});
+						}
+					}
+
+					// Bottom Face
+					if (!(j != 0 ?
+						_transparency[_index - CHUNK_SIZE] :
+						IS_SOLID[chunkDown->getBlock(ChunkLocalBlockPos(i, CHUNK_SIZE - 1, k)).blockType]))
+					{
+						addFaceOdd(indicies, indexCounter, triangleCount);
+						for (int v = 0; v < 4; ++v)
+						{
+							verticies.push_back({
+								static_cast<uint16_t>(i + FACE_TABLE[1][v][0]),
+								static_cast<uint16_t>(j + FACE_TABLE[1][v][1]),
+								static_cast<uint16_t>(k + FACE_TABLE[1][v][2]),
+								BLOCK_TEXTURES[block.blockType][1],
+								TEXTURE_COORDINATES[(v + rotationOffset) % 4][0],
+								TEXTURE_COORDINATES[(v + rotationOffset) % 4][1],
+								LIGHT[1]
+							});
+						}
+					}
+
+					// North face
+					if (!(i != CHUNK_SIZE - 1 ?
+						_transparency[_index + CHUNK_AREA] :
+						IS_SOLID[chunkNorth->getBlock(ChunkLocalBlockPos(0, j, k)).blockType]))
+					{
+						addFaceEven(indicies, indexCounter, triangleCount);
+						for (int v = 0; v < 4; ++v)
+						{
+							verticies.push_back({
+								static_cast<uint16_t>(i + FACE_TABLE[2][v][0]),
+								static_cast<uint16_t>(j + FACE_TABLE[2][v][1]),
+								static_cast<uint16_t>(k + FACE_TABLE[2][v][2]),
+								BLOCK_TEXTURES[block.blockType][2],
+								TEXTURE_COORDINATES[(v + rotationOffset) % 4][0],
+								TEXTURE_COORDINATES[(v + rotationOffset) % 4][1],
+								LIGHT[2]
+							});
+						}
+					}
+
+					// South face
+					if (!(i != 0 ?
+						_transparency[_index - CHUNK_AREA] :
+						IS_SOLID[chunkSouth->getBlock(ChunkLocalBlockPos(CHUNK_SIZE - 1, j, k)).blockType]))
+					{
+						addFaceOdd(indicies, indexCounter, triangleCount);
+						for (int v = 0; v < 4; ++v)
+						{
+							verticies.push_back({
+								static_cast<uint16_t>(i + FACE_TABLE[3][v][0]),
+								static_cast<uint16_t>(j + FACE_TABLE[3][v][1]),
+								static_cast<uint16_t>(k + FACE_TABLE[3][v][2]),
+								BLOCK_TEXTURES[block.blockType][3],
+								TEXTURE_COORDINATES[(v + rotationOffset) % 4][0],
+								TEXTURE_COORDINATES[(v + rotationOffset) % 4][1],
+								LIGHT[3]
+							});
+						}
+					}
+
+					// East face
+					if (!(k != CHUNK_SIZE - 1 ?
+						_transparency[_index + 1] :
+						IS_SOLID[chunkEast->getBlock(ChunkLocalBlockPos(i, j, 0)).blockType]))
+					{
+						addFaceEven(indicies, indexCounter, triangleCount);
+						for (int v = 0; v < 4; ++v)
+						{
+							verticies.push_back({
+								static_cast<uint16_t>(i + FACE_TABLE[4][v][0]),
+								static_cast<uint16_t>(j + FACE_TABLE[4][v][1]),
+								static_cast<uint16_t>(k + FACE_TABLE[4][v][2]),
+								BLOCK_TEXTURES[block.blockType][4],
+								TEXTURE_COORDINATES[(v + rotationOffset) % 4][0],
+								TEXTURE_COORDINATES[(v + rotationOffset) % 4][1],
+								LIGHT[4]
+							});
+						}
+					}
+
+					// West face
+					if (!(k != 0 ?
+						_transparency[_index - 1] :
+						IS_SOLID[chunkWest->getBlock(ChunkLocalBlockPos(i, j, CHUNK_SIZE - 1)).blockType]))
+					{
+						addFaceOdd(indicies, indexCounter, triangleCount);
+						for (int v = 0; v < 4; ++v)
+						{
+							verticies.push_back({
+								static_cast<uint16_t>(i + FACE_TABLE[5][v][0]),
+								static_cast<uint16_t>(j + FACE_TABLE[5][v][1]),
+								static_cast<uint16_t>(k + FACE_TABLE[5][v][2]),
+								BLOCK_TEXTURES[block.blockType][5],
+								TEXTURE_COORDINATES[(v + rotationOffset) % 4][0],
+								TEXTURE_COORDINATES[(v + rotationOffset) % 4][1],
+								LIGHT[5]
+							});
 						}
 					}
 				}
 				// Cross shaped plant
 				else
 				{
+					ChunkLocalBlockPos localPos(i, j, k);
+
 					uint16_t _dU = static_cast<uint16_t>(localPos.y) + 1;
 					uint16_t _dD = static_cast<uint16_t>(localPos.y);
 					uint16_t _dN = static_cast<uint16_t>(localPos.x) + 1;
 					uint16_t _dS = static_cast<uint16_t>(localPos.x);
 					uint16_t _dE = static_cast<uint16_t>(localPos.z) + 1;
 					uint16_t _dW = static_cast<uint16_t>(localPos.z);
-					uint16_t _tex = BLOCK_TEXUTRES[block.blockType - 1][0];
+					uint16_t _tex = BLOCK_TEXTURES[block.blockType][0];
 
 					verticies.push_back({ _dS, _dU, _dE, _tex,   0,   0, 255 });
 					verticies.push_back({ _dN, _dU, _dW, _tex, 255,   0, 255 });

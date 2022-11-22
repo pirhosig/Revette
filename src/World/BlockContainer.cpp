@@ -14,7 +14,7 @@ inline int blockPositionIsInside(int x, int y, int z)
 inline int flattenIndex(const ChunkLocalBlockPos blockPos)
 {
 	// assert(blockPositionIsInside(blockPos.x, blockPos.y, blockPos.z) && "Block outside chunk.");
-	return blockPos.x * CHUNK_SIZE * CHUNK_SIZE + blockPos.y * CHUNK_SIZE + blockPos.z;
+	return blockPos.x * CHUNK_AREA + blockPos.y * CHUNK_SIZE + blockPos.z;
 }
 
 
@@ -62,6 +62,9 @@ Block BlockContainer::getBlock(ChunkLocalBlockPos blockPos) const try
 	int _index = flattenIndex(blockPos);
 	switch (blockArray.index())
 	{
+	case 0:
+		return Block(0);
+		break;
 	case 1:
 		_blockIndex = std::get<std::unique_ptr<uint8_t[]>>(blockArray)[_index];
 		break;
@@ -85,6 +88,63 @@ catch (...)
 
 
 
+std::vector<bool> BlockContainer::getSolid() const
+{
+	const bool IS_SOLID[] = {
+	false,
+	true,
+	true,
+	true,
+	false,
+	true,
+	true,
+	true,
+	true,
+	true,
+	false,
+	true,
+	false,
+	true,
+	false,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true
+	};
+
+	std::vector<bool> _solid(CHUNK_VOLUME);
+	std::vector<bool> _indexTransparency(blockArrayBlocksByIndex.size());
+	for (std::size_t i = 0; i < blockArrayBlocksByIndex.size(); ++i)
+		_indexTransparency[i] = IS_SOLID[blockArrayBlocksByIndex[i].blockType];
+
+	switch (blockArray.index())
+	{
+	case 0:
+		break;
+	case 1:
+		for (int i = 0; i < CHUNK_VOLUME; ++i)
+			_solid[i] = _indexTransparency[std::get<std::unique_ptr<uint8_t[]>>(blockArray)[i]];
+		break;
+	case 2:
+		for (int i = 0; i < CHUNK_VOLUME; ++i)
+			_solid[i] = _indexTransparency[std::get<std::unique_ptr<uint16_t[]>>(blockArray)[i]];
+		break;
+	default:
+		break;
+	}
+
+	return _solid;
+}
+
+
+
 void BlockContainer::setBlock(ChunkLocalBlockPos blockPos, Block block)
 {
 	if (isEmpty()) blockArrayCreate();
@@ -93,11 +153,8 @@ void BlockContainer::setBlock(ChunkLocalBlockPos blockPos, Block block)
 	if (it != blockArrayIndicesByBlock.end()) _blockIndex = it->second;
 	else
 	{
-		blockArrayBlocksByIndex.push_back(block);
-		blockArrayIndicesByBlock[block] = currentIndex;
-		_blockIndex = currentIndex;
-		if (currentIndex > 255) blockArrayExtend();
-		currentIndex++;
+		_blockIndex = addBlockToPallete(block);
+		if (_blockIndex > 255) blockArrayExtend();
 	}
 	setBlockRaw(flattenIndex(blockPos), _blockIndex);
 }
@@ -110,6 +167,15 @@ void BlockContainer::setBlockRaw(int arrayIndex, int blockIndex)
 	if (std::holds_alternative<std::unique_ptr<uint8_t[]>>(blockArray))
 		std::get<std::unique_ptr<uint8_t[]>>(blockArray)[arrayIndex] = static_cast<uint8_t>(blockIndex);
 	else std::get<std::unique_ptr<uint16_t[]>>(blockArray)[arrayIndex] = static_cast<uint16_t>(blockIndex);
+}
+
+
+
+int BlockContainer::addBlockToPallete(Block block)
+{
+	blockArrayBlocksByIndex.push_back(block);
+	blockArrayIndicesByBlock[block] = currentIndex;
+	return currentIndex++;
 }
 
 

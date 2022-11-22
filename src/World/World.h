@@ -3,13 +3,12 @@
 
 #include "Block.h"
 #include "Chunk.h"
-#include "ChunkPos.h"
 #include "ChunkStatusMap.h"
+#include "Entities/Entity.h"
 #include "Generation/GeneratorChunkParameters.h"
 #include "Generation/GeneratorChunkNoise.h"
 #include "Generation/Structures/Structure.h"
 #include "../Rendering/Mesh/MeshDataChunk.h"
-#include "../Threading/PlayerState.h"
 #include "../Threading/ThreadPointerQueue.h"
 
 
@@ -41,15 +40,20 @@ public:
 		const char* settingNoiseFoliage
 	);
 	World(const World&) = delete;
-	void tick(std::atomic<PlayerState>& playerState);
+	void tick(Entity& player);
 
 	Block getBlock(BlockPos blockPos) const;
 	void setBlock(BlockPos blockPos, Block block) const;
 	const std::unique_ptr<Chunk>& getChunk(const ChunkPos chunkPos) const;
+
 	void addStructure(const BlockPos _blockPos, std::unique_ptr<Structure> _structure);
 	const std::unique_ptr<Structure>& getStructure(const BlockPos blockPos) const;
 
 private:
+	void processEntities(Entity& player);
+	void moveEntity(Entity& entity);
+	bool collides(BlockPos blockPos) const;
+
 	void onLoadCentreChange();
 
 	void updateLoadQueue();
@@ -64,8 +68,9 @@ private:
 	const GeneratorChunkParameters& getGeneratorChunkParameters(const ChunkPos2D position);
 
 	// Chunk storage
-	std::map<ChunkPos, std::unique_ptr<Chunk>> chunkMap;
-	std::map<BlockPos, std::unique_ptr<Structure>> structureMap;
+	std::map<long long, Entity> mapEntities;
+	std::map<ChunkPos, std::unique_ptr<Chunk>> mapChunks;
+	std::map<BlockPos, std::unique_ptr<Structure>> mapStructures;
 
 	// Chunk loading information
 	ChunkPos loadCentre;

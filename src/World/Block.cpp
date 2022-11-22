@@ -14,12 +14,16 @@ inline int wrapCoordinate(int x)
 
 
 
+BlockOffset::BlockOffset(int _x, int _y, int _z) : x{ wrapCoordinate(_x) }, y{ _y }, z{ wrapCoordinate(_z) } {}
+
+
+
 BlockPos::BlockPos(int x, int y, int z) : x(wrapCoordinate(x)), y(y), z(wrapCoordinate(z)) {}
 
 BlockPos::BlockPos(EntityPosition position) :
-	x(wrapCoordinate(static_cast<int>(position.X))),
-	y(static_cast<int>(position.Y)),
-	z(wrapCoordinate(static_cast<int>(position.Z)))
+	x(wrapCoordinate(static_cast<int>(position.pos.X))),
+	y(static_cast<int>(position.pos.Y)),
+	z(wrapCoordinate(static_cast<int>(position.pos.Z)))
 {}
 
 
@@ -47,10 +51,11 @@ BlockPos BlockPos::direction(AxisDirection direction) const
 
 
 
-BlockPos BlockPos::offset(int _x, int _y, int _z)
-{
-	return BlockPos(x + _x, y + _y, z + _z);
-}
+BlockOffset BlockPos::distance(BlockPos other) const { return BlockOffset(other.x - x, other.y - y, other.z - z); }
+
+
+
+BlockPos BlockPos::offset(int _x, int _y, int _z) const { return BlockPos(x + _x, y + _y, z + _z); }
 
 
 
