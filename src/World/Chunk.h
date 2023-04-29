@@ -29,19 +29,17 @@ public:
 	Chunk(ChunkPos _pos);
 	Chunk(const Chunk&) = delete;
 
-	void GenerateChunk(const GeneratorChunkParameters& generatorParameters, const NoiseSource2D& noiseFoliage, const NoiseSource2D& noiseFoliageSecondary);
+	void GenerateChunk(const GeneratorChunkParameters& generatorParameters);
 	void PopulateChunk(World& world);
 
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
 	void setBlockPopulation(BlockPos blockPos, Block block, unsigned long long age);
 	bool isEmpty() const;
-	bool isGenerated() const;
 
 	const ChunkPos position;
 
 private:
-	bool containsPosition(BlockPos blockPos) const;
 	void addAdjacentPopulationChanges(Chunk& _chunk) const;
 
 	bool generated;

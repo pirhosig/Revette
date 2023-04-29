@@ -1,5 +1,4 @@
 #pragma once
-#include <map>
 #include <memory>
 #include <variant>
 #include <vector>
@@ -11,7 +10,7 @@
 class BlockContainer
 {
 public:
-	BlockContainer();
+	BlockContainer() : emptyBlock{ Block(0) } {};
 	BlockContainer(const BlockContainer&) = delete;
 
 	void blockArrayCreate();
@@ -22,14 +21,15 @@ public:
 	std::vector<bool> getSolid() const;
 
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
+	void setBlockFill(Block block);
 	void setBlockRaw(int arrayIndex, int blockIndex);
 	int addBlockToPallete(Block block);
 
 	bool isEmpty() const;
 
+	Block emptyBlock;
+
 	std::variant<std::monostate, std::unique_ptr<uint8_t[]>, std::unique_ptr<uint16_t[]>> blockArray;
 	std::vector<Block> blockArrayBlocksByIndex;
-	std::map<Block, uint16_t, blockComparator> blockArrayIndicesByBlock;
-	uint16_t currentIndex;
 };
 

@@ -1,5 +1,4 @@
 #include "Renderer.h"
-#include <stdio.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -45,21 +44,21 @@ void Renderer::render(const EntityPosition& playerPos)
 		constexpr double FOV_Y = 45.0;
 		constexpr double ASPECT = 1920.0 / 1080.0;
 
-		const glm::mat4 projection = glm::perspective(glm::radians(FOV_Y), ASPECT, 0.1, 2048.0);
+		const glm::mat4 projection = glm::perspective(glm::radians(FOV_Y), ASPECT, 0.1, 1024.0);
 		ChunkPos _playerChunk(playerPos);
 		EntityPosition _playerLocalPos({
 			playerPos.pos.X - _playerChunk.x * CHUNK_SIZE,
 			playerPos.pos.Y - _playerChunk.y * CHUNK_SIZE,
 			playerPos.pos.Z - _playerChunk.z * CHUNK_SIZE
 		});
-		const glm::vec3 pos = glm::vec3(_playerLocalPos.pos.X, _playerLocalPos.pos.Y + 2.5, _playerLocalPos.pos.Z) * 0.25f;
+		const glm::vec3 pos = glm::vec3(_playerLocalPos.pos.X, _playerLocalPos.pos.Y + 2.5, _playerLocalPos.pos.Z) * 0.5f;
 		const glm::vec3 front = glm::normalize(glm::vec3(
 			cos(rotationX) * cos(rotationY),
 			sin(rotationY),
 			sin(rotationX) * cos(rotationY)
 		));
 		const glm::mat4 view = glm::lookAt(pos, pos + front, glm::vec3(0.0, 1.0, 0.0));
-		const glm::mat4 projectionView = glm::scale(projection * view, glm::vec3(0.25f));
+		const glm::mat4 projectionView = projection * view;
 
 		chunkShader.use();
 		tileTextureAtlas.bindTexture();

@@ -25,17 +25,17 @@ MeshChunk::MeshChunk(std::unique_ptr<MeshDataChunk> meshData) : triangleCount(me
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
-	glVertexAttribPointer(0, 3, GL_UNSIGNED_SHORT, GL_FALSE, sizeof(Vertex), (void*)(0));
-	glVertexAttribPointer(1, 1, GL_UNSIGNED_SHORT, GL_FALSE, sizeof(Vertex), (void*)(6));
+	glVertexAttribPointer(0, 4, GL_UNSIGNED_INT_2_10_10_10_REV, GL_FALSE, sizeof(Vertex), (void*)(0));
+	glVertexAttribPointer(1, 1, GL_UNSIGNED_SHORT, GL_FALSE, sizeof(Vertex), (void*)(4));
 	glVertexAttribPointer(
 		2,
 		2,
 		GL_UNSIGNED_BYTE,
 		GL_TRUE,
 		sizeof(Vertex),
-		(void*)(8)
+		(void*)(6)
 	);
-	glVertexAttribPointer(3, 1, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void*)(10));
+	glVertexAttribPointer(3, 1, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void*)(8));
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
@@ -90,7 +90,7 @@ bool withinFOV(glm::mat4& transformMatrix)
 void MeshChunk::draw(const ShaderProgram& shader, const glm::mat4& transformMatrix, ChunkPos playerPosition) const
 {
 	ChunkOffset offset = playerPosition.offset(position);
-	glm::vec3 chunkVector = glm::vec3(offset.x * CHUNK_SIZE, offset.y * CHUNK_SIZE, offset.z * CHUNK_SIZE);
+	glm::vec3 chunkVector = glm::vec3(offset.x * CHUNK_SIZE, offset.y * CHUNK_SIZE, offset.z * CHUNK_SIZE) * 0.5f;
 	glm::mat4 modelViewProjection = transformMatrix * glm::translate(glm::mat4(1.0f), chunkVector);
 
 	// Return if the chunk is outside the FOV, and the chunk is not very close to the player

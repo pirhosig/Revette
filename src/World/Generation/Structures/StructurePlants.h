@@ -18,4 +18,5 @@ namespace Structures
 
 	// Temperate Forest
 	void placeTreeAspen(Chunk& chunk, BlockPos base, unsigned long long age, int height);
+	void placeTreeOak(Chunk& chunk, BlockPos base, unsigned long long age, int height);
 }

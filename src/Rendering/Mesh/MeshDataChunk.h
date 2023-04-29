@@ -9,9 +9,9 @@
 #pragma pack(push, 1)
 struct Vertex
 {
-	uint16_t x;
-	uint16_t y;
-	uint16_t z;
+	uint32_t x: 10;
+	uint32_t y: 10;
+	uint32_t z: 10;
 	uint16_t t;
 	uint8_t u;
 	uint8_t v;

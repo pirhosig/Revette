@@ -41,14 +41,6 @@ public:
 	Block(int type);
 
 	int blockType;
-};
 
-
-
-struct blockComparator
-{
-	bool operator()(const Block& a, const Block& b) const
-	{
-		return a.blockType < b.blockType;
-	}
+	bool operator==(const Block& other) const { return blockType == other.blockType; }
 };

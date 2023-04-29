@@ -19,19 +19,11 @@ inline int flattenIndex(const ChunkLocalBlockPos blockPos)
 
 
 
-BlockContainer::BlockContainer()
-{
-	blockArrayBlocksByIndex.push_back(Block(0));
-	blockArrayIndicesByBlock[Block(0)] = 0;
-	currentIndex = 1;
-}
-
-
-
 void BlockContainer::blockArrayCreate()
 {
 	assert(std::holds_alternative<std::monostate>(blockArray));
 	blockArray = std::make_unique<uint8_t[]>(CHUNK_VOLUME);
+	blockArrayBlocksByIndex.push_back(emptyBlock);
 }
 
 
@@ -58,6 +50,8 @@ void BlockContainer::blockArrayExtend()
 
 Block BlockContainer::getBlock(ChunkLocalBlockPos blockPos) const try
 {
+	if (isEmpty()) return emptyBlock;
+
 	int _blockIndex{};
 	int _index = flattenIndex(blockPos);
 	switch (blockArray.index())
@@ -148,15 +142,28 @@ std::vector<bool> BlockContainer::getSolid() const
 void BlockContainer::setBlock(ChunkLocalBlockPos blockPos, Block block)
 {
 	if (isEmpty()) blockArrayCreate();
-	auto it = blockArrayIndicesByBlock.find(block);
-	int _blockIndex;
-	if (it != blockArrayIndicesByBlock.end()) _blockIndex = it->second;
-	else
+	// Linear search for matching index, if it doesn't exist then it is added
+	int _blockIndex = -1;
+	for (int i = 0; i < static_cast<int>(blockArrayBlocksByIndex.size()); ++i) {
+		if (blockArrayBlocksByIndex[i] == block)
+		{
+			_blockIndex = i;
+			break;
+		}
+	}
+	if (_blockIndex == -1)
 	{
 		_blockIndex = addBlockToPallete(block);
 		if (_blockIndex > 255) blockArrayExtend();
 	}
 	setBlockRaw(flattenIndex(blockPos), _blockIndex);
+}
+
+
+void BlockContainer::setBlockFill(Block block)
+{
+	blockArrayDelete();
+	emptyBlock = block;
 }
 
 
@@ -174,8 +181,7 @@ void BlockContainer::setBlockRaw(int arrayIndex, int blockIndex)
 int BlockContainer::addBlockToPallete(Block block)
 {
 	blockArrayBlocksByIndex.push_back(block);
-	blockArrayIndicesByBlock[block] = currentIndex;
-	return currentIndex++;
+	return static_cast<int>(blockArrayBlocksByIndex.size() - 1);
 }
 
 

@@ -36,8 +36,7 @@ public:
 	World(
 		std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> queueMesh,
 		std::shared_ptr<ThreadQueue<ChunkPos>> queueMeshDeletion,
-		const char* settingNoiseHeightmap,
-		const char* settingNoiseFoliage
+		const char* settingNoiseHeightmap
 	);
 	World(const World&) = delete;
 	void tick(Entity& player);
@@ -82,8 +81,6 @@ private:
 	// Chunk generation tools
 	std::map<ChunkPos2D, GeneratorChunkParameters> generatorChunkCache;
 	GeneratorChunkNoise generatorChunkNoise;
-	NoiseSource2D noiseFoliage;
-	NoiseSource2D noiseFoliageSecondary;
 
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes;
 	std::shared_ptr<ThreadQueue<ChunkPos>> threadQueueMeshDeletion;

@@ -3,7 +3,6 @@
 
 
 const char* NOISE_HEIGHTMAP = "GQAbAA0AAwAAAM3MDEATAAAAAD4JAACamRk/AAAAAAAAAACAPgEkAAMAAAATAM3MzD0WAAEAAAD//wEA";
-const char* NOISE_FOLIAGE = "AQA=";
 
 
 
@@ -13,7 +12,7 @@ LoopGame::LoopGame(
 	std::shared_ptr<ThreadQueue<ChunkPos>> chunkMeshQueueDeletion
 ) : timerFramerate(512),
 	renderer(_window, chunkMeshQueue, chunkMeshQueueDeletion),
-	world(chunkMeshQueue, chunkMeshQueueDeletion, NOISE_HEIGHTMAP, NOISE_FOLIAGE),
+	world(chunkMeshQueue, chunkMeshQueueDeletion, NOISE_HEIGHTMAP),
 	player(EntityPosition({ 0.0, 50.0, 0.0 })),
 	window{ _window }
 {

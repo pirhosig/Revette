@@ -53,8 +53,7 @@ inline bool withinMeshingDistance(ChunkPos _pos, ChunkPos _centre)
 World::World(
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> queueMesh,
 	std::shared_ptr<ThreadQueue<ChunkPos>> queueMeshDeletion,
-	const char* settingNoiseHeightmap,
-	const char* settingNoiseFoliage
+	const char* settingNoiseHeightmap
 ) :
 	loadCentre(0, 0, 0),
 	threadQueueMeshes{ queueMesh },
@@ -68,9 +67,7 @@ World::World(
 		"HAABGQANAAIAAAAAAABAEwAK16M8CQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==",
 		"HAABGQANAAIAAAAAAABAEwAK16M8CQAAAAAAPwAAAAAAAAAAgD8AAAAAQA==",
 		"HAABBgAAAABAQA=="
-	),
-	noiseFoliage(settingNoiseFoliage, 1.0f, SEED),
-	noiseFoliageSecondary(settingNoiseFoliage, 1.0f, SEED + 0xB745)
+	)
 {
 	updateLoadQueue();
 }
@@ -462,17 +459,15 @@ void World::loadChunks()
 		chunkStatusMap.setChunkStatusLoad(lPos, StatusChunkLoad::LOADED);
 
 		// Generate the chunk
-		insertRes.first->second->GenerateChunk(getGeneratorChunkParameters(ChunkPos2D(lPos)), noiseFoliage, noiseFoliageSecondary);
+		insertRes.first->second->GenerateChunk(getGeneratorChunkParameters(ChunkPos2D(lPos)));
 		chunkStatusMap.setChunkStatusLoad(lPos, StatusChunkLoad::GENERATED);
 		// Check if it, or its neighbours can populate
-		for (int ni = -1; ni < 2; ++ni)
-		{
-			for (int nj = -1; nj < 2; ++nj)
-			{
-				for (int nk = -1; nk < 2; ++nk)
-				{
+		for (int ni = -1; ni < 2; ++ni) {
+			for (int nj = -1; nj < 2; ++nj) {
+				for (int nk = -1; nk < 2; ++nk) {
 					ChunkPos _pos(lPos.x + ni, lPos.y + nj, lPos.z + nk);
-					if (withinPopulationDistance(_pos, loadCentre) && chunkStatusMap.getChunkStatusCanPopulate(_pos)) queueChunkPopulation(_pos);
+					if (withinPopulationDistance(_pos, loadCentre) && chunkStatusMap.getChunkStatusCanPopulate(_pos))
+						queueChunkPopulation(_pos);
 				}
 			}
 		}
@@ -506,9 +501,9 @@ void World::populateChunks()
 			{  0,  0,  1 },
 			{  0,  0, -1 },
 		};
-		for (int j = 0; j < 6; ++j)
+		for (auto [_dx, _dy, _dz] : NEIGHBOURS)
 		{
-			ChunkPos meshPos(_pos.x + NEIGHBOURS[j][0], _pos.y + NEIGHBOURS[j][1], _pos.z + NEIGHBOURS[j][2]);
+			ChunkPos meshPos(_pos.x + _dx, _pos.y + _dy, _pos.z + _dz);
 			if (chunkStatusMap.getChunkStatusCanMesh(meshPos)) queueChunkMeshing(meshPos);
 		}
 	}
@@ -557,8 +552,7 @@ void World::meshChunks()
 // Returns a reference to a chunk
 const std::unique_ptr<Chunk>& World::getChunk(const ChunkPos chunkPos) const
 {
-	try
-	{
+	try {
 		return mapChunks.at(chunkPos);
 	}
 	catch (std::out_of_range)
@@ -581,8 +575,7 @@ void World::addStructure(const BlockPos _blockPos, std::unique_ptr<Structure> _s
 // Returns a reference to the structure at the location
 const std::unique_ptr<Structure>& World::getStructure(const BlockPos blockPos) const
 {
-	try
-	{
+	try {
 		return mapStructures.at(blockPos);
 	}
 	catch (std::out_of_range)
@@ -607,7 +600,8 @@ void World::queueChunkMeshing(const ChunkPos chunkPos)
 
 void World::queueChunkPopulation(const ChunkPos chunkPos)
 {
-	assert(withinPopulationDistance(chunkPos, loadCentre) && chunkStatusMap.getChunkStatusCanPopulate(chunkPos) && "Attempted to populate chunk that cannot be populated");
+	assert(withinPopulationDistance(chunkPos, loadCentre) && chunkStatusMap.getChunkStatusCanPopulate(chunkPos) &&
+		"Attempted to populate chunk that cannot be populated");
 	int priority = std::max(100 - static_cast<int>(loadCentre.distance(chunkPos)), 0);
 	populateQueue.push(ChunkPriorityTicket(priority, chunkPos));
 	chunkStatusMap.setChunkStatusLoad(chunkPos, StatusChunkLoad::QUEUED_POPULATE);

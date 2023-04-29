@@ -188,4 +188,60 @@ namespace Structures
 		chunk.setBlockPopulation(base.offset( 0, height, -1), LEAF, age);
 		chunk.setBlockPopulation(base.offset( 0, height,  1), LEAF, age);
 	}
+
+
+
+	void placeTreeOak(Chunk& chunk, BlockPos base, unsigned long long age, int height)
+	{
+		const Block LOG(3);
+		const Block LEAF(4);
+
+		for (int i = 0; i < height; ++i) {
+			chunk.setBlockPopulation(base.offset(0, i, 0), LOG, age + 1);
+		}
+
+		int POS_TABLE[][3] = {
+			{ 0,  1,  0},
+			{ 0,  1, -1},
+			{ 0,  1,  1},
+			{-1,  1,  0},
+			{ 1,  1,  0},
+			{-1,  0, -1},
+			{-1,  0,  0},
+			{-1,  0,  1},
+			{ 0,  0, -1},
+			{ 0,  0,  0},
+			{ 0,  0,  1},
+			{ 1,  0, -1},
+			{ 1,  0,  0},
+			{ 1,  0,  1},
+			{-1, -1, -1},
+			{-1, -1,  0},
+			{-1, -1,  1},
+			{ 0, -1, -1},
+			{ 0, -1,  1},
+			{ 1, -1, -1},
+			{ 1, -1,  0},
+			{ 1, -1,  1},
+			{-2, -1, -1},
+			{-2, -1,  0},
+			{-2, -1,  1},
+			{ 2, -1, -1},
+			{ 2, -1,  0},
+			{ 2, -1,  1},
+			{-1, -1, -2},
+			{ 0, -1, -2},
+			{ 1, -1, -2},
+			{-1, -1,  2},
+			{ 0, -1,  2},
+			{ 1, -1,  2},
+			{ 0, -2, -1},
+			{ 0, -2,  1},
+			{-1, -2,  0},
+			{ 1, -2,  0}
+		};
+		for (auto [i, j, k] : POS_TABLE) {
+			chunk.setBlockPopulation(base.offset(i, height + j, k), LEAF, age);
+		}
+	}
 }

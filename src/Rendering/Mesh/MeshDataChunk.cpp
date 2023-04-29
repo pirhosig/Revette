@@ -223,7 +223,7 @@ MeshDataChunk::MeshDataChunk(
 	if (chunkCentre->isEmpty()) return;
 
 	// Cache transparency
-	std::vector _transparency = chunkCentre->blockContainer.getSolid();
+	auto _transparency = chunkCentre->blockContainer.getSolid();
 
 	// Loop and check for each block whether it is solid, and so whether it needs to be added
 	for (int i = 0; i < CHUNK_SIZE; ++i)
@@ -251,16 +251,16 @@ MeshDataChunk::MeshDataChunk(
 
 					// Top face
 					if (!(j != CHUNK_SIZE - 1 ?
-						_transparency[_index + CHUNK_SIZE] :
+						_transparency[_index + CHUNK_SIZE] : 
 						IS_SOLID[chunkUp->getBlock(ChunkLocalBlockPos(i, 0, k)).blockType]))
 					{
 						addFaceEven(indicies, indexCounter, triangleCount);
 						for (int v = 0; v < 4; ++v)
 						{
 							verticies.push_back({
-								static_cast<uint16_t>(i + FACE_TABLE[0][v][0]),
-								static_cast<uint16_t>(j + FACE_TABLE[0][v][1]),
-								static_cast<uint16_t>(k + FACE_TABLE[0][v][2]),
+								static_cast<uint16_t>(i + FACE_TABLE[0][v][0]) * 16u,
+								static_cast<uint16_t>(j + FACE_TABLE[0][v][1]) * 16u,
+								static_cast<uint16_t>(k + FACE_TABLE[0][v][2]) * 16u,
 								BLOCK_TEXTURES[block.blockType][0],
 								TEXTURE_COORDINATES[(v + rotationOffset) % 4][0],
 								TEXTURE_COORDINATES[(v + rotationOffset) % 4][1],
@@ -278,9 +278,9 @@ MeshDataChunk::MeshDataChunk(
 						for (int v = 0; v < 4; ++v)
 						{
 							verticies.push_back({
-								static_cast<uint16_t>(i + FACE_TABLE[1][v][0]),
-								static_cast<uint16_t>(j + FACE_TABLE[1][v][1]),
-								static_cast<uint16_t>(k + FACE_TABLE[1][v][2]),
+								static_cast<uint16_t>(i + FACE_TABLE[1][v][0]) * 16u,
+								static_cast<uint16_t>(j + FACE_TABLE[1][v][1]) * 16u,
+								static_cast<uint16_t>(k + FACE_TABLE[1][v][2]) * 16u,
 								BLOCK_TEXTURES[block.blockType][1],
 								TEXTURE_COORDINATES[(v + rotationOffset) % 4][0],
 								TEXTURE_COORDINATES[(v + rotationOffset) % 4][1],
@@ -297,10 +297,10 @@ MeshDataChunk::MeshDataChunk(
 						addFaceEven(indicies, indexCounter, triangleCount);
 						for (int v = 0; v < 4; ++v)
 						{
-							verticies.push_back({
-								static_cast<uint16_t>(i + FACE_TABLE[2][v][0]),
-								static_cast<uint16_t>(j + FACE_TABLE[2][v][1]),
-								static_cast<uint16_t>(k + FACE_TABLE[2][v][2]),
+							verticies.push_back(Vertex{
+								static_cast<uint16_t>(i + FACE_TABLE[2][v][0]) * 16u,
+								static_cast<uint16_t>(j + FACE_TABLE[2][v][1]) * 16u,
+								static_cast<uint16_t>(k + FACE_TABLE[2][v][2]) * 16u,
 								BLOCK_TEXTURES[block.blockType][2],
 								TEXTURE_COORDINATES[(v + rotationOffset) % 4][0],
 								TEXTURE_COORDINATES[(v + rotationOffset) % 4][1],
@@ -318,9 +318,9 @@ MeshDataChunk::MeshDataChunk(
 						for (int v = 0; v < 4; ++v)
 						{
 							verticies.push_back({
-								static_cast<uint16_t>(i + FACE_TABLE[3][v][0]),
-								static_cast<uint16_t>(j + FACE_TABLE[3][v][1]),
-								static_cast<uint16_t>(k + FACE_TABLE[3][v][2]),
+								static_cast<uint16_t>(i + FACE_TABLE[3][v][0]) * 16u,
+								static_cast<uint16_t>(j + FACE_TABLE[3][v][1]) * 16u,
+								static_cast<uint16_t>(k + FACE_TABLE[3][v][2]) * 16u,
 								BLOCK_TEXTURES[block.blockType][3],
 								TEXTURE_COORDINATES[(v + rotationOffset) % 4][0],
 								TEXTURE_COORDINATES[(v + rotationOffset) % 4][1],
@@ -338,9 +338,9 @@ MeshDataChunk::MeshDataChunk(
 						for (int v = 0; v < 4; ++v)
 						{
 							verticies.push_back({
-								static_cast<uint16_t>(i + FACE_TABLE[4][v][0]),
-								static_cast<uint16_t>(j + FACE_TABLE[4][v][1]),
-								static_cast<uint16_t>(k + FACE_TABLE[4][v][2]),
+								static_cast<uint16_t>(i + FACE_TABLE[4][v][0]) * 16u,
+								static_cast<uint16_t>(j + FACE_TABLE[4][v][1]) * 16u,
+								static_cast<uint16_t>(k + FACE_TABLE[4][v][2]) * 16u,
 								BLOCK_TEXTURES[block.blockType][4],
 								TEXTURE_COORDINATES[(v + rotationOffset) % 4][0],
 								TEXTURE_COORDINATES[(v + rotationOffset) % 4][1],
@@ -358,9 +358,9 @@ MeshDataChunk::MeshDataChunk(
 						for (int v = 0; v < 4; ++v)
 						{
 							verticies.push_back({
-								static_cast<uint16_t>(i + FACE_TABLE[5][v][0]),
-								static_cast<uint16_t>(j + FACE_TABLE[5][v][1]),
-								static_cast<uint16_t>(k + FACE_TABLE[5][v][2]),
+								static_cast<uint16_t>(i + FACE_TABLE[5][v][0]) * 16u,
+								static_cast<uint16_t>(j + FACE_TABLE[5][v][1]) * 16u,
+								static_cast<uint16_t>(k + FACE_TABLE[5][v][2]) * 16u,
 								BLOCK_TEXTURES[block.blockType][5],
 								TEXTURE_COORDINATES[(v + rotationOffset) % 4][0],
 								TEXTURE_COORDINATES[(v + rotationOffset) % 4][1],
@@ -374,12 +374,12 @@ MeshDataChunk::MeshDataChunk(
 				{
 					ChunkLocalBlockPos localPos(i, j, k);
 
-					uint16_t _dU = static_cast<uint16_t>(localPos.y) + 1;
-					uint16_t _dD = static_cast<uint16_t>(localPos.y);
-					uint16_t _dN = static_cast<uint16_t>(localPos.x) + 1;
-					uint16_t _dS = static_cast<uint16_t>(localPos.x);
-					uint16_t _dE = static_cast<uint16_t>(localPos.z) + 1;
-					uint16_t _dW = static_cast<uint16_t>(localPos.z);
+					uint16_t _dU = static_cast<uint16_t>(localPos.y + 1) * 16u;
+					uint16_t _dD = static_cast<uint16_t>(localPos.y)     * 16u;
+					uint16_t _dN = static_cast<uint16_t>(localPos.x + 1) * 16u;
+					uint16_t _dS = static_cast<uint16_t>(localPos.x)     * 16u;
+					uint16_t _dE = static_cast<uint16_t>(localPos.z + 1) * 16u;
+					uint16_t _dW = static_cast<uint16_t>(localPos.z)     * 16u;
 					uint16_t _tex = BLOCK_TEXTURES[block.blockType][0];
 
 					verticies.push_back({ _dS, _dU, _dE, _tex,   0,   0, 255 });

@@ -1,14 +1,17 @@
 #include "Chunk.h"
 #include <array>
 #include <cassert>
+#include <random>
 #include <string>
 
 #include "World.h"
+#include "Generation/ChunkPRNG.h"
 #include "Generation/GeneratorChunkParameters.h"
 #include "Generation/NoiseSource.h"
 #include "Generation/Structures/StructurePlants.h"
 #include "../Constants.h"
 #include "../Exceptions.h"
+#include "../Math/ProbabilityTable.h"
 
 
 
@@ -31,11 +34,7 @@ Chunk::Chunk(ChunkPos _pos) : position(_pos), generated(false) {}
 
 
 
-void Chunk::GenerateChunk(
-	const GeneratorChunkParameters& generatorParameters,
-	const NoiseSource2D& noiseFoliage,
-	const NoiseSource2D& noiseFoliageSecondary
-)
+void Chunk::GenerateChunk(const GeneratorChunkParameters& generatorParameters)
 {
 	if (generated) throw EXCEPTION_WORLD::ChunkRegeneration("Attempted to re-generate chunk");
 	generated = true;
@@ -46,19 +45,17 @@ void Chunk::GenerateChunk(
 	// Return if all of the chunk falls above the terrain height
 	if (generatorParameters.heightMap.heightMax < _chunkBottom && _chunkBottom > 0) return;
 
-	blockContainer.blockArrayCreate();
-
 	// Fill the chunk if all of the chunk falls below the terrain height
 	// This code is sort of horrible, but it runs hella fast compared to what was here before
+	// Nvm this code is now even faster, and also looks okay
 	if (_chunkTop < generatorParameters.heightMap.heightMin)
 	{
-		int _rawIndex = blockContainer.addBlockToPallete(Block(2));
-		for (int i = 0; i < CHUNK_VOLUME; ++i)
-		{
-			blockContainer.setBlockRaw(i, _rawIndex);
-		}
+		blockContainer.setBlockFill(Block(2));
 		return;
 	}
+
+	// Some blocks must be placed beyond this point, so this optimisation is valid
+	blockContainer.blockArrayCreate();
 
 	for (int lX = 0; lX < CHUNK_SIZE; ++lX)
 	{
@@ -106,13 +103,14 @@ void Chunk::GenerateChunk(
 		}
 	}
 
-
 	// Create population features
 	// Return if chunk is entirely below surface or if all the surface air blocks are also below this chunk
 	if (_chunkTop <= generatorParameters.heightMap.heightMin || generatorParameters.heightMap.heightMax + 1 < _chunkBottom) return;
 
-	std::array<float, CHUNK_AREA> foliageValues = noiseFoliage.GenChunkNoise(ChunkPos2D(position));
-	std::array<float, CHUNK_AREA> foliageValuesSecondary = noiseFoliageSecondary.GenChunkNoise(ChunkPos2D(position));
+	// LCG as the PRNG for population: this may or may not work out in the end
+	// I have no idea tbh, I am not the stats person
+	// Update: it somehow works
+	ChunkPRNG prng(position);
 
 	for (int lX = 0; lX < CHUNK_SIZE; ++lX)
 	{
@@ -126,12 +124,8 @@ void Chunk::GenerateChunk(
 			// Currently no features generate below sea level, so this is sort of a hack until those features exist
 			if (_surfaceLevel < 0) continue;
 
-			const int _worldX = position.x * CHUNK_SIZE + lX;
-			const int _worldZ = position.z * CHUNK_SIZE + lZ;
-			const int _bottomAir = _surfaceLevel + 1;
-			const BlockPos _centre(_worldX, _bottomAir, _worldZ);
-			const auto _foliageValue = foliageValues[_index];
-			const auto _foliageValueSecondary = foliageValuesSecondary[_index];
+			const BlockPos _centre(position.x * CHUNK_SIZE + lX, _surfaceLevel + 1, position.z * CHUNK_SIZE + lZ);
+			const double _foliageValue = prng.getNext();
 
 			switch (generatorParameters.biomeMap.biomeArray[_index])
 			{
@@ -139,9 +133,9 @@ void Chunk::GenerateChunk(
 				// Cactus
 				if (_foliageValue > 0.9956)
 				{
-					int _cactusHeight = static_cast<int>(2.67 + _foliageValueSecondary);
+					int _cactusHeight = static_cast<int>(2.67 + prng.getNext());
 					for (int i = 0; i < _cactusHeight; ++i) {
-						setBlockPopulation(BlockPos(_worldX, _bottomAir + i, _worldZ), Block(9), 0);
+						setBlockPopulation(_centre.offset(0, i, 0), Block(9), 0);
 					}
 				}
 				// Desert Flower
@@ -150,57 +144,41 @@ void Chunk::GenerateChunk(
 			case BIOME::FOREST_BOREAL:
 				// Basic pine tree
 				if (_foliageValue > 0.9910)
-					Structures::placeTreePine(*this, _centre, 0, static_cast<int>(6.6 + _foliageValueSecondary * 2.4));
+					Structures::placeTreePine(*this, _centre, 0, prng.getScaledInt(2.4, 6.6));
 				else if (_foliageValue > 0.9893)
-					Structures::placeTreePineMassive(*this, _centre, 0, static_cast<int>(15.7 + _foliageValueSecondary * 4.7));
+					Structures::placeTreePineMassive(*this, _centre, 0, prng.getScaledInt(4.7, 15.7));
 				break;
 			case BIOME::FOREST_TEMPERATE:
 				// Basic bitch tree
-				if (_foliageValue > 0.9840)
-				{
-					int _treeHeight = static_cast<int>(10.1 + _foliageValueSecondary * 5.3);
-					unsigned long long _treeAge = 0;
-					// Build tree trunk
-					for (int i = 0; i < _treeHeight - 2; ++i) {
-						setBlockPopulation(BlockPos(_worldX, _bottomAir + i, _worldZ), Block(3), _treeAge + 1);
-					}
-					const int leafBase = _bottomAir + _treeHeight - 2;
-					// Add the leaves
-					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ), Block(4), _treeAge);
-					setBlockPopulation(BlockPos(_worldX, leafBase + 1, _worldZ), Block(4), _treeAge);
-					setBlockPopulation(BlockPos(_worldX - 1, leafBase, _worldZ), Block(4), _treeAge);
-					setBlockPopulation(BlockPos(_worldX + 1, leafBase, _worldZ), Block(4), _treeAge);
-					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ - 1), Block(4), _treeAge);
-					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ + 1), Block(4), _treeAge);
-				}
-				else if (_foliageValue > 0.9815)
-					Structures::placeTreeAspen(*this, _centre, 0, static_cast<int>(12.7 + _foliageValueSecondary * 6.2));
+				if (_foliageValue > 0.9780)
+					Structures::placeTreeOak(*this, _centre, 0, prng.getScaledInt(5.3, 10.1));
+				else if (_foliageValue > 0.9765)
+					Structures::placeTreeAspen(*this, _centre, 0, prng.getScaledInt(6.2, 12.7));
 				break;
 			case BIOME::RAINFOREST:
 				// Rainforests are pretty bland like this ngl (slightly better now)
 				if (_foliageValue > 0.92)
 				{
-					int _treeHeight = static_cast<int>(9.9 + _foliageValueSecondary * 3.2);
+					int _treeHeight = prng.getScaledInt(3.2, 9.9);
 					unsigned long long _treeAge = 0;
 					// Build tree trunk
 					for (int i = 0; i < _treeHeight - 2; ++i) {
-						setBlockPopulation(BlockPos(_worldX, _bottomAir + i, _worldZ), Block(3), _treeAge + 1);
+						setBlockPopulation(_centre.offset(0, i, 0), Block(3), _treeAge + 1);
 					}
-					const int leafBase = _bottomAir + _treeHeight - 2;
 					// Add the leaves
 					for (int i = -1; i < 2; ++i) {
 						for (int j = -1; j < 2; ++j) {
-							setBlockPopulation(BlockPos(_worldX + i, leafBase, _worldZ + j), Block(4), _treeAge);
+							setBlockPopulation(_centre.offset(i, _treeHeight - 2, j), Block(4), _treeAge);
 						}
 					}
-					setBlockPopulation(BlockPos(_worldX, leafBase + 1, _worldZ), Block(4), _treeAge);
-					setBlockPopulation(BlockPos(_worldX - 2, leafBase, _worldZ), Block(4), _treeAge);
-					setBlockPopulation(BlockPos(_worldX + 2, leafBase, _worldZ), Block(4), _treeAge);
-					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ - 2), Block(4), _treeAge);
-					setBlockPopulation(BlockPos(_worldX, leafBase, _worldZ + 2), Block(4), _treeAge);
+					setBlockPopulation(_centre.offset( 0, _treeHeight - 1,  0), Block(4), _treeAge);
+					setBlockPopulation(_centre.offset(-2, _treeHeight - 2,  0), Block(4), _treeAge);
+					setBlockPopulation(_centre.offset( 2, _treeHeight - 2,  0), Block(4), _treeAge);
+					setBlockPopulation(_centre.offset( 0, _treeHeight - 2, -2), Block(4), _treeAge);
+					setBlockPopulation(_centre.offset( 0, _treeHeight - 2,  2), Block(4), _treeAge);
 				}
 				else if (_foliageValue > 0.914)
-					Structures::placeTreeRainforestTall(*this, _centre, 0, static_cast<int>(15.7 + _foliageValueSecondary * 4.3));
+					Structures::placeTreeRainforestTall(*this, _centre, 0, prng.getScaledInt(4.3, 15.7));
 				else if (_foliageValue > 0.74) Structures::placeTreeRainforestShrub((*this), _centre, 0);
 				else if (_foliageValue > 0.55) setBlockPopulation(_centre, Block(10), 0);
 				break;
@@ -222,22 +200,17 @@ void Chunk::GenerateChunk(
 
 void Chunk::PopulateChunk(World& world)
 {
-	for (int lX = -1; lX < 2; ++lX)
-	{
-		for (int lY = -1; lY < 2; ++lY)
-		{
-			for (int lZ = -1; lZ < 2; ++lZ)
-			{
-				auto& _chunk = world.getChunk(ChunkPos(position.x + lX, position.y + lY, position.z + lZ));
-				_chunk->addAdjacentPopulationChanges(*this);
+	for (int lX = -1; lX < 2; ++lX) {
+		for (int lY = -1; lY < 2; ++lY) {
+			for (int lZ = -1; lZ < 2; ++lZ) {
+				world.getChunk(ChunkPos(position.x + lX, position.y + lY, position.z + lZ))->
+					addAdjacentPopulationChanges(*this);
 			}
 		}
 	}
 
-	for (auto& change : populationChanges)
-	{
-		auto& _pos = change.first;
-		if (ChunkPos(_pos) == position) setBlock(ChunkLocalBlockPos(_pos), change.second.block);
+	for (auto& [_pos, _change] : populationChanges) {
+		if (ChunkPos(_pos) == position && getBlock(_pos).blockType == 0) setBlock(ChunkLocalBlockPos(_pos), _change.block);
 	}
 }
 
@@ -264,33 +237,18 @@ bool Chunk::isEmpty() const
 
 
 
-bool Chunk::isGenerated() const
-{
-	return generated;
-}
-
-
-
-bool Chunk::containsPosition(BlockPos blockPos) const
-{
-	return ChunkPos(blockPos) == position;
-}
-
-
-
 void Chunk::setBlockPopulation(BlockPos blockPos, Block block, unsigned long long age)
 {
-	if ((!populationChanges.contains(blockPos)) || (populationChanges.at(blockPos).age < age)) populationChanges[blockPos] = {block, age};
+	if ((!populationChanges.contains(blockPos)) || (populationChanges.at(blockPos).age < age))
+		populationChanges[blockPos] = {block, age};
 }
 
 
 
 void Chunk::addAdjacentPopulationChanges(Chunk& _chunk) const
 {
-	for (auto& change : populationChanges)
-	{
-		auto& _pos = change.first;
-		if (ChunkPos(_pos) == _chunk.position) _chunk.setBlockPopulation(_pos, change.second.block, change.second.age);
+	for (auto& [_pos, _change] : populationChanges) {
+		if (ChunkPos(_pos) == _chunk.position) _chunk.setBlockPopulation(_pos, _change.block, _change.age);
 	}
 }
 
