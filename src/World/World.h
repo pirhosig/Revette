@@ -54,8 +54,6 @@ private:
 	bool collides(BlockPos blockPos) const;
 
 	void onLoadCentreChange();
-
-	void updateLoadQueue();
 	void loadChunks();
 	void populateChunks();
 	void meshChunks();

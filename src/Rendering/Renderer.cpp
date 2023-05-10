@@ -19,7 +19,8 @@ Renderer::Renderer(
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> chunkMeshQueue,
 	std::shared_ptr<ThreadQueue<ChunkPos>> chunkMeshQueueDeletion
 ) :
-	chunkShader("shader/chunkShader.vs", "shader/chunkShader.fs"),
+	chunkShaderOpaque("shader/chunkShader.vs", "shader/chunkShader.fs"),
+	chunkShaderTransparent("shader/chunkShader.vs", "shader/chunkShaderTransparent.fs"),
 	textShader("shader/textShader.vs", "shader/textShader.fs"),
 	tileTextureAtlas("res/texture_atlas.png", 16, 16, true),
 	textureAtlasCharacters("res/character_set.png", 6, 8, false),
@@ -60,17 +61,24 @@ void Renderer::render(const EntityPosition& playerPos)
 		const glm::mat4 view = glm::lookAt(pos, pos + front, glm::vec3(0.0, 1.0, 0.0));
 		const glm::mat4 projectionView = projection * view;
 
-		chunkShader.use();
+		chunkShaderOpaque.use();
 		tileTextureAtlas.bindTexture();
-		chunkShader.setInt("tileAtlas", 0);
-		for (const auto& mesh : meshesChunk) {
-			mesh->draw(chunkShader, projectionView, _playerChunk);
-		}
+		chunkShaderOpaque.setInt("tileAtlas", 0);
+		for (const auto& mesh : meshesChunk) mesh->drawOpaque(chunkShaderOpaque, projectionView, _playerChunk);
+
+		// Draw transparent objects
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		chunkShaderTransparent.use();
+		chunkShaderTransparent.setInt("tileAtlas", 0);
+		for (const auto& mesh : meshesChunk) mesh->drawTransparent(chunkShaderTransparent, projectionView, _playerChunk);
 	}
 
 	// Draw GUI
-	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
 	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
 
 	textShader.use();
 	textureAtlasCharacters.bindTexture();

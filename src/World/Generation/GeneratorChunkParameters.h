@@ -11,7 +11,7 @@ class GeneratorChunkParameters
 public:
 	GeneratorChunkParameters(ChunkPos2D noisePos, GeneratorChunkNoise& noiseParameters) :
 		heightMap(noisePos, noiseParameters.noiseHeight),
-		biomeMap(noisePos, noiseParameters.noiseTemperature, noiseParameters.noiseRainfall, noiseParameters.noiseBiomeEdge)
+		biomeMap(noisePos, noiseParameters.noiseTemperature, noiseParameters.noiseRainfall)
 	{}
 	GeneratorChunkParameters(const GeneratorChunkParameters&) = delete;
 

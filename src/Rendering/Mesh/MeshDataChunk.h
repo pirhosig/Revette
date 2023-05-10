@@ -2,7 +2,8 @@
 #include <memory>
 #include <vector>
 
-#include "../../World/Chunk.h"
+#include "../../World/ChunkPos.h"
+class Chunk;
 
 
 
@@ -24,16 +25,7 @@ struct Vertex
 class MeshDataChunk
 {
 public:
-	MeshDataChunk(
-		ChunkPos chunkPos,
-		const std::unique_ptr<Chunk>& chunkCentre,
-		const std::unique_ptr<Chunk>& chunkUp,
-		const std::unique_ptr<Chunk>& chunkDown,
-		const std::unique_ptr<Chunk>& chunkNorth,
-		const std::unique_ptr<Chunk>& chunkSouth,
-		const std::unique_ptr<Chunk>& chunkEast,
-		const std::unique_ptr<Chunk>& chunkWest
-	);
+	MeshDataChunk(const Chunk* chunkCentre, const std::array<Chunk*, 6> neighbours);
 	MeshDataChunk(const MeshDataChunk&) = delete;
 
 	ChunkPos position;
@@ -41,5 +33,6 @@ public:
 	std::vector<Vertex> verticies;
 	std::vector<uint32_t> indicies;
 
-	int triangleCount = 0;
+	unsigned triangleCountOpaque;
+	unsigned triangleCountTransparent;
 };

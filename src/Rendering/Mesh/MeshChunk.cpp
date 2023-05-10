@@ -4,15 +4,16 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "../ShaderProgram.h"
+
 
 
 // Creates a chunk mesh using the passed data object, the data members of "meshData" are moved into this instance
-MeshChunk::MeshChunk(std::unique_ptr<MeshDataChunk> meshData) : triangleCount(meshData->triangleCount), position(meshData->position)
+MeshChunk::MeshChunk(std::unique_ptr<MeshDataChunk> meshData) :
+	triangleCountOpaque{ meshData->triangleCountOpaque },
+	triangleCountTransparent{ meshData->triangleCountTransparent },
+	position(meshData->position), VAO{}, VBO{}, EBO{}
 {
-	VAO = 0;
-	VBO = 0;
-	EBO = 0;
-
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 
@@ -60,10 +61,11 @@ MeshChunk::~MeshChunk()
 
 
 
+// This function is pretty hacky and should probably be replaced with a better cube intersection algorithm
 bool pointFallsWithinFOV(glm::vec3 point, glm::mat4& transformMatrix)
 {
 	glm::vec4 clipCoordinates = transformMatrix * glm::vec4(point, 1.0);
-	return (std::abs(clipCoordinates.x / clipCoordinates.w) <= 1.0 && std::abs(clipCoordinates.y / clipCoordinates.w) <= 1.0);
+	return (std::abs(clipCoordinates.x / clipCoordinates.w) <= 1.15 && std::abs(clipCoordinates.y / clipCoordinates.w) <= 1.15);
 }
 
 
@@ -87,8 +89,9 @@ bool withinFOV(glm::mat4& transformMatrix)
 
 
 // Draws the mesh, the shader program should already be active when this function is called
-void MeshChunk::draw(const ShaderProgram& shader, const glm::mat4& transformMatrix, ChunkPos playerPosition) const
+void MeshChunk::drawOpaque(const ShaderProgram& shader, const glm::mat4& transformMatrix, ChunkPos playerPosition) const
 {
+	if (!triangleCountOpaque) return;
 	ChunkOffset offset = playerPosition.offset(position);
 	glm::vec3 chunkVector = glm::vec3(offset.x * CHUNK_SIZE, offset.y * CHUNK_SIZE, offset.z * CHUNK_SIZE) * 0.5f;
 	glm::mat4 modelViewProjection = transformMatrix * glm::translate(glm::mat4(1.0f), chunkVector);
@@ -99,8 +102,26 @@ void MeshChunk::draw(const ShaderProgram& shader, const glm::mat4& transformMatr
 	shader.setMat4("transform", modelViewProjection);
 
 	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, triangleCount * 3, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, triangleCountOpaque * 3, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+}
 
+
+
+void MeshChunk::drawTransparent(const ShaderProgram& shader, const glm::mat4& transformMatrix, ChunkPos playerPosition) const
+{
+	if (!triangleCountTransparent) return;
+	ChunkOffset offset = playerPosition.offset(position);
+	glm::vec3 chunkVector = glm::vec3(offset.x * CHUNK_SIZE, offset.y * CHUNK_SIZE, offset.z * CHUNK_SIZE) * 0.5f;
+	glm::mat4 modelViewProjection = transformMatrix * glm::translate(glm::mat4(1.0f), chunkVector);
+
+	// Return if the chunk is outside the FOV, and the chunk is not very close to the player
+	if ((offset.x * offset.x + offset.y * offset.y + offset.z * offset.z > 5) && !withinFOV(modelViewProjection)) return;
+
+	shader.setMat4("transform", modelViewProjection);
+
+	glBindVertexArray(VAO);
+	glDrawElements(GL_TRIANGLES, triangleCountTransparent * 3, GL_UNSIGNED_INT, (void *)(static_cast<uint64_t>(triangleCountOpaque * 12)));
 	glBindVertexArray(0);
 }
 

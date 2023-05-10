@@ -36,7 +36,8 @@ private:
 	TileTexture tileTextureAtlas;
 	TileTexture textureAtlasCharacters;
 
-	ShaderProgram chunkShader;
+	ShaderProgram chunkShaderOpaque;
+	ShaderProgram chunkShaderTransparent;
 	ShaderProgram textShader;
 
 	GLFWwindow* mainWindow;

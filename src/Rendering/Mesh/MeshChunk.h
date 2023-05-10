@@ -4,10 +4,11 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
-#include "../../World/Entities/EntityPosition.h"
 #include "../../World/ChunkPos.h"
-#include "../ShaderProgram.h"
 #include "MeshDataChunk.h"
+
+class ShaderProgram;
+
 
 
 
@@ -18,7 +19,8 @@ public:
 	MeshChunk(const MeshChunk&) = delete;
 	~MeshChunk();
 
-	void draw(const ShaderProgram& shader, const glm::mat4& transformMatrix, ChunkPos playerPosition) const;
+	void drawOpaque(const ShaderProgram& shader, const glm::mat4& transformMatrix, ChunkPos playerPosition) const;
+	void drawTransparent(const ShaderProgram& shader, const glm::mat4& transformMatrix, ChunkPos playerPosition) const;
 	ChunkPos getPosition() const { return position; }
 
 private:
@@ -28,5 +30,6 @@ private:
 	GLuint VBO;
 	GLuint EBO;
 
-	GLuint triangleCount;
+	GLuint triangleCountOpaque;
+	GLuint triangleCountTransparent;
 };

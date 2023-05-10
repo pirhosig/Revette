@@ -8,7 +8,6 @@
 #include "ChunkPos.h"
 
 class GeneratorChunkParameters;
-class NoiseSource2D;
 class World;
 class Structure;
 class MeshDataChunk;
@@ -33,6 +32,7 @@ public:
 	void PopulateChunk(World& world);
 
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
+	std::vector<bool> getSolidFaceMask(AxisDirection direction) const;
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
 	void setBlockPopulation(BlockPos blockPos, Block block, unsigned long long age);
 	bool isEmpty() const;
@@ -48,4 +48,5 @@ private:
 
 	friend class Structure;
 	friend class MeshDataChunk;
+	friend class MeshChunkLOD;
 };

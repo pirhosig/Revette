@@ -19,7 +19,7 @@ uint32_t positionHash(ChunkPos chunkPos)
 	auto hashX = basicHash(static_cast<uint32_t>(chunkPos.x));
 	auto hashY = basicHash(static_cast<uint32_t>(chunkPos.y));
 	auto hashZ = basicHash(static_cast<uint32_t>(chunkPos.z));
-	return (hashX << 11) + (hashX >> 21) ^ (hashY << 4) ^ (hashY >> 28) ^ hashZ;
+	return (hashX << 11) ^ (hashX >> 21) ^ (hashY << 4) ^ (hashY >> 28) ^ hashZ;
 }
 
 
@@ -28,14 +28,21 @@ ChunkPRNG::ChunkPRNG(ChunkPos pos) : lcg(positionHash(pos)) {}
 
 
 
-double ChunkPRNG::getNext()
+double ChunkPRNG::next()
 {
-	return lcg() / static_cast<double>(lcg.max());
+	return raw() / 65535.0;
 }
 
 
 
-int ChunkPRNG::getScaledInt(double a, double b)
+int ChunkPRNG::scaledInt(double a, double b)
 {
-	return static_cast<int>(getNext() * a + b);
+	return static_cast<int>(next() * a + b);
+}
+
+
+
+uint16_t ChunkPRNG::raw()
+{
+	return static_cast<uint16_t>(lcg());
 }

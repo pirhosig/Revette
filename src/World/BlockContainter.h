@@ -2,8 +2,9 @@
 #include <memory>
 #include <variant>
 #include <vector>
-#include "ChunkPos.h"
+#include "AxisDirection.h"
 #include "Block.h"
+#include "ChunkPos.h"
 
 
 
@@ -14,14 +15,14 @@ public:
 	BlockContainer(const BlockContainer&) = delete;
 
 	void blockArrayCreate();
-	void blockArrayDelete();
+	void blockArrayDelete(Block block);
 	void blockArrayExtend();
 
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
 	std::vector<bool> getSolid() const;
+	std::vector<bool> getSolidFace(AxisDirection direction) const;
 
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
-	void setBlockFill(Block block);
 	void setBlockRaw(int arrayIndex, int blockIndex);
 	int addBlockToPallete(Block block);
 

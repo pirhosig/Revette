@@ -8,8 +8,9 @@ class ChunkPRNG
 {
 public:
 	ChunkPRNG(ChunkPos pos);
-	double getNext();
-	int getScaledInt(double a, double b);
+	double next();
+	int scaledInt(double a, double b);
+	uint16_t raw();
 
 private:
 	std::minstd_rand lcg;

@@ -2,21 +2,28 @@
 #include "../../Block.h"
 
 class Chunk;
+class ChunkPRNG;
 
 
 namespace Structures
 {
 	// Boreal Forest
-	void placeTreePine(Chunk& chunk, BlockPos base, unsigned long long age, int height);
-	void placeTreePineMassive(Chunk& chunk, BlockPos base, unsigned long long age, int height);
+	void placeTreePine(Chunk& chunk, ChunkPRNG& prng, BlockPos base);
+	void placeTreePineMassive(Chunk& chunk, ChunkPRNG& prng, BlockPos base);
 
 
 	// Rainforest
-	void placeTreeRainforestShrub(Chunk& chunk, BlockPos base, unsigned long long age);
-	void placeTreeRainforestTall(Chunk& chunk, BlockPos base, unsigned long long age, int height);
+	void placeTreeRainforestBasic(Chunk& chunk, ChunkPRNG& prng, BlockPos base);
+	void placeTreeRainforestShrub(Chunk& chunk, BlockPos base);
+	void placeTreeRainforestTall(Chunk& chunk, ChunkPRNG& prng, BlockPos base);
+
+
+	// Savannah
+	void placeTreeSavannahBaobab(Chunk& chunk, ChunkPRNG& prng, BlockPos base);
+	void placeTreeSavannahAcacia(Chunk& chunk, ChunkPRNG& prng, BlockPos base);
 
 
 	// Temperate Forest
-	void placeTreeAspen(Chunk& chunk, BlockPos base, unsigned long long age, int height);
-	void placeTreeOak(Chunk& chunk, BlockPos base, unsigned long long age, int height);
+	void placeTreeAspen(Chunk& chunk, ChunkPRNG& prng, BlockPos base);
+	void placeTreeOak(Chunk& chunk, ChunkPRNG& prng, BlockPos base);
 }

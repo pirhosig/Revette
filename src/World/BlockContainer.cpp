@@ -3,6 +3,38 @@
 #include "../Exceptions.h"
 
 
+// This should ideally be stored in a physics engine lookup, but it works for now
+// TODO: move this to a physics engine
+const bool IS_SOLID[] = {
+	false,
+	true,
+	true,
+	true,
+	false,
+	true,
+	false,
+	true,
+	true,
+	true,
+	false,
+	true,
+	false,
+	true,
+	false,
+	false,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true,
+	true
+};
+
+
 
 inline int blockPositionIsInside(int x, int y, int z)
 {
@@ -28,9 +60,10 @@ void BlockContainer::blockArrayCreate()
 
 
 
-void BlockContainer::blockArrayDelete()
+void BlockContainer::blockArrayDelete(Block block)
 {
 	blockArray = std::monostate();
+	emptyBlock = block;
 }
 
 
@@ -50,20 +83,18 @@ void BlockContainer::blockArrayExtend()
 
 Block BlockContainer::getBlock(ChunkLocalBlockPos blockPos) const try
 {
-	if (isEmpty()) return emptyBlock;
-
 	int _blockIndex{};
 	int _index = flattenIndex(blockPos);
 	switch (blockArray.index())
 	{
 	case 0:
-		return Block(0);
+		return emptyBlock;
 		break;
 	case 1:
-		_blockIndex = std::get<std::unique_ptr<uint8_t[]>>(blockArray)[_index];
+		_blockIndex = std::get<1>(blockArray)[_index];
 		break;
 	case 2:
-		_blockIndex = std::get<std::unique_ptr<uint16_t[]>>(blockArray)[_index];
+		_blockIndex = std::get<2>(blockArray)[_index];
 		break;
 	default:
 		return Block(0);
@@ -84,35 +115,6 @@ catch (...)
 
 std::vector<bool> BlockContainer::getSolid() const
 {
-	const bool IS_SOLID[] = {
-	false,
-	true,
-	true,
-	true,
-	false,
-	true,
-	true,
-	true,
-	true,
-	true,
-	false,
-	true,
-	false,
-	true,
-	false,
-	true,
-	true,
-	true,
-	true,
-	true,
-	true,
-	true,
-	true,
-	true,
-	true,
-	true
-	};
-
 	std::vector<bool> _solid(CHUNK_VOLUME);
 	std::vector<bool> _indexTransparency(blockArrayBlocksByIndex.size());
 	for (std::size_t i = 0; i < blockArrayBlocksByIndex.size(); ++i)
@@ -120,20 +122,95 @@ std::vector<bool> BlockContainer::getSolid() const
 
 	switch (blockArray.index())
 	{
-	case 0:
-		break;
 	case 1:
 		for (int i = 0; i < CHUNK_VOLUME; ++i)
-			_solid[i] = _indexTransparency[std::get<std::unique_ptr<uint8_t[]>>(blockArray)[i]];
+			_solid[i] = _indexTransparency[std::get<1>(blockArray)[i]];
 		break;
 	case 2:
 		for (int i = 0; i < CHUNK_VOLUME; ++i)
-			_solid[i] = _indexTransparency[std::get<std::unique_ptr<uint16_t[]>>(blockArray)[i]];
+			_solid[i] = _indexTransparency[std::get<2>(blockArray)[i]];
 		break;
 	default:
 		break;
 	}
 
+	return _solid;
+}
+
+
+
+std::vector<bool> BlockContainer::getSolidFace(AxisDirection direction) const
+{
+	// Skip any checking if the chunk contains only one block type
+	if (isEmpty()) return std::vector<bool>(CHUNK_AREA, IS_SOLID[emptyBlock.blockType]);
+
+	std::vector<bool> _solid(CHUNK_AREA);
+	std::vector<bool> _indexTransparency(blockArrayBlocksByIndex.size());
+	for (std::size_t i = 0; i < blockArrayBlocksByIndex.size(); ++i)
+		_indexTransparency[i] = IS_SOLID[blockArrayBlocksByIndex[i].blockType];
+
+	int _indexOffset = 0;
+	switch (blockArray.index())
+	{
+	case 1:
+		switch (direction)
+		{
+		case AxisDirection::Up:
+			_indexOffset = (CHUNK_SIZE - 1) * CHUNK_SIZE;
+		case AxisDirection::Down:
+			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX)
+				for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ)
+					_solid[lX * CHUNK_SIZE + lZ] = _indexTransparency[std::get<1>(blockArray)[_indexOffset + lX * CHUNK_AREA + lZ]];
+			break;
+		case AxisDirection::North:
+			_indexOffset = (CHUNK_SIZE - 1) * CHUNK_AREA;
+		case AxisDirection::South:
+			for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY)
+				for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ)
+					_solid[lY * CHUNK_SIZE + lZ] = _indexTransparency[std::get<1>(blockArray)[_indexOffset + lY * CHUNK_SIZE + lZ]];
+			break;
+		case AxisDirection::East:
+			_indexOffset = CHUNK_SIZE - 1;
+		case AxisDirection::West:
+			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX)
+				for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY)
+					_solid[lX * CHUNK_SIZE + lY] = _indexTransparency[std::get<1>(blockArray)[_indexOffset + lX * CHUNK_AREA + lY * CHUNK_SIZE]];
+			break;
+		default:
+			break;
+		}
+		break;
+	case 2:
+		switch (direction)
+		{
+		case AxisDirection::Up:
+			_indexOffset = (CHUNK_SIZE - 1) * CHUNK_SIZE;
+		case AxisDirection::Down:
+			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX)
+				for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ)
+					_solid[lX * CHUNK_SIZE + lZ] = _indexTransparency[std::get<2>(blockArray)[_indexOffset + lX * CHUNK_AREA + lZ]];
+			break;
+		case AxisDirection::North:
+			_indexOffset = (CHUNK_SIZE - 1) * CHUNK_AREA;
+		case AxisDirection::South:
+			for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY)
+				for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ)
+					_solid[lY * CHUNK_SIZE + lZ] = _indexTransparency[std::get<2>(blockArray)[_indexOffset + lY * CHUNK_SIZE + lZ]];
+			break;
+		case AxisDirection::East:
+			_indexOffset = CHUNK_SIZE - 1;
+		case AxisDirection::West:
+			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX)
+				for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY)
+					_solid[lX * CHUNK_SIZE + lY] = _indexTransparency[std::get<2>(blockArray)[_indexOffset + lX * CHUNK_AREA + lY * CHUNK_SIZE]];
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		break;
+	}
 	return _solid;
 }
 
@@ -160,20 +237,12 @@ void BlockContainer::setBlock(ChunkLocalBlockPos blockPos, Block block)
 }
 
 
-void BlockContainer::setBlockFill(Block block)
-{
-	blockArrayDelete();
-	emptyBlock = block;
-}
-
-
 
 // Directly sets the value in the block array, without any safety checks
 void BlockContainer::setBlockRaw(int arrayIndex, int blockIndex)
 {
-	if (std::holds_alternative<std::unique_ptr<uint8_t[]>>(blockArray))
-		std::get<std::unique_ptr<uint8_t[]>>(blockArray)[arrayIndex] = static_cast<uint8_t>(blockIndex);
-	else std::get<std::unique_ptr<uint16_t[]>>(blockArray)[arrayIndex] = static_cast<uint16_t>(blockIndex);
+	if (blockArray.index() == 1) std::get<1>(blockArray)[arrayIndex] = static_cast<uint8_t>(blockIndex);
+	else std::get<2>(blockArray)[arrayIndex] = static_cast<uint16_t>(blockIndex);
 }
 
 
