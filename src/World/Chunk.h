@@ -1,6 +1,6 @@
 #pragma once
-#include <map>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "Block.h"
@@ -16,6 +16,7 @@ class MeshDataChunk;
 
 struct BlockChange
 {
+	BlockPos pos;
 	Block block{Block(0)};
 	unsigned long long age{0};
 };
@@ -40,11 +41,12 @@ public:
 	const ChunkPos position;
 
 private:
-	void addAdjacentPopulationChanges(Chunk& _chunk) const;
+	void addAdjacentPopulationChanges(std::unordered_map<BlockPos, std::pair<Block, unsigned long long>>& changes, ChunkPos pos) const;
 
 	bool generated;
 	BlockContainer blockContainer;
-	std::map<BlockPos, BlockChange> populationChanges;
+	std::vector<BlockChange> populationChangesAdjacent;
+	std::vector<BlockChange> populationChangesInside;
 
 	friend class Structure;
 	friend class MeshDataChunk;

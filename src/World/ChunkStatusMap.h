@@ -1,7 +1,8 @@
 #pragma once
-#include <map>
+#include <unordered_map>
 
 #include "ChunkPos.h"
+#include "ChunkPosHash.h"
 #include "StatusChunk.h"
 
 
@@ -17,5 +18,5 @@ public:
 	void setChunkStatusLoad(const ChunkPos chunkPos, StatusChunkLoad status);
 	void setChunkStatusMesh(const ChunkPos chunkPos, StatusChunkMesh status);
 
-	std::map<ChunkPos, StatusChunk> statusMap;
+	std::unordered_map<ChunkPos, StatusChunk> statusMap;
 };

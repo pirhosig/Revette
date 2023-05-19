@@ -1,15 +1,18 @@
 #include "Renderer.h"
+#include <algorithm>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "../GlobalLog.h"
 
 
-inline bool withinRenderingDistance(ChunkPos _pos, ChunkPos _centre)
+
+inline bool withinLoadDistance(ChunkPos _pos, ChunkPos _centre)
 {
 	auto _offset = _pos.offset(_centre);
-	return (std::abs(_offset.x) < LOAD_DISTANCE - 1 &&
-		std::abs(_offset.y) < LOAD_DISTANCE_VERTICAL - 1 &&
-		std::abs(_offset.z) < LOAD_DISTANCE - 1);
+	return ((_offset.x * _offset.x + _offset.z * _offset.z <= LOAD_DISTANCE * LOAD_DISTANCE) &&
+		(std::abs(_offset.y) <= LOAD_DISTANCE_VERTICAL));
 }
 
 
@@ -27,7 +30,21 @@ Renderer::Renderer(
 	threadQueueMeshDeletion{ chunkMeshQueueDeletion },
 	threadQueueMeshes{ chunkMeshQueue },
 	mainWindow{ window }
-{}
+{
+	GlobalLog.Write("Created renderer");
+}
+
+
+
+struct CmpChunkPos
+{
+	ChunkPos centre;
+
+	bool operator()(const ChunkPos& a, const ChunkPos& b) const
+	{
+		return centre.distance(a) < centre.distance(b);
+	}
+};
 
 
 
@@ -61,10 +78,16 @@ void Renderer::render(const EntityPosition& playerPos)
 		const glm::mat4 view = glm::lookAt(pos, pos + front, glm::vec3(0.0, 1.0, 0.0));
 		const glm::mat4 projectionView = projection * view;
 
+		// Get sorted array of meshes
+		std::vector<ChunkPos> _meshPositions;
+		_meshPositions.reserve(meshesChunk.size());
+		for (auto& [_pos, _mesh] : meshesChunk) _meshPositions.push_back(_pos);
+		std::sort(_meshPositions.begin(), _meshPositions.end(), CmpChunkPos{_playerChunk});
+
 		chunkShaderOpaque.use();
 		tileTextureAtlas.bindTexture();
 		chunkShaderOpaque.setInt("tileAtlas", 0);
-		for (const auto& mesh : meshesChunk) mesh->drawOpaque(chunkShaderOpaque, projectionView, _playerChunk);
+		for (const auto& _pos : _meshPositions) meshesChunk[_pos]->drawOpaque(chunkShaderOpaque, projectionView, _playerChunk);
 
 		// Draw transparent objects
 		glEnable(GL_BLEND);
@@ -72,7 +95,8 @@ void Renderer::render(const EntityPosition& playerPos)
 
 		chunkShaderTransparent.use();
 		chunkShaderTransparent.setInt("tileAtlas", 0);
-		for (const auto& mesh : meshesChunk) mesh->drawTransparent(chunkShaderTransparent, projectionView, _playerChunk);
+		for (auto it = _meshPositions.rbegin(); it != _meshPositions.rend(); ++it)
+			meshesChunk[*it]->drawTransparent(chunkShaderTransparent, projectionView, _playerChunk);
 	}
 
 	// Draw GUI
@@ -113,7 +137,7 @@ void Renderer::unqueueMeshes()
 	threadQueueMeshes->getQueue(queue);
 	while (!queue.empty())
 	{
-		meshesChunk.insert(std::make_unique<MeshChunk>(std::move(queue.front())));
+		meshesChunk.insert({ queue.front()->position, std::make_unique<MeshChunk>(std::move(queue.front())) });
 		queue.pop();
 	}
 }
@@ -124,14 +148,13 @@ void Renderer::unloadMeshes(const ChunkPos& playerChunk)
 {
 	std::queue<ChunkPos> removeQueue;
 
-	std::unordered_set<std::unique_ptr<MeshChunk>>::iterator it = meshesChunk.begin();
+	auto it = meshesChunk.begin();
 	while (it != meshesChunk.end())
 	{
-		auto _pos = (*it)->getPosition();
-		if (!withinRenderingDistance(_pos, playerChunk))
+		if (!withinLoadDistance(it->first, playerChunk))
 		{
 			it = meshesChunk.erase(it);
-			removeQueue.push(_pos);
+			removeQueue.push(it->first);
 		}
 		else it++;
 	}

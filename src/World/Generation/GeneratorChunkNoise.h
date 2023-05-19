@@ -1,4 +1,5 @@
 #pragma once
+#include "../../GlobalLog.h"
 #include "NoiseSource.h"
 class GeneratorChunkParameters;
 
@@ -19,7 +20,9 @@ public:
 	) : noiseHeight(settingHeight, freqHeight, seed),
 		noiseTemperature(settingTemperature, freqTemperature, seed + 0x57),
 		noiseRainfall(settingRainfall, freqRainfall, seed + 0x63)
-	{}
+	{
+		GlobalLog.Write("Created noise generators");
+	}
 
 private:
 	NoiseSource2D noiseHeight;

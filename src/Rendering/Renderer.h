@@ -1,5 +1,5 @@
 #pragma once
-#include <unordered_set>
+#include <unordered_map>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -9,7 +9,10 @@
 #include "Mesh/MeshChunk.h"
 #include "Mesh/MeshText.h"
 #include "../Threading/ThreadPointerQueue.h"
+#include "../World/ChunkPos.h"
+#include "../World/ChunkPosHash.h"
 #include "../World/Entities/EntityPosition.h"
+
 
 
 
@@ -30,7 +33,7 @@ private:
 	// Mesh queue and storage
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes;
 	std::shared_ptr<ThreadQueue<ChunkPos>> threadQueueMeshDeletion;
-	std::unordered_set<std::unique_ptr<MeshChunk>> meshesChunk;
+	std::unordered_map<ChunkPos, std::unique_ptr<MeshChunk>> meshesChunk;
 	MeshText meshGUI;
 
 	TileTexture tileTextureAtlas;

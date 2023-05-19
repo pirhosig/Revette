@@ -16,6 +16,7 @@ std::string readFile(const char* filePath)
 
 	file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 	file.open(filePath);
+	if (!file.is_open()) throw std::runtime_error("Error reading shader file");
 	fileStream << file.rdbuf();
 	fileString = fileStream.str();
 

@@ -1,6 +1,8 @@
 #include "MainLoop.h"
 #include "LoopGame.h"
 
+#include "GlobalLog.h"
+
 
 
 MainLoop::MainLoop()
@@ -27,6 +29,8 @@ MainLoop::MainLoop()
 
 	// Set the viewport to match the screen height and width
 	glViewport(0, 0, windowWidth, windowHeight);
+
+	GlobalLog.Write("Created opengl context");
 }
 
 

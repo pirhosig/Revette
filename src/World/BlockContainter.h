@@ -19,12 +19,13 @@ public:
 	void blockArrayExtend();
 
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
+	Block getBlockRaw(unsigned int index) const;
 	std::vector<bool> getSolid() const;
 	std::vector<bool> getSolidFace(AxisDirection direction) const;
 
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
 	void setBlockRaw(int arrayIndex, int blockIndex);
-	int addBlockToPallete(Block block);
+	int getPalleteIndex(Block block);
 
 	bool isEmpty() const;
 

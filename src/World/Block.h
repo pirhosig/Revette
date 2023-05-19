@@ -30,6 +30,7 @@ public:
 	BlockPos offset(int _x, int _y, int _z) const;
 
 	bool operator<(const BlockPos& other) const;
+	bool operator==(const BlockPos& other) const;
 };
 
 

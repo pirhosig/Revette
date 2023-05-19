@@ -8,7 +8,7 @@ constexpr int CHUNK_AREA = CHUNK_SIZE * CHUNK_SIZE;
 constexpr int CHUNK_VOLUME = CHUNK_AREA * CHUNK_SIZE;
 
 // Loading constants, should probably be settings not constants but oh well
-constexpr int LOAD_DISTANCE = 20;
+constexpr int LOAD_DISTANCE = 25;
 constexpr int LOAD_DISTANCE_VERTICAL = 7;
 
 // World size constants

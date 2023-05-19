@@ -72,7 +72,7 @@ bool pointFallsWithinFOV(glm::vec3 point, glm::mat4& transformMatrix)
 
 bool withinFOV(glm::mat4& transformMatrix)
 {
-	constexpr double CS = static_cast<double>(CHUNK_SIZE) + 1.0;
+	constexpr double CS = static_cast<double>(CHUNK_SIZE);
 	// Check if any of the eight corners fall within the FOV
 	return (
 		pointFallsWithinFOV(glm::vec3(0.0, 0.0, 0.0), transformMatrix) ||
@@ -121,7 +121,7 @@ void MeshChunk::drawTransparent(const ShaderProgram& shader, const glm::mat4& tr
 	shader.setMat4("transform", modelViewProjection);
 
 	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, triangleCountTransparent * 3, GL_UNSIGNED_INT, (void *)(static_cast<uint64_t>(triangleCountOpaque * 12)));
+	glDrawElements(GL_TRIANGLES, triangleCountTransparent * 3, GL_UNSIGNED_INT, (void *)(static_cast<uint64_t>(triangleCountOpaque * 3 * 4)));
 	glBindVertexArray(0);
 }
 

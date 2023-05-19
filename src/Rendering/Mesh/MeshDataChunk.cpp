@@ -24,7 +24,7 @@ const uint16_t BLOCK_TEXTURES[][6] = {
 	{15, 15, 15, 15, 15, 15},
 	{16, 16, 16, 16, 16, 16},
 	{17, 17, 17, 17, 17, 17},
-	{18, 18, 18, 18, 18, 18},
+	{18, 18, 18, 18, 18, 18}
 };
 
 
@@ -175,7 +175,8 @@ MeshDataChunk::MeshDataChunk(const Chunk* chunkCentre, const std::array<Chunk*, 
 		for (int j = 0; j < CHUNK_SIZE; ++j)
 			for (int k = 0; k < CHUNK_SIZE; ++k)
 			{
-				Block block = chunkCentre->getBlock(ChunkLocalBlockPos(i, j, k));
+				int _index = i * CHUNK_AREA + j * CHUNK_SIZE + k;
+				Block block = chunkCentre->blockContainer.getBlockRaw(_index);
 				// Skip if air block
 				if (block.blockType == 0) continue;
 
@@ -193,8 +194,6 @@ MeshDataChunk::MeshDataChunk(const Chunk* chunkCentre, const std::array<Chunk*, 
 						{{ 0, 1, 1 }, { 1, 1, 1 }, { 1, 0, 1 }, { 0, 0, 1 }}, // East
 						{{ 0, 1, 0 }, { 1, 1, 0 }, { 1, 0, 0 }, { 0, 0, 0 }}  // West
 					};
-
-					int _index = i * CHUNK_AREA + j * CHUNK_SIZE + k;
 					int rotationOffset = IS_ROTATEABLE[block.blockType] ?
 						static_cast<int>(getPositionHash(ChunkLocalBlockPos(i, j, k).asBlockPos(position), basicHash(1)) % 4) : 0;
 					bool faceIsVisible[6] = {
@@ -293,4 +292,6 @@ MeshDataChunk::MeshDataChunk(const Chunk* chunkCentre, const std::array<Chunk*, 
 	// Merge transparent verticies
 	for (auto& vertex : _verticiesTrans) verticies.push_back(vertex);
 	for (auto& index : _indiciesTrans) indicies.push_back(indexCounterOpaque + index);
+	verticies.shrink_to_fit();
+	indicies.shrink_to_fit();
 }

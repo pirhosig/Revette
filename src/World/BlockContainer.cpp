@@ -46,7 +46,7 @@ inline int blockPositionIsInside(int x, int y, int z)
 inline int flattenIndex(const ChunkLocalBlockPos blockPos)
 {
 	// assert(blockPositionIsInside(blockPos.x, blockPos.y, blockPos.z) && "Block outside chunk.");
-	return blockPos.x * CHUNK_AREA + blockPos.y * CHUNK_SIZE + blockPos.z;
+	return static_cast<unsigned>(blockPos.x) * CHUNK_AREA + static_cast<unsigned>(blockPos.y) * CHUNK_SIZE + blockPos.z;
 }
 
 
@@ -81,20 +81,27 @@ void BlockContainer::blockArrayExtend()
 
 
 
-Block BlockContainer::getBlock(ChunkLocalBlockPos blockPos) const try
+Block BlockContainer::getBlock(ChunkLocalBlockPos blockPos) const
+{
+	return getBlockRaw(flattenIndex(blockPos));
+}
+
+
+
+Block BlockContainer::getBlockRaw(unsigned int index) const
+try
 {
 	int _blockIndex{};
-	int _index = flattenIndex(blockPos);
 	switch (blockArray.index())
 	{
 	case 0:
 		return emptyBlock;
 		break;
 	case 1:
-		_blockIndex = std::get<1>(blockArray)[_index];
+		_blockIndex = std::get<1>(blockArray)[index];
 		break;
 	case 2:
-		_blockIndex = std::get<2>(blockArray)[_index];
+		_blockIndex = std::get<2>(blockArray)[index];
 		break;
 	default:
 		return Block(0);
@@ -219,21 +226,7 @@ std::vector<bool> BlockContainer::getSolidFace(AxisDirection direction) const
 void BlockContainer::setBlock(ChunkLocalBlockPos blockPos, Block block)
 {
 	if (isEmpty()) blockArrayCreate();
-	// Linear search for matching index, if it doesn't exist then it is added
-	int _blockIndex = -1;
-	for (int i = 0; i < static_cast<int>(blockArrayBlocksByIndex.size()); ++i) {
-		if (blockArrayBlocksByIndex[i] == block)
-		{
-			_blockIndex = i;
-			break;
-		}
-	}
-	if (_blockIndex == -1)
-	{
-		_blockIndex = addBlockToPallete(block);
-		if (_blockIndex > 255) blockArrayExtend();
-	}
-	setBlockRaw(flattenIndex(blockPos), _blockIndex);
+	setBlockRaw(flattenIndex(blockPos), getPalleteIndex(block));
 }
 
 
@@ -247,9 +240,12 @@ void BlockContainer::setBlockRaw(int arrayIndex, int blockIndex)
 
 
 
-int BlockContainer::addBlockToPallete(Block block)
+int BlockContainer::getPalleteIndex(Block block)
 {
+	for (int i = 0; i < static_cast<int>(blockArrayBlocksByIndex.size()); ++i)
+		if (blockArrayBlocksByIndex[i] == block) return i;
 	blockArrayBlocksByIndex.push_back(block);
+	if (blockArrayBlocksByIndex.size() > 255) blockArrayExtend();
 	return static_cast<int>(blockArrayBlocksByIndex.size() - 1);
 }
 

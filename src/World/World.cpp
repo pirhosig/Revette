@@ -4,49 +4,71 @@
 
 #include "Physics.h"
 #include "../Exceptions.h"
+#include "../GlobalLog.h"
 
 
 
-constexpr int SEED = 2489756;
+constexpr int SEED = 2489734;
 
 
 
-inline bool withinGenerationDistance(ChunkPos _pos, ChunkPos _centre)
+inline bool withinLoadDistance(ChunkPos _pos, ChunkPos _centre)
 {
 	auto _offset = _pos.offset(_centre);
-	return (std::abs(_offset.x) <= LOAD_DISTANCE &&
-			std::abs(_offset.y) <= LOAD_DISTANCE_VERTICAL &&
-			std::abs(_offset.z) <= LOAD_DISTANCE);
+	return ((_offset.x * _offset.x + _offset.z * _offset.z <= LOAD_DISTANCE * LOAD_DISTANCE) &&
+			(std::abs(_offset.y) <= LOAD_DISTANCE_VERTICAL));
 }
 
 
 
-inline bool withinGenerationDistance2D(ChunkPos _pos, ChunkPos _centre)
+inline bool withinLoadDistance2D(ChunkPos _pos, ChunkPos _centre)
 {
 	auto _offset = _pos.offset(_centre);
-	return (std::abs(_offset.x) <= LOAD_DISTANCE && std::abs(_offset.z) <= LOAD_DISTANCE);
+	return (_offset.x * _offset.x + _offset.z * _offset.z <= LOAD_DISTANCE * LOAD_DISTANCE);
 }
 
 
 
-inline bool withinPopulationDistance(ChunkPos _pos, ChunkPos _centre)
+inline int chunkLoadPriority(ChunkPos pos, ChunkPos centre)
 {
-	auto _offset = _pos.offset(_centre);
-	return (std::abs(_offset.x) < LOAD_DISTANCE &&
-			std::abs(_offset.y) < LOAD_DISTANCE_VERTICAL &&
-			std::abs(_offset.z) < LOAD_DISTANCE);
+	return std::clamp(200 - static_cast<int>(centre.distance(pos)), 0, 200);
 }
 
 
 
-inline bool withinMeshingDistance(ChunkPos _pos, ChunkPos _centre)
-{
-	auto _offset = _pos.offset(_centre);
-	return (std::abs(_offset.x) < LOAD_DISTANCE - 1 &&
-		std::abs(_offset.y) < LOAD_DISTANCE_VERTICAL - 1 &&
-		std::abs(_offset.z) < LOAD_DISTANCE - 1);
-}
+const int CHUNK_NEIGHBOURHOOD[27][3] = {
+	{-1, -1, -1},
+	{-1, -1,  0},
+	{-1, -1,  1},
+	{-1,  0, -1},
+	{-1,  0,  0},
+	{-1,  0,  1},
+	{-1,  1, -1},
+	{-1,  1,  0},
+	{-1,  1,  1},
+	{ 0, -1, -1},
+	{ 0, -1,  0},
+	{ 0, -1,  1},
+	{ 0,  0, -1},
+	{ 0,  0,  0},
+	{ 0,  0,  1},
+	{ 0,  1, -1},
+	{ 0,  1,  0},
+	{ 0,  1,  1},
+	{ 1, -1, -1},
+	{ 1, -1,  0},
+	{ 1, -1,  1},
+	{ 1,  0, -1},
+	{ 1,  0,  0},
+	{ 1,  0,  1},
+	{ 1,  1, -1},
+	{ 1,  1,  0},
+	{ 1,  1,  1}
+};
 
+
+
+const int CHUNK_NEIGHBOURS_CARDINAL[6][3] = { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 } };
 
 
 
@@ -55,12 +77,12 @@ World::World(
 	std::shared_ptr<ThreadQueue<ChunkPos>> queueMeshDeletion,
 	const char* settingNoiseHeightmap
 ) :
-	loadCentre(0, 0, 0),
+	loadCentre(0, 1, 0),
 	threadQueueMeshes{ queueMesh },
 	threadQueueMeshDeletion{ queueMeshDeletion },
 	generatorChunkNoise(
 		SEED,
-		(1.0f / 32.0f),
+		(1.0f / 64.0f),
 		(1.0f / 64.0f),
 		(1.0f / 64.0f),
 		settingNoiseHeightmap,
@@ -68,57 +90,15 @@ World::World(
 		"EwAK1yM8FwAAAIC/AACAPwAAAAAAAIA/GQANAAMAAAAAAABACQAAAAAAPwAAAAAAARsAAQAAj8J1PA=="
 	)
 {
-	// Updates the load queue by removing chunks too far away, updating priorities and adding chunks within load distance
-	// Update priority of queued chunks
-	{
-		std::priority_queue<ChunkPriorityTicket> updatedQueue;
-
-		while (!loadQueue.empty())
-		{
-			const ChunkPriorityTicket item = loadQueue.top();
-			loadQueue.pop();
-			auto& _pos = item.pos;
-			// Check if chunk still falls within load distance
-			if (withinGenerationDistance(_pos, loadCentre))
-			{
-				// Add chunk back with updated priority
-				int priority = std::max(100 - static_cast<int>(loadCentre.distance(_pos)), 0);
-				updatedQueue.push(ChunkPriorityTicket(priority, _pos));
-			}
-			// Skip chunk and remove queued status
-			else chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::NON_EXISTENT);
-		}
-
-		std::swap(loadQueue, updatedQueue);
-	}
-
-	for (int x = loadCentre.x - LOAD_DISTANCE; x <= loadCentre.x + LOAD_DISTANCE; ++x)
-		for (int z = loadCentre.z - LOAD_DISTANCE; z <= loadCentre.z + LOAD_DISTANCE; ++z)
-			for (int y = loadCentre.y - LOAD_DISTANCE_VERTICAL; y <= loadCentre.y + LOAD_DISTANCE_VERTICAL; ++y)
-			{
-				ChunkPos loadPos(x, y, z);
-				// This should absolutely be optimised, I just haven't thought of a nice-ish way to
-				// loop over all chunks in a sphere
-				if (!withinGenerationDistance(loadPos, loadCentre)) continue;
-				int priority = std::max(100 - static_cast<int>(loadCentre.distance(loadPos)), 0);
-				// Update chunk state
-				chunkStatusMap.setChunkStatusLoad(loadPos, StatusChunkLoad::QUEUED_LOAD);
-				loadQueue.push(ChunkPriorityTicket(priority, loadPos));
-			}
+	loadQueue.push(ChunkPriorityTicket(chunkLoadPriority(loadCentre, loadCentre), loadCentre));
+	chunkStatusMap.setChunkStatusLoad(loadCentre, StatusChunkLoad::QUEUED_LOAD);
+	GlobalLog.Write("Loaded World");
 }
 
 
 
 void World::tick(Entity& player)
 {
-	ChunkPos _playerChunk(player);
-	if (_playerChunk != loadCentre)
-	{
-		loadCentre = _playerChunk;
-		onLoadCentreChange();
-	}
-
-	
 	std::queue<ChunkPos> meshUnloadQueue;
 	threadQueueMeshDeletion->getQueue(meshUnloadQueue);
 	while (!meshUnloadQueue.empty())
@@ -126,6 +106,13 @@ void World::tick(Entity& player)
 		ChunkPos _pos = meshUnloadQueue.front();
 		meshUnloadQueue.pop();
 		if (chunkStatusMap.chunkExists(_pos)) chunkStatusMap.setChunkStatusMesh(_pos, StatusChunkMesh::NON_EXISTENT);
+	}
+
+	ChunkPos _playerChunk(player);
+	if (_playerChunk != loadCentre)
+	{
+		loadCentre = _playerChunk;
+		onLoadCentreChange();
 	}
 
 	loadChunks();
@@ -167,6 +154,12 @@ inline double getFracAbs(double x)
 
 
 
+void World::moveEntity(Entity& entity)
+{
+	entity.moveAbsolute(entity.displacement);
+	entity.displacement = { 0.0, 0.0, 0.0 };
+}
+/*
 void World::moveEntity(Entity& entity)
 {
 	constexpr double SMALL = 1e-6;
@@ -295,6 +288,7 @@ void World::moveEntity(Entity& entity)
 
 	entity.displacement = { 0.0, 0.0, 0.0 };
 }
+*/
 
 
 
@@ -313,112 +307,75 @@ void World::onLoadCentreChange()
 	// I pray to god that this never breaks because I sure as hell do not know how it works.
 	// Update: well fuck, it doesn't quite work
 
-	// Clear all chunk queues
-	loadQueue = std::priority_queue<ChunkPriorityTicket>();
-	populateQueue = std::priority_queue<ChunkPriorityTicket>();
-	meshQueue = std::priority_queue<ChunkPriorityTicket>();
-
-	// Remove all unneeded chunks
+	// Pass 1: unload all chunks that should be unloaded
 	std::vector<ChunkPos> unloadQueue;
-
 	for (auto& [_pos, _status] : chunkStatusMap.statusMap)
-	{
-		if (!withinGenerationDistance(_pos, loadCentre)) unloadQueue.push_back(_pos);
-		else if (_status.getLoadStatus() == StatusChunkLoad::QUEUED_POPULATE && !withinPopulationDistance(_pos, loadCentre))
-			chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::GENERATED);
-	}
+		if (!withinLoadDistance(_pos, loadCentre)) unloadQueue.push_back(_pos);
 
+	// Actually unload them
 	for (auto& _pos : unloadQueue)
 	{
 		chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::NON_EXISTENT);
 		mapChunks.erase(_pos);
-
 		// Check if cached generation data can be cleared
-		if (!withinGenerationDistance2D(_pos, loadCentre)) generatorChunkCache.erase(ChunkPos2D(_pos));
+		if (!withinLoadDistance2D(_pos, loadCentre)) generatorChunkCache.erase(ChunkPos2D(_pos));
 	}
 
-	// Figure out which chunks need loading
-	for (int lX = loadCentre.x - LOAD_DISTANCE; lX <= loadCentre.x + LOAD_DISTANCE; ++lX)
-		for (int lZ = loadCentre.z - LOAD_DISTANCE; lZ <= loadCentre.z + LOAD_DISTANCE; ++lZ)
-			for (int lY = loadCentre.y - LOAD_DISTANCE_VERTICAL; lY <= loadCentre.y + LOAD_DISTANCE_VERTICAL; ++lY)
+	// Figure out wtf is going on with the rest of the chunks
+	for (auto& [_pos, _status] : chunkStatusMap.statusMap)
+	{
+		switch (_status.getLoadStatus())
+		{
+		case StatusChunkLoad::GENERATED:
+			// Check if this can populate
+			if (chunkStatusMap.getChunkStatusCanPopulate(_pos))
+				chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::QUEUED_POPULATE);
+		case StatusChunkLoad::POPULATED:
+			// Check if any neighbours should be loaded
+			for (auto [lX, lY, lZ] : CHUNK_NEIGHBOURS_CARDINAL)
 			{
-				auto _pos = ChunkPos(lX, lY, lZ);
-				auto _status = chunkStatusMap.getChunkStatusLoad(_pos);
-				int _priority = std::max(100 - static_cast<int>(loadCentre.distance(_pos)), 0);
-				if (_status == StatusChunkLoad::NON_EXISTENT)
-				{
-					// Queue for loading
-					chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::QUEUED_LOAD);
-					loadQueue.push(ChunkPriorityTicket(_priority, _pos));
-				}
-				// Add back to load queue
-				else if (_status == StatusChunkLoad::QUEUED_LOAD) loadQueue.push(ChunkPriorityTicket(_priority, _pos));
+				ChunkPos nPos(_pos.x + lX, _pos.y + lY, _pos.z + lZ);
+				if (withinLoadDistance(nPos, loadCentre) &&
+					chunkStatusMap.getChunkStatusLoad(nPos) == StatusChunkLoad::NON_EXISTENT
+				)
+					chunkStatusMap.setChunkStatusLoad(nPos, StatusChunkLoad::QUEUED_LOAD);
 			}
+			break;
+		case StatusChunkLoad::QUEUED_POPULATE:
+			if (!_status.canPopulate()) chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::GENERATED);
+			break;
+		default:
+			break;
+		}
 
-	// Figure out which chunks need populating
-	for (int lX = loadCentre.x - LOAD_DISTANCE + 1; lX < loadCentre.x + LOAD_DISTANCE; ++lX)
-		for (int lZ = loadCentre.z - LOAD_DISTANCE + 1; lZ < loadCentre.z + LOAD_DISTANCE; ++lZ)
-			for (int lY = loadCentre.y - LOAD_DISTANCE_VERTICAL + 1; lY < loadCentre.y + LOAD_DISTANCE_VERTICAL; ++lY)
-			{
-				auto _pos = ChunkPos(lX, lY, lZ);
-				auto _status = chunkStatusMap.getChunkStatusLoad(_pos);
-				int _priority = std::max(100 - static_cast<int>(loadCentre.distance(_pos)), 0);
-				if (_status == StatusChunkLoad::GENERATED)
-				{
-					// Check if population is possible
-					if (chunkStatusMap.getChunkStatusCanPopulate(_pos))
-					{
-						chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::QUEUED_POPULATE);
-						populateQueue.push(ChunkPriorityTicket(_priority, _pos));
-					}
-				}
-				// Add back to population queue
-				else if (_status == StatusChunkLoad::QUEUED_POPULATE) populateQueue.push(ChunkPriorityTicket(_priority, _pos));
-			}
+		if (_status.getMeshStatus() == StatusChunkMesh::NON_EXISTENT && _status.canMesh())
+			chunkStatusMap.setChunkStatusMesh(_pos, StatusChunkMesh::QUEUED);
+		else if (_status.getMeshStatus() == StatusChunkMesh::QUEUED && !_status.canMesh())
+			chunkStatusMap.setChunkStatusMesh(_pos, StatusChunkMesh::NON_EXISTENT);
+	}
 
-	// Figure out wtf is going on with meshing
-	for (int lX = loadCentre.x - LOAD_DISTANCE; lX <= loadCentre.x + LOAD_DISTANCE; ++lX)
-		for (int lZ = loadCentre.z - LOAD_DISTANCE; lZ <= loadCentre.z + LOAD_DISTANCE; ++lZ)
-			for (int lY = loadCentre.y - LOAD_DISTANCE_VERTICAL; lY <= loadCentre.y + LOAD_DISTANCE_VERTICAL; ++lY)
-			{
-				auto _pos = ChunkPos(lX, lY, lZ);
-				auto _status = chunkStatusMap.getChunkStatusMesh(_pos);
-				if (!withinMeshingDistance(_pos, loadCentre))
-				{
-					if (_status != StatusChunkMesh::NON_EXISTENT) chunkStatusMap.setChunkStatusMesh(_pos, StatusChunkMesh::NON_EXISTENT);
-				}
-				else
-				{
-					int _priority = std::max(100 - static_cast<int>(loadCentre.distance(_pos)), 0);
-					switch (_status)
-					{
-					case StatusChunkMesh::NON_EXISTENT:
-						if (chunkStatusMap.getChunkStatusCanMesh(_pos))
-						{
-							meshQueue.push(ChunkPriorityTicket(_priority, _pos));
-							chunkStatusMap.setChunkStatusMesh(_pos, StatusChunkMesh::QUEUED);
-						}
-						break;
-					case StatusChunkMesh::QUEUED:
-						meshQueue.push(ChunkPriorityTicket(_priority, _pos));
-						break;
-					case StatusChunkMesh::MESHED:
-						break;
-					default:
-						break;
-					}
-				}
-			}
+	// Re generate all chunk queues
+	loadQueue = std::priority_queue<ChunkPriorityTicket>();
+	populateQueue = std::priority_queue<ChunkPriorityTicket>();
+	meshQueue = std::priority_queue<ChunkPriorityTicket>();
+	for (auto& [_pos, _status] : chunkStatusMap.statusMap)
+	{
+		if (_status.getLoadStatus() == StatusChunkLoad::QUEUED_LOAD)
+			loadQueue.push(ChunkPriorityTicket(chunkLoadPriority(_pos, loadCentre), _pos));
+		else if (_status.getLoadStatus() == StatusChunkLoad::QUEUED_POPULATE)
+			populateQueue.push(ChunkPriorityTicket(chunkLoadPriority(_pos, loadCentre), _pos));
+		else if (_status.getMeshStatus() == StatusChunkMesh::QUEUED)
+			meshQueue.push(ChunkPriorityTicket(chunkLoadPriority(_pos, loadCentre), _pos));
+	}
 }
 
 
 
 void World::loadChunks()
 {
-	constexpr int MAX_LOAD_COUNT = 30;
-	for (int i = 0; i < MAX_LOAD_COUNT; ++i)
+	constexpr int MAX_LOAD_COUNT = 40;
+	for (int i = 0; !loadQueue.empty() && i < MAX_LOAD_COUNT; ++i)
 	{
-		if (loadQueue.empty()) break;
 		ChunkPos lPos = loadQueue.top().pos;
 		loadQueue.pop();
 
@@ -432,14 +389,22 @@ void World::loadChunks()
 		// Generate the chunk
 		insertRes.first->second->GenerateChunk(getGeneratorChunkParameters(ChunkPos2D(lPos)));
 		chunkStatusMap.setChunkStatusLoad(lPos, StatusChunkLoad::GENERATED);
-		// Check if it, or its neighbours can populate
-		for (int ni = -1; ni < 2; ++ni)
-			for (int nj = -1; nj < 2; ++nj)
-				for (int nk = -1; nk < 2; ++nk) {
-					ChunkPos _pos(lPos.x + ni, lPos.y + nj, lPos.z + nk);
-					if (withinPopulationDistance(_pos, loadCentre) && chunkStatusMap.getChunkStatusCanPopulate(_pos))
-						queueChunkPopulation(_pos);
+		// Check if it, or its neighbours can populate or load
+		for (auto [lX, lY, lZ] : CHUNK_NEIGHBOURHOOD)
+		{
+			ChunkPos _pos(lPos.x + lX, lPos.y + lY, lPos.z + lZ);
+			if (withinLoadDistance(_pos, loadCentre))
+			{
+				auto _status = chunkStatusMap.getChunkStatusLoad(_pos);
+				if (_status == StatusChunkLoad::NON_EXISTENT)
+				{
+					loadQueue.push(ChunkPriorityTicket(chunkLoadPriority(_pos, loadCentre), _pos));
+					chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::QUEUED_LOAD);
 				}
+				else if (_status == StatusChunkLoad::GENERATED && chunkStatusMap.getChunkStatusCanPopulate(_pos))
+					queueChunkPopulation(_pos);
+			}
+		}
 	}
 }
 
@@ -447,23 +412,24 @@ void World::loadChunks()
 
 void World::populateChunks()
 {
-	constexpr int MAX_POPULATE_COUNT = 25;
+	constexpr int MAX_POPULATE_COUNT = 30;
 	for (int i = 0; !populateQueue.empty() && i < MAX_POPULATE_COUNT; ++i)
 	{
 		ChunkPos _pos = populateQueue.top().pos;
 		populateQueue.pop();
 
 		// Make sure that the chunk is queued for population
-		assert(withinPopulationDistance(_pos, loadCentre) && (chunkStatusMap.getChunkStatusLoad(_pos) == StatusChunkLoad::QUEUED_POPULATE) && "Attempted to populate already populated chunk.");
+		assert(withinPopulationDistance(_pos, loadCentre) &&
+			(chunkStatusMap.getChunkStatusLoad(_pos) == StatusChunkLoad::QUEUED_POPULATE) &&
+			"Attempted to populate already populated chunk."
+		);
 
 		getChunk(_pos)->PopulateChunk(*this);
 
 		chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::POPULATED);
 		// Check if this chunk or any cardinal neighbours can generate meshes
-		if (chunkStatusMap.getChunkStatusCanMesh(_pos)) queueChunkMeshing(_pos);
-
-		const int NEIGHBOURS[6][3] = { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 } };
-		for (auto [_dx, _dy, _dz] : NEIGHBOURS)
+		const int NEIGHBOURHOOD[7][3] = { { 0, 0, 0 }, { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 } };
+		for (auto [_dx, _dy, _dz] : NEIGHBOURHOOD)
 		{
 			ChunkPos meshPos(_pos.x + _dx, _pos.y + _dy, _pos.z + _dz);
 			if (chunkStatusMap.getChunkStatusCanMesh(meshPos)) queueChunkMeshing(meshPos);
@@ -477,7 +443,7 @@ void World::meshChunks()
 {
 	std::queue<std::unique_ptr<MeshDataChunk>> meshDataQueue;
 
-	constexpr int MAX_MESH_COUNT = 18;
+	constexpr int MAX_MESH_COUNT = 25;
 	for (int i = 0; i < MAX_MESH_COUNT; ++i)
 	{
 		if (meshQueue.empty()) break;
@@ -550,8 +516,7 @@ const std::unique_ptr<Structure>& World::getStructure(const BlockPos blockPos) c
 void World::queueChunkMeshing(const ChunkPos chunkPos)
 {
 	assert(chunkStatusMap.getChunkStatusCanMesh(chunkPos) && "Attempted to queue mesh that cannot be meshed");
-	int meshPriority = std::max(100 - static_cast<int>(loadCentre.distance(chunkPos)), 0);
-	meshQueue.push(ChunkPriorityTicket(meshPriority, chunkPos));
+	meshQueue.push(ChunkPriorityTicket(chunkLoadPriority(chunkPos, loadCentre), chunkPos));
 	chunkStatusMap.setChunkStatusMesh(chunkPos, StatusChunkMesh::QUEUED);
 }
 
@@ -561,11 +526,9 @@ void World::queueChunkPopulation(const ChunkPos chunkPos)
 {
 	assert(withinPopulationDistance(chunkPos, loadCentre) && chunkStatusMap.getChunkStatusCanPopulate(chunkPos) &&
 		"Attempted to populate chunk that cannot be populated");
-	int priority = std::max(100 - static_cast<int>(loadCentre.distance(chunkPos)), 0);
-	populateQueue.push(ChunkPriorityTicket(priority, chunkPos));
+	populateQueue.push(ChunkPriorityTicket(chunkLoadPriority(chunkPos, loadCentre), chunkPos));
 	chunkStatusMap.setChunkStatusLoad(chunkPos, StatusChunkLoad::QUEUED_POPULATE);
 }
-
 
 
 

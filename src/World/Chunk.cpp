@@ -3,10 +3,11 @@
 #include <cassert>
 #include <string>
 
-#include "World.h"
+#include "BlockHash.h"
 #include "Generation/ChunkPRNG.h"
 #include "Generation/GeneratorChunkParameters.h"
 #include "Generation/Structures/StructurePlants.h"
+#include "World.h"
 #include "../Constants.h"
 #include "../Exceptions.h"
 #include "../Math/ProbabilityTable.h"
@@ -20,7 +21,7 @@ inline int blockPositionIsInside(int x, int y, int z)
 
 
 
-Chunk::Chunk(ChunkPos _pos) : position(_pos), generated(false) {}
+Chunk::Chunk(ChunkPos _pos) : position(_pos), generated{ false } {}
 
 
 
@@ -57,7 +58,7 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 					defaultBlock = Block(5);
 					break;
 				case BIOME::DESERT_DEEP:
-					defaultBlock = Block(5);
+					defaultBlock = Block(17);
 					break;
 				case BIOME::FOREST_BOREAL:
 					defaultBlock = Block(11);
@@ -87,10 +88,17 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 					const auto _worldHeight = _chunkBottom + lY;
 					const auto _surfaceHeight = genParameters.heightMap.heightArray[index];
 
-					if (_surfaceHeight < _worldHeight) {
-						if (_worldHeight <= 0) setBlock(blockPos, Block(6));
+					if (_worldHeight < 3)
+					{
+						if (_worldHeight <= _surfaceHeight)
+						{
+							if (_worldHeight <= -2) setBlock(blockPos, Block(2));
+							else setBlock(blockPos, Block(5));
+						}
+						else if (_worldHeight <= 0) setBlock(blockPos, Block(6));
 					}
-					else setBlock(blockPos, defaultBlock);
+					else if (_worldHeight < _surfaceHeight) setBlock(blockPos, Block(2));
+					else if (_worldHeight == _surfaceHeight) setBlock(blockPos, defaultBlock);
 				}
 			}
 	}
@@ -113,7 +121,7 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 			if (_surfaceLevel + 1 < _chunkBottom || _surfaceLevel + 1 > _chunkTop) continue;
 
 			// Currently no features generate below sea level, so this is sort of a hack until those features exist
-			if (_surfaceLevel < 0) continue;
+			if (_surfaceLevel < 3) continue;
 
 			// Variables defined for quick access, this could absolutely by optimised
 			// TODO: optimise this
@@ -169,22 +177,57 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 				break;
 			}
 		}
+	populationChangesInside.shrink_to_fit();
+	populationChangesAdjacent.shrink_to_fit();
 }
 
 
 
 void Chunk::PopulateChunk(World& world)
 {
-	for (int lX = -1; lX < 2; ++lX)
-		for (int lY = -1; lY < 2; ++lY)
-			for (int lZ = -1; lZ < 2; ++lZ)
-			{
-				world.getChunk(ChunkPos(position.x + lX, position.y + lY, position.z + lZ))->
-					addAdjacentPopulationChanges(*this);
-			}
+	const int CHUNK_NEIGHBOURS[26][3] = {
+		{-1, -1, -1},
+		{-1, -1,  0},
+		{-1, -1,  1},
+		{-1,  0, -1},
+		{-1,  0,  0},
+		{-1,  0,  1},
+		{-1,  1, -1},
+		{-1,  1,  0},
+		{-1,  1,  1},
+		{ 0, -1, -1},
+		{ 0, -1,  0},
+		{ 0, -1,  1},
+		{ 0,  0, -1},
+		{ 0,  0,  1},
+		{ 0,  1, -1},
+		{ 0,  1,  0},
+		{ 0,  1,  1},
+		{ 1, -1, -1},
+		{ 1, -1,  0},
+		{ 1, -1,  1},
+		{ 1,  0, -1},
+		{ 1,  0,  0},
+		{ 1,  0,  1},
+		{ 1,  1, -1},
+		{ 1,  1,  0},
+		{ 1,  1,  1}
+	};
 
-	for (auto& [_pos, _change] : populationChanges)
-		if (ChunkPos(_pos) == position && getBlock(_pos).blockType == 0) setBlock(ChunkLocalBlockPos(_pos), _change.block);
+	// Sort out changes based on age
+	std::unordered_map<BlockPos, std::pair<Block, unsigned long long>> _changes;
+	for (auto& [_pos, _block, _age] : populationChangesInside)
+		if (!_changes.contains(_pos) || _changes.at(_pos).second < _age) _changes[_pos] = { _block, _age };
+
+	// Get changes from neighbours
+	for (auto [lX, lY, lZ] : CHUNK_NEIGHBOURS)
+		world.getChunk(ChunkPos(position.x + lX, position.y + lY, position.z + lZ))->
+			addAdjacentPopulationChanges(_changes, position);
+
+	for (auto& [_pos, _change] : _changes)
+		if (_pos == position && getBlock(_pos).blockType == 0) setBlock(ChunkLocalBlockPos(_pos), _change.first);
+
+	populationChangesInside.clear();
 }
 
 
@@ -219,16 +262,17 @@ bool Chunk::isEmpty() const
 
 void Chunk::setBlockPopulation(BlockPos blockPos, Block block, unsigned long long age)
 {
-	if ((!populationChanges.contains(blockPos)) || (populationChanges.at(blockPos).age < age))
-		populationChanges[blockPos] = {block, age};
+	if (ChunkPos(blockPos) == position) populationChangesInside.push_back({ blockPos, block, age });
+	else populationChangesAdjacent.push_back({ blockPos, block, age });
 }
 
 
 
-void Chunk::addAdjacentPopulationChanges(Chunk& _chunk) const
+void Chunk::addAdjacentPopulationChanges(std::unordered_map<BlockPos, std::pair<Block, unsigned long long>>& changes, ChunkPos pos) const
 {
-	for (auto& [_pos, _change] : populationChanges)
-		if (ChunkPos(_pos) == _chunk.position) _chunk.setBlockPopulation(_pos, _change.block, _change.age);
+	for (auto& _change : populationChangesAdjacent)
+		if (_change.pos == pos && (!changes.contains(_change.pos) || changes.at(_change.pos).second < _change.age))
+			changes[_change.pos] = { _change.block, _change.age };
 }
 
 

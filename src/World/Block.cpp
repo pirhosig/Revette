@@ -68,6 +68,13 @@ bool BlockPos::operator<(const BlockPos& other) const
 
 
 
+bool BlockPos::operator==(const BlockPos& other) const
+{
+	return x == other.x && y == other.y && z == other.z;
+}
+
+
+
 Block::Block() : blockType{ 0 } {}
 
 

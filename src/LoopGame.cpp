@@ -1,8 +1,10 @@
 #include "LoopGame.h"
 
+#include "GlobalLog.h"
 
 
-const char* NOISE_HEIGHTMAP = "GQAbAA0AAwAAAM3MDEATAAAAAD4JAACamRk/AAAAAAAAAACAPgEkAAMAAAATAM3MzD0WAAEAAAD//wEA";
+
+const char* NOISE_HEIGHTMAP = "GQAbABkAGwANAAYAAAB7FA5AEwAAAIA9CQAAmpkZPwDNzEy9AJqZGT8BJAAFAAAAEwDNzEw+FgABAAAA//8BAAAAAIBCAAAAAEE=";
 
 
 
@@ -27,6 +29,8 @@ LoopGame::LoopGame(
 
 	// Set the initial cursor position to avoid jump on first frame
 	glfwGetCursorPos(window, &cursorLastX, &cursorLastY);
+
+	GlobalLog.Write("Created game loop");
 }
 
 
@@ -76,7 +80,8 @@ void LoopGame::processInput(const double deltaTime)
 	glfwPollEvents();
 	double _playerSpeed = PLAYER_SPEED_DEFAULT * deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) _playerSpeed *= 10.0;
-	else if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) _playerSpeed *= 250.0;
+	else if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) _playerSpeed *= 200.0;
+	_playerSpeed = std::min(_playerSpeed, 32.0);
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) player.displaceForward( _playerSpeed);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) player.displaceForward(-_playerSpeed);
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) player.displaceSideways(-_playerSpeed);

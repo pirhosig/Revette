@@ -1,8 +1,10 @@
 #pragma once
-#include <map>
+#include <unordered_map>
 
 #include "Block.h"
+#include "BlockHash.h"
 #include "Chunk.h"
+#include "ChunkPosHash.h"
 #include "ChunkStatusMap.h"
 #include "Entities/Entity.h"
 #include "Generation/GeneratorChunkParameters.h"
@@ -23,8 +25,7 @@ public:
 
 	bool operator<(const ChunkPriorityTicket& other) const
 	{
-		if (priority != other.priority) return priority < other.priority;
-		else return pos < other.pos;
+		return priority < other.priority;
 	}
 };
 
@@ -65,9 +66,9 @@ private:
 	const GeneratorChunkParameters& getGeneratorChunkParameters(const ChunkPos2D position);
 
 	// Chunk storage
-	std::map<long long, Entity> mapEntities;
-	std::map<ChunkPos, std::unique_ptr<Chunk>> mapChunks;
-	std::map<BlockPos, std::unique_ptr<Structure>> mapStructures;
+	std::unordered_map<long long, Entity> mapEntities;
+	std::unordered_map<ChunkPos, std::unique_ptr<Chunk>> mapChunks;
+	std::unordered_map<BlockPos, std::unique_ptr<Structure>> mapStructures;
 
 	// Chunk loading information
 	ChunkPos loadCentre;
@@ -77,7 +78,7 @@ private:
 	std::priority_queue<ChunkPriorityTicket> meshQueue;
 
 	// Chunk generation tools
-	std::map<ChunkPos2D, GeneratorChunkParameters> generatorChunkCache;
+	std::unordered_map<ChunkPos2D, GeneratorChunkParameters> generatorChunkCache;
 	GeneratorChunkNoise generatorChunkNoise;
 
 	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes;

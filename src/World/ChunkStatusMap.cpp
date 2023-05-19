@@ -47,10 +47,7 @@ StatusChunkMesh ChunkStatusMap::getChunkStatusMesh(const ChunkPos chunkPos) cons
 
 void ChunkStatusMap::setChunkStatusLoad(const ChunkPos chunkPos, StatusChunkLoad status)
 {
-	if (status == StatusChunkLoad::NON_EXISTENT)
-	{
-		statusMap.erase(chunkPos);
-	}
+	if (status == StatusChunkLoad::NON_EXISTENT) statusMap.erase(chunkPos);
 	else
 	{
 		bool isNew = !statusMap.contains(chunkPos);
