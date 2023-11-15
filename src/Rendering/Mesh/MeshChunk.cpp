@@ -28,26 +28,17 @@ MeshChunk::MeshChunk(std::unique_ptr<MeshDataChunk> meshData) :
 
 	glVertexAttribPointer(0, 4, GL_UNSIGNED_INT_2_10_10_10_REV, GL_FALSE, sizeof(Vertex), (void*)(0));
 	glVertexAttribPointer(1, 1, GL_UNSIGNED_SHORT, GL_FALSE, sizeof(Vertex), (void*)(4));
-	glVertexAttribPointer(
-		2,
-		2,
-		GL_UNSIGNED_BYTE,
-		GL_TRUE,
-		sizeof(Vertex),
-		(void*)(6)
-	);
+	glVertexAttribPointer(2, 2, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void*)(6));
 	glVertexAttribPointer(3, 1, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void*)(8));
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
 	glEnableVertexAttribArray(3);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)* meshData->verticies.size(), meshData->verticies.data(), GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * meshData->verticies.size(), meshData->verticies.data(), GL_DYNAMIC_DRAW);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * meshData->indicies.size(), meshData->indicies.data(), GL_DYNAMIC_DRAW);
 
-	glBindVertexArray(0);
+	glBindVertexArray(NULL);
 }
 
 
@@ -72,7 +63,7 @@ bool pointFallsWithinFOV(glm::vec3 point, glm::mat4& transformMatrix)
 
 bool withinFOV(glm::mat4& transformMatrix)
 {
-	constexpr double CS = static_cast<double>(CHUNK_SIZE);
+	constexpr double CS = CHUNK_SIZE_D;
 	// Check if any of the eight corners fall within the FOV
 	return (
 		pointFallsWithinFOV(glm::vec3(0.0, 0.0, 0.0), transformMatrix) ||
@@ -93,8 +84,10 @@ void MeshChunk::drawOpaque(const ShaderProgram& shader, const glm::mat4& transfo
 {
 	if (!triangleCountOpaque) return;
 	ChunkOffset offset = playerPosition.offset(position);
-	glm::vec3 chunkVector = glm::vec3(offset.x * CHUNK_SIZE, offset.y * CHUNK_SIZE, offset.z * CHUNK_SIZE) * 0.5f;
-	glm::mat4 modelViewProjection = transformMatrix * glm::translate(glm::mat4(1.0f), chunkVector);
+	glm::mat4 modelViewProjection = transformMatrix * glm::translate(
+		glm::mat4(1.0f),
+		glm::vec3(offset.x * CHUNK_SIZE, offset.y * CHUNK_SIZE, offset.z * CHUNK_SIZE) * 0.5f
+	);
 
 	// Return if the chunk is outside the FOV, and the chunk is not very close to the player
 	if ((offset.x * offset.x + offset.y * offset.y + offset.z * offset.z > 5) && !withinFOV(modelViewProjection)) return;
@@ -112,8 +105,10 @@ void MeshChunk::drawTransparent(const ShaderProgram& shader, const glm::mat4& tr
 {
 	if (!triangleCountTransparent) return;
 	ChunkOffset offset = playerPosition.offset(position);
-	glm::vec3 chunkVector = glm::vec3(offset.x * CHUNK_SIZE, offset.y * CHUNK_SIZE, offset.z * CHUNK_SIZE) * 0.5f;
-	glm::mat4 modelViewProjection = transformMatrix * glm::translate(glm::mat4(1.0f), chunkVector);
+	glm::mat4 modelViewProjection = transformMatrix * glm::translate(
+		glm::mat4(1.0f),
+		glm::vec3(offset.x * CHUNK_SIZE, offset.y * CHUNK_SIZE, offset.z * CHUNK_SIZE) * 0.5f
+	);
 
 	// Return if the chunk is outside the FOV, and the chunk is not very close to the player
 	if ((offset.x * offset.x + offset.y * offset.y + offset.z * offset.z > 5) && !withinFOV(modelViewProjection)) return;

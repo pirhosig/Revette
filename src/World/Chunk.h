@@ -18,7 +18,7 @@ struct BlockChange
 {
 	BlockPos pos;
 	Block block{Block(0)};
-	unsigned long long age{0};
+	unsigned age{0};
 };
 
 
@@ -35,13 +35,13 @@ public:
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
 	std::vector<bool> getSolidFaceMask(AxisDirection direction) const;
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
-	void setBlockPopulation(BlockPos blockPos, Block block, unsigned long long age);
+	void setBlockPopulation(BlockPos blockPos, Block block, unsigned age);
 	bool isEmpty() const;
 
 	const ChunkPos position;
 
 private:
-	void addAdjacentPopulationChanges(std::unordered_map<BlockPos, std::pair<Block, unsigned long long>>& changes, ChunkPos pos) const;
+	void addAdjacentPopulationChanges(std::unordered_map<BlockPos, std::pair<Block, unsigned>>& changes, ChunkPos pos) const;
 
 	bool generated;
 	BlockContainer blockContainer;

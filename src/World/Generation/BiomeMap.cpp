@@ -29,8 +29,8 @@ int BIOME_TABLE[16][16] = {
 BiomeMap::BiomeMap(ChunkPos2D noisePos, NoiseSource2D& noiseTemperature, NoiseSource2D& noiseHumidity) :
 	biomeArray{}
 {
-	std::array<float, CHUNK_AREA> temperature = noiseTemperature.GenChunkNoise(noisePos);
-	std::array<float, CHUNK_AREA> humidity = noiseHumidity.GenChunkNoise(noisePos);
+	std::array<float, CHUNK_AREA> temperature = noiseTemperature.genChunkNoise(noisePos);
+	std::array<float, CHUNK_AREA> humidity = noiseHumidity.genChunkNoise(noisePos);
 
 	for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ)
 		for (int lX = 0; lX < CHUNK_SIZE; ++lX)
@@ -38,7 +38,7 @@ BiomeMap::BiomeMap(ChunkPos2D noisePos, NoiseSource2D& noiseTemperature, NoiseSo
 			int _index = lZ * CHUNK_SIZE + lX;
 			int _dist = noisePos.x * CHUNK_SIZE + lX;
 			temperature[_index] = std::clamp(
-				0.40f + temperature[_index] - (std::abs(static_cast<float>(_dist)) / static_cast<float>(WORLD_RADIUS_BLOCK)),
+				0.40f + temperature[_index] - (std::abs(_dist) / WORLD_RADIUS_BLOCK_F),
 				0.0f,
 				1.0f
 			);

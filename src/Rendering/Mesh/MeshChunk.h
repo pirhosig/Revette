@@ -2,7 +2,7 @@
 #include <memory>
 
 #include <glad/glad.h>
-#include <glm/glm.hpp>
+#include <glm/mat4x4.hpp>
 
 #include "../../World/ChunkPos.h"
 #include "MeshDataChunk.h"

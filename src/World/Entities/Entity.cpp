@@ -2,7 +2,7 @@
 
 
 
-Entity::Entity(EntityPosition pos) : EntityPosition(pos), UUID{ generateUUID() } {}
+Entity::Entity(EntityPosition pos, glm::dvec3 _size) : EntityPosition(pos), size{ _size }, UUID{ generateUUID() } {}
 
 
 

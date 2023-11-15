@@ -56,20 +56,17 @@ void Renderer::render(const EntityPosition& playerPos)
 	glClearColor(0.52f, 0.70f, 0.89f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	{
-		double rotationY = glm::radians(fmax(fmin(playerPos.yRotation, 89.9), -89.9));
+		double rotationY = glm::radians(std::clamp(playerPos.yRotation, -89.9, 89.9));
 		double rotationX = glm::radians(playerPos.xRotation);
 
-		constexpr double FOV_Y = 45.0;
-		constexpr double ASPECT = 1920.0 / 1080.0;
-
-		const glm::mat4 projection = glm::perspective(glm::radians(FOV_Y), ASPECT, 0.1, 1024.0);
+		const glm::mat4 projection = glm::perspective(glm::radians(45.0), 1920.0 / 1080.0, 0.25, 1024.0);
 		ChunkPos _playerChunk(playerPos);
 		EntityPosition _playerLocalPos({
 			playerPos.pos.X - _playerChunk.x * CHUNK_SIZE,
 			playerPos.pos.Y - _playerChunk.y * CHUNK_SIZE,
 			playerPos.pos.Z - _playerChunk.z * CHUNK_SIZE
 		});
-		const glm::vec3 pos = glm::vec3(_playerLocalPos.pos.X, _playerLocalPos.pos.Y + 2.5, _playerLocalPos.pos.Z) * 0.5f;
+		const glm::vec3 pos = glm::vec3(_playerLocalPos.pos.X, _playerLocalPos.pos.Y + 3.0, _playerLocalPos.pos.Z) * 0.5f;
 		const glm::vec3 front = glm::normalize(glm::vec3(
 			cos(rotationX) * cos(rotationY),
 			sin(rotationY),
@@ -87,7 +84,8 @@ void Renderer::render(const EntityPosition& playerPos)
 		chunkShaderOpaque.use();
 		tileTextureAtlas.bindTexture();
 		chunkShaderOpaque.setInt("tileAtlas", 0);
-		for (const auto& _pos : _meshPositions) meshesChunk[_pos]->drawOpaque(chunkShaderOpaque, projectionView, _playerChunk);
+		for (const auto& _pos : _meshPositions)
+			meshesChunk[_pos]->drawOpaque(chunkShaderOpaque, projectionView, _playerChunk);
 
 		// Draw transparent objects
 		glEnable(GL_BLEND);
@@ -111,11 +109,11 @@ void Renderer::render(const EntityPosition& playerPos)
 
 	// Update coordinates
 	{
-		char coordinateString[32]{};
+		char coordinateString[33]{};
 		int _length = sprintf_s(
 			&coordinateString[0],
 			32,
-			"%8.1lf %8.1lf %8.1lf",
+			"%8.2lf %8.2lf %8.2lf",
 			playerPos.pos.X,
 			playerPos.pos.Y,
 			playerPos.pos.Z
@@ -153,8 +151,8 @@ void Renderer::unloadMeshes(const ChunkPos& playerChunk)
 	{
 		if (!withinLoadDistance(it->first, playerChunk))
 		{
-			it = meshesChunk.erase(it);
 			removeQueue.push(it->first);
+			it = meshesChunk.erase(it);
 		}
 		else it++;
 	}

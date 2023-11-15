@@ -12,7 +12,7 @@ namespace Physics
 			true,
 			true,
 			true,
-			false,
+			true,
 			true,
 			false,
 			true,

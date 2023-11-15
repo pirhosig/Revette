@@ -8,7 +8,7 @@
 MainLoop::MainLoop()
 {
 	// Initialize glfw and configure it
-	glfwInit();
+	if (glfwInit() == GL_FALSE) throw std::runtime_error("Failed to initialise GLFW");
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -21,7 +21,7 @@ MainLoop::MainLoop()
 
 	// Create a window and verify that it was created, then set it as the current opengl context on this thread
 	window = glfwCreateWindow(windowWidth, windowHeight, "Revette-3D", primaryMonitor, NULL);
-	if (window == NULL) throw std::runtime_error("Unable to create window");
+	if (window == NULL) throw std::runtime_error("Failed to create window");
 	glfwMakeContextCurrent(window);
 
 	// Load opengl function pointers

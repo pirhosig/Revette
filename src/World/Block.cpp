@@ -1,4 +1,7 @@
 #include "Block.h"
+
+#include <cmath>
+
 #include "../Constants.h"
 
 
@@ -18,12 +21,18 @@ BlockOffset::BlockOffset(int _x, int _y, int _z) : x{ wrapCoordinate(_x) }, y{ _
 
 
 
-BlockPos::BlockPos(int x, int y, int z) : x(wrapCoordinate(x)), y(y), z(wrapCoordinate(z)) {}
+BlockPos::BlockPos(int _x, int _y, int _z) : x{ wrapCoordinate(_x) }, y{ _y }, z{ wrapCoordinate(_z) } {}
+
+BlockPos::BlockPos(double _x, double _y, double _z) :
+	x{ wrapCoordinate(static_cast<int>(std::floor(_x))) },
+	y{ static_cast<int>(std::floor(_y)) },
+	z{ wrapCoordinate(static_cast<int>(std::floor(_z))) }
+{}
 
 BlockPos::BlockPos(EntityPosition position) :
-	x(wrapCoordinate(static_cast<int>(position.pos.X))),
-	y(static_cast<int>(position.pos.Y)),
-	z(wrapCoordinate(static_cast<int>(position.pos.Z)))
+	x{ wrapCoordinate(static_cast<int>(position.pos.X)) },
+	y{ static_cast<int>(position.pos.Y) },
+	z{ wrapCoordinate(static_cast<int>(position.pos.Z)) }
 {}
 
 

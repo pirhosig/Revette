@@ -8,7 +8,7 @@
 
 
 
-constexpr int SEED = 2489734;
+constexpr int SEED = 24383737;
 
 
 
@@ -32,6 +32,13 @@ inline bool withinLoadDistance2D(ChunkPos _pos, ChunkPos _centre)
 inline int chunkLoadPriority(ChunkPos pos, ChunkPos centre)
 {
 	return std::clamp(200 - static_cast<int>(centre.distance(pos)), 0, 200);
+}
+
+
+
+inline int sign(double x)
+{
+	return (0.0 < x) - (x < 0.0);
 }
 
 
@@ -82,9 +89,6 @@ World::World(
 	threadQueueMeshDeletion{ queueMeshDeletion },
 	generatorChunkNoise(
 		SEED,
-		(1.0f / 64.0f),
-		(1.0f / 64.0f),
-		(1.0f / 64.0f),
 		settingNoiseHeightmap,
 		"EwAK1yM8FwAAAIC/AACAPwAAAAAAAIA/GQANAAMAAAAAAABACQAAAAAAPwAAAAAAARsAAQAAj8J1PA==",
 		"EwAK1yM8FwAAAIC/AACAPwAAAAAAAIA/GQANAAMAAAAAAABACQAAAAAAPwAAAAAAARsAAQAAj8J1PA=="
@@ -146,149 +150,82 @@ void World::processEntities(Entity& player)
 
 
 
-inline double getFracAbs(double x)
-{
-	double _pI;
-	return std::abs(std::modf(x, &_pI));
-}
-
-
-
 void World::moveEntity(Entity& entity)
 {
-	entity.moveAbsolute(entity.displacement);
-	entity.displacement = { 0.0, 0.0, 0.0 };
-}
-/*
-void World::moveEntity(Entity& entity)
-{
-	constexpr double SMALL = 1e-6;
+	if (entity.displacement.X == 0.0 && entity.displacement.Y == 0.0 && entity.displacement.Z == 0.0) return;
 
-	// Skip if entity has zero velocity
-	if (entity.displacement.X == 0.0 && entity.displacement.Y == 0 && entity.displacement.Z == 0) return;
+	BlockPos currentPos(entity.pos.X - entity.size.x, entity.pos.Y, entity.pos.Z - entity.size.z);
 
-	// Try to process the movement this tick
-	double _DX = entity.displacement.X;
-	double _DY = entity.displacement.Y;
-	double _DZ = entity.displacement.Z;
+	const double _DX = std::clamp(entity.displacement.X, -CHUNK_SIZE_D, CHUNK_SIZE_D);
+	const double _DY = std::clamp(entity.displacement.Y, -CHUNK_SIZE_D, CHUNK_SIZE_D);
+	const double _DZ = std::clamp(entity.displacement.Z, -CHUNK_SIZE_D, CHUNK_SIZE_D);
 
-	// Check if the entity is initially pressed against any voxel faces
-	if (std::abs(_DX) > SMALL) {
-		double _rX = getFracAbs(_DX > 0 ? entity.pos.X + 1.0 : entity.pos.X - 1.0);
-		if ((_rX < SMALL) || (_rX > (1.0 - SMALL))) {
-			int _lowZ = static_cast<int>(std::floor(entity.pos.Z - 1.0));
-			int _uppZ = static_cast<int>(std::ceil(entity.pos.Z + 1.0));
-			int _lowY = static_cast<int>(std::floor(entity.pos.Y));
-			int _uppY = static_cast<int>(std::ceil(entity.pos.Y + 4.0));
-			int _pX = _DX > 0.0 ? static_cast<int>(std::floor(entity.pos.X + 1.0)) :
-				static_cast<int>(std::floor(entity.pos.X - 1.0));
-			for (int lZ = _lowZ; lZ < _uppZ; ++lZ) {
-				for (int lY = _lowY; lY < _uppY; ++lY) {
-					if (collides(BlockPos(_pX, lY, lZ))) _DX = 0.0;
-				}
-			}
-		}
-	}
+	const int stepX = sign(_DX);
+	const int stepY = sign(_DY);
+	const int stepZ = sign(_DZ);
 
-	if (std::abs(_DZ) > SMALL) {
-		double _rZ = getFracAbs(_DX > 0 ? entity.pos.Z + 1.0 : entity.pos.Z - 1.0);
-		if ((_rZ < SMALL) || (_rZ > (1.0 - SMALL))) {
-			int _lowX = static_cast<int>(std::floor(entity.pos.X - 1.0));
-			int _uppX = static_cast<int>(std::ceil(entity.pos.X + 1.0));
-			int _lowY = static_cast<int>(std::floor(entity.pos.Y));
-			int _uppY = static_cast<int>(std::ceil(entity.pos.Y + 4.0));
-			int _pZ = static_cast<int>(_DZ > 0.0 ? std::floor(entity.pos.Z + 1.0) : std::floor(entity.pos.Z - 1.0));
-			for (int lX = _lowX; lX < _uppX; ++lX) {
-				for (int lY = _lowY; lY < _uppY; ++lY)
-					if (collides(BlockPos(lX, lY, _pZ))) _DZ = 0.0;
-			}
-		}
-	}
+	const double tDeltaX = std::clamp(1.0 / std::abs(_DX), 0.0, 1.0);
+	const double tDeltaY = std::clamp(1.0 / std::abs(_DY), 0.0, 1.0);
+	const double tDeltaZ = std::clamp(1.0 / std::abs(_DZ), 0.0, 1.0);
 
+	double tMaxX = stepX ? ((0 < stepX) ? std::ceil(entity.pos.X) - entity.pos.X : entity.pos.X - std::floor(entity.pos.X)) * tDeltaX : 1.0;
+	double tMaxY = stepY ? ((0 < stepY) ? std::ceil(entity.pos.Y) - entity.pos.Y : entity.pos.Y - std::floor(entity.pos.Y)) * tDeltaY : 1.0;
+	double tMaxZ = stepZ ? ((0 < stepZ) ? std::ceil(entity.pos.Z) - entity.pos.Z : entity.pos.Z - std::floor(entity.pos.Z)) * tDeltaZ : 1.0;
 
-	if (std::abs(_DY) > SMALL) {
-		double _rY = getFracAbs(_DY > 0 ? entity.pos.Y + 4.0 : entity.pos.Y);
-		if ((_rY < SMALL) || (_rY > (1.0 - SMALL))) {
-			int _lowX = static_cast<int>(std::floor(entity.pos.X - 1.0));
-			int _uppX = static_cast<int>(std::ceil(entity.pos.X + 1.0));
-			int _lowZ = static_cast<int>(std::floor(entity.pos.Z - 1.0));
-			int _uppZ = static_cast<int>(std::ceil(entity.pos.Z + 1.0));
-			int _pY = static_cast<int>(_DY > 0.0 ? std::floor(entity.pos.Y + 4.0) : std::floor(entity.pos.Y));
-			for (int lX = _lowX; lX < _uppX; ++lX) {
-				for (int lZ = _lowZ; lZ < _uppZ; ++lZ)
-					if (collides(BlockPos(lX, _pY, lZ))) _DY = 0.0;
-			}
-		}
-	}
+	const int _sx = static_cast<int>(std::ceil(entity.size.x * 2)) - 1;
+	const int _sy = static_cast<int>(std::ceil(entity.size.y))     - 1;
+	const int _sz = static_cast<int>(std::ceil(entity.size.z * 2)) - 1;
 
-	// Loop while movement remains
-	while (std::abs(_DX) > SMALL || std::abs(_DY) > SMALL || std::abs(_DZ) > SMALL)
+	while (tMaxX < 1.0 || tMaxY < 1.0 || tMaxZ < 1.0)
 	{
-		// Calculate first voxel edge crossing to occur
-		double _collisionTimeX = std::abs(_DX) > SMALL ?
-			(1.0 - getFracAbs(_DX > 0 ? entity.pos.X + 1.0 : entity.pos.X - 1.0)) / std::abs(_DX) : 1.0;
-		double _collisionTimeY = std::abs(_DY) > SMALL ?
-			(1.0 - getFracAbs(_DY > 0 ? entity.pos.Y + 4.0 : entity.pos.Y)) / std::abs(_DY) : 1.0;
-		double _collisionTimeZ = std::abs(_DZ) > SMALL ?
-			(1.0 - getFracAbs(_DZ > 0 ? entity.pos.Z + 1.0 : entity.pos.Z - 1.0)) / std::abs(_DZ) : 1.0;
-		double _minCollisionTime = std::min(std::min(_collisionTimeX, _collisionTimeZ), _collisionTimeY);
-
-		// If no voxel border crossing occurs, simply move all of the remaining velocity
-		if (_minCollisionTime >= 1.0)
+		if (tMaxX < tMaxY)
 		{
-			entity.moveAbsolute({ _DX, _DY, _DZ });
-			break;
+			if (tMaxX < tMaxZ)
+			{
+				int lX = (stepX > 0) ? _sx : 0;
+				for (int lZ = 0; lZ < _sz; ++lZ)
+					for (int lY = 0; lY < _sy; ++lY)
+						if (collides(currentPos.offset(stepX + lX, lY, lZ))) goto Collided;
+				tMaxX += tDeltaX;
+				currentPos = currentPos.offset(stepX, 0, 0);
+			}
+			else
+			{
+				int lZ = (stepZ > 0) ? _sz : 0;
+				for (int lY = 0; lY < _sy; ++lY)
+					for (int lX = 0; lX < _sx; ++lX)
+						if (collides(currentPos.offset(lX, lY, stepZ + lZ))) goto Collided;
+				tMaxZ += tDeltaZ;
+				currentPos = currentPos.offset(0, 0, stepZ);
+			}
 		}
-		// Handle collision checking
 		else
 		{
-			// Move by time before collision
-			entity.moveAbsolute(Math::Vector{ _DX, _DY, _DZ } *_minCollisionTime);
-			_DX -= _minCollisionTime * _DX;
-			_DY -= _minCollisionTime * _DY;
-			_DZ -= _minCollisionTime * _DZ;
-
-			if (_collisionTimeX == _minCollisionTime && std::abs(_DX) > SMALL) {
-				int _lowZ = static_cast<int>(std::floor(entity.pos.Z - 1.0));
-				int _uppZ = static_cast<int>(std::ceil(entity.pos.Z + 1.0));
-				int _lowY = static_cast<int>(std::floor(entity.pos.Y));
-				int _uppY = static_cast<int>(std::ceil(entity.pos.Y + 4.0));
-				int _pX = static_cast<int>(_DX > 0.0 ? std::ceil(entity.pos.X + 1.0) : std::floor(entity.pos.X - 1.0));
-				for (int lZ = _lowZ; lZ < _uppZ; ++lZ) {
-					for (int lY = _lowY; lY < _uppY; ++lY)
-						if (collides(BlockPos(_pX, lY, lZ))) _DX = 0.0;
-				}
-			}
-			if (_collisionTimeZ == _minCollisionTime && std::abs(_DZ) > SMALL)
+			if (tMaxY < tMaxZ)
 			{
-				int _lowX = static_cast<int>(std::floor(entity.pos.X - 1.0));
-				int _uppX = static_cast<int>(std::ceil(entity.pos.X + 1.0));
-				int _lowY = static_cast<int>(std::floor(entity.pos.Y));
-				int _uppY = static_cast<int>(std::ceil(entity.pos.Y + 4.0));
-				int _pZ = static_cast<int>(_DZ > 0.0 ? std::ceil(entity.pos.Z + 1.0) : std::floor(entity.pos.Z - 1.0));
-				for (int lX = _lowX; lX < _uppX; ++lX) {
-					for (int lY = _lowY; lY < _uppY; ++lY)
-						if (collides(BlockPos(lX, lY, _pZ))) _DZ = 0.0;
-				}
+				int lY = (stepY > 0) ? _sy : 0;
+				for (int lX = 0; lX < _sx; ++lX)
+					for (int lZ = 0; lZ < _sz; ++lZ)
+						if (collides(currentPos.offset(lX, stepY + lY, lZ))) goto Collided;
+				tMaxY += tDeltaY;
+				currentPos = currentPos.offset(0, stepY, 0);
 			}
-			if (_collisionTimeY == _minCollisionTime && std::abs(_DY) > SMALL)
+			else
 			{
-				int _lowX = static_cast<int>(std::floor(entity.pos.X - 1.0));
-				int _uppX = static_cast<int>(std::ceil(entity.pos.X + 1.0));
-				int _lowZ = static_cast<int>(std::floor(entity.pos.Z - 1.0));
-				int _uppZ = static_cast<int>(std::ceil(entity.pos.Z + 1.0));
-				int _pY = static_cast<int>(_DY > 0.0 ? std::ceil(entity.pos.Y + 4.0) : std::floor(entity.pos.Y));
-				for (int lX = _lowX; lX < _uppX; ++lX) {
-					for (int lZ = _lowZ; lZ < _uppZ; ++lZ)
-						if (collides(BlockPos(lX, _pY, lZ))) _DY = 0.0;
-				}
+				int lZ = (stepZ > 0) ? _sz : 0;
+				for (int lY = 0; lY < _sy; ++lY)
+					for (int lX = 0; lX < _sx; ++lX)
+						if (collides(currentPos.offset(lX, lY, stepZ + lZ))) goto Collided;
+				tMaxZ += tDeltaZ;
+				currentPos = currentPos.offset(0, 0, stepZ);
 			}
 		}
 	}
-
+Collided:
+	double tTotal = std::clamp(std::min(tMaxX, std::min(tMaxY, tMaxZ)), 0.0, 1.0);
+	entity.moveAbsolute({ _DX * tTotal, _DY * tTotal, _DZ * tTotal });
 	entity.displacement = { 0.0, 0.0, 0.0 };
 }
-*/
 
 
 
@@ -373,7 +310,7 @@ void World::onLoadCentreChange()
 
 void World::loadChunks()
 {
-	constexpr int MAX_LOAD_COUNT = 40;
+	constexpr int MAX_LOAD_COUNT = 35;
 	for (int i = 0; !loadQueue.empty() && i < MAX_LOAD_COUNT; ++i)
 	{
 		ChunkPos lPos = loadQueue.top().pos;
@@ -412,15 +349,14 @@ void World::loadChunks()
 
 void World::populateChunks()
 {
-	constexpr int MAX_POPULATE_COUNT = 30;
+	constexpr int MAX_POPULATE_COUNT = 25;
 	for (int i = 0; !populateQueue.empty() && i < MAX_POPULATE_COUNT; ++i)
 	{
 		ChunkPos _pos = populateQueue.top().pos;
 		populateQueue.pop();
 
 		// Make sure that the chunk is queued for population
-		assert(withinPopulationDistance(_pos, loadCentre) &&
-			(chunkStatusMap.getChunkStatusLoad(_pos) == StatusChunkLoad::QUEUED_POPULATE) &&
+		assert(chunkStatusMap.getChunkStatusLoad(_pos) == StatusChunkLoad::QUEUED_POPULATE &&
 			"Attempted to populate already populated chunk."
 		);
 
@@ -428,7 +364,9 @@ void World::populateChunks()
 
 		chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::POPULATED);
 		// Check if this chunk or any cardinal neighbours can generate meshes
-		const int NEIGHBOURHOOD[7][3] = { { 0, 0, 0 }, { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 } };
+		const int NEIGHBOURHOOD[7][3] = {
+			{ 0, 0, 0 }, { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 }
+		};
 		for (auto [_dx, _dy, _dz] : NEIGHBOURHOOD)
 		{
 			ChunkPos meshPos(_pos.x + _dx, _pos.y + _dy, _pos.z + _dz);
@@ -443,7 +381,7 @@ void World::meshChunks()
 {
 	std::queue<std::unique_ptr<MeshDataChunk>> meshDataQueue;
 
-	constexpr int MAX_MESH_COUNT = 25;
+	constexpr int MAX_MESH_COUNT = 20;
 	for (int i = 0; i < MAX_MESH_COUNT; ++i)
 	{
 		if (meshQueue.empty()) break;
@@ -524,8 +462,7 @@ void World::queueChunkMeshing(const ChunkPos chunkPos)
 
 void World::queueChunkPopulation(const ChunkPos chunkPos)
 {
-	assert(withinPopulationDistance(chunkPos, loadCentre) && chunkStatusMap.getChunkStatusCanPopulate(chunkPos) &&
-		"Attempted to populate chunk that cannot be populated");
+	assert(chunkStatusMap.getChunkStatusCanPopulate(chunkPos) && "Attempted to populate chunk that cannot be populated");
 	populateQueue.push(ChunkPriorityTicket(chunkLoadPriority(chunkPos, loadCentre), chunkPos));
 	chunkStatusMap.setChunkStatusLoad(chunkPos, StatusChunkLoad::QUEUED_POPULATE);
 }

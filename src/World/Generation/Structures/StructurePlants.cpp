@@ -1,78 +1,104 @@
 #include "StructurePlants.h"
+
 #include "../../Chunk.h"
 #include "../ChunkPRNG.h"
 
 /*
 Idk where else to put this, but I guess an explanation of the basic structure parameters is necessary
 Chunk: self explanatory, the structure centre is in
+ChunkPRNG: source for random values needed to generate this tree, using this makes this process deterministic.
 BlockPos: the centre of the structure, the structure may extended up to 32 blocks in any directions from this block
-age: the base age of the structure, older structures will overwrite newer ones in any placement overlaps
 
-Tree specific parameters:
-height: the height of the tree trunk, which the leaves may or may not extend above
+Additional notes:
+Blocks placed during population will be placed in order of "age" priority: older structures will overwrite newer ones
+in any placement overlaps. In cases where age is tied, the order is deterministic, so one of the conflicting structures
+will consistently overwrite the other one. Which structure overwrites the other in case of a tie depends on the chunk
+population processing order.
 */
 
 
 
-namespace Structures
+namespace Structures::Trees
 {
-	void placeTreePine(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
+	void PineBasic(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
 	{
-		const Block LOG(3);
-		const Block LEAF(4);
-
-		const unsigned long long age = 0;
+		const unsigned age = 0;
 		const int height = prng.scaledInt(2.4, 6.6);
 
-		// Tree trunk
-		for (int i = 0; i < height; ++i) chunk.setBlockPopulation(base.offset(0, i, 0), LOG, age + 1);
+		for (int i = 0; i < height; ++i) chunk.setBlockPopulation(base.offset(0, i, 0), Block(3), age + 1);
 
-		const int leafBase = height;
-
-		chunk.setBlockPopulation(base.offset(0, leafBase, 0), LEAF, age);
-		chunk.setBlockPopulation(base.offset(0, leafBase + 1, 0), LEAF, age);
-		chunk.setBlockPopulation(base.offset(-1, leafBase, 0), LEAF, age);
-		chunk.setBlockPopulation(base.offset(1, leafBase, 0), LEAF, age);
-		chunk.setBlockPopulation(base.offset(0, leafBase, -1), LEAF, age);
-		chunk.setBlockPopulation(base.offset(0, leafBase, 1), LEAF, age);
-
-		chunk.setBlockPopulation(base.offset(-1, leafBase - 2, -1), LEAF, age);
-		chunk.setBlockPopulation(base.offset(-1, leafBase - 2, 0), LEAF, age);
-		chunk.setBlockPopulation(base.offset(-1, leafBase - 2, 1), LEAF, age);
-		chunk.setBlockPopulation(base.offset(1, leafBase - 2, -1), LEAF, age);
-		chunk.setBlockPopulation(base.offset(1, leafBase - 2, 0), LEAF, age);
-		chunk.setBlockPopulation(base.offset(1, leafBase - 2, 1), LEAF, age);
-		chunk.setBlockPopulation(base.offset(0, leafBase - 2, -1), LEAF, age);
-		chunk.setBlockPopulation(base.offset(0, leafBase - 2, 1), LEAF, age);
+		const int LEAF_OFFSETS[][3] = {
+			{ 0,  0,  0}, { 0,  1,  0}, {-1,  0,  0}, { 1,  0,  0}, { 0,  0, -1}, { 0,  0,  1}, {-1, -2, -1},
+			{-1, -2,  0}, {-1, -2,  1}, { 0, -2, -1}, { 0, -2,  1}, { 1, -2, -1}, { 1, -2,  0}, { 1, -2,  1}
+		};
+		for (auto [lX, lY, lZ] : LEAF_OFFSETS)
+			chunk.setBlockPopulation(base.offset(lX, height + lY, lZ), Block(4), age);
 
 		if (height > 6)
 		{
-			chunk.setBlockPopulation(base.offset(-1, leafBase - 4, -1), LEAF, age);
-			chunk.setBlockPopulation(base.offset(-1, leafBase - 4, 0), LEAF, age);
-			chunk.setBlockPopulation(base.offset(-1, leafBase - 4, 1), LEAF, age);
-			chunk.setBlockPopulation(base.offset(1, leafBase - 4, -1), LEAF, age);
-			chunk.setBlockPopulation(base.offset(1, leafBase - 4, 0), LEAF, age);
-			chunk.setBlockPopulation(base.offset(1, leafBase - 4, 1), LEAF, age);
-			chunk.setBlockPopulation(base.offset(0, leafBase - 4, -1), LEAF, age);
-			chunk.setBlockPopulation(base.offset(0, leafBase - 4, 1), LEAF, age);
-			chunk.setBlockPopulation(base.offset(-2, leafBase - 4, 0), LEAF, age);
-			chunk.setBlockPopulation(base.offset(2, leafBase - 4, 0), LEAF, age);
-			chunk.setBlockPopulation(base.offset(0, leafBase - 4, -2), LEAF, age);
-			chunk.setBlockPopulation(base.offset(0, leafBase - 4, 2), LEAF, age);
+			const int LEAF_OFFSETS_TALL[][2] = {
+				{-1, -1}, {-1,  0}, {-1,  1}, { 0, -1}, { 0,  1}, { 1, -1},
+				{ 1,  0}, { 1,  1}, {-2,  0}, { 2,  0}, { 0, -2}, { 0,  2}
+			};
+			for (auto [lX, lZ] : LEAF_OFFSETS_TALL) chunk.setBlockPopulation(base.offset(lX, height - 4, lZ), Block(4), age);
 		}
 	}
 
 
-	void placeTreePineMassive(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
+
+	void PineFancy(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
 	{
-		const Block LOG(3);
+		const unsigned age = 0;
+		const int height = prng.scaledInt(5.4, 8.7);
+		const int leafMin = prng.scaledInt(2.4, 3.5);
+		const int leafMax = height + prng.scaledInt(4.3, 1.4);
+
+		bool leaves[9][9]{};
+		leaves[4][4] = true;
+
+		for (int lY = 0; lY < leafMax; ++lY)
+		{
+			if (lY < height) chunk.setBlockPopulation(base.offset(0, lY, 0), Block(3), age);
+			if (leafMin <= lY)
+				for (int lX = 1; lX < 8; ++lX)
+					for (int lZ = 1; lZ < 8; ++lZ)
+					{
+						if (lY < height)
+						{
+							if (lX == 4 && lZ == 4) continue;
+							if ((lZ == 4 && (lX == 3 || lX == 5)) || (lX == 4 && (lZ == 3 || lZ == 5)))
+							{
+								leaves[lX][lZ] = true;
+								chunk.setBlockPopulation(base.offset(lX - 4, lY, lZ - 4), Block(4), age + 1);
+								continue;
+							}
+						}
+						if (prng.scaledInt(
+							1.0,
+							0.247 * (leaves[lX][lZ] + leaves[lX - 1][lZ] + leaves[lX + 1][lZ] + leaves[lX][lZ - 1] + leaves[lX][lZ + 1])
+							- (lY - leafMin) * 0.027
+						))
+						{
+							leaves[lX][lZ] = true;
+							chunk.setBlockPopulation(base.offset(lX - 4, lY, lZ - 4), Block(4), age + 1);
+						}
+						else leaves[lX][lZ] = false;
+					}
+		}
+	}
+
+
+
+	void PineMassive(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
+	{
 		const Block LEAF(4);
 
-		const unsigned long long age = 0;
-		const int height = prng.scaledInt(4.7, 15.7);
+		const unsigned age = 0;
+		const int height = prng.scaledInt(13.7, 15.7);
+		const double tanAngle = 0.179 * prng.next() + 0.283;
 
 		// Tree trunk
-		for (int i = 0; i < height; ++i) chunk.setBlockPopulation(base.offset(0, i, 0), LOG, age + 1);
+		for (int i = 0; i < height; ++i) chunk.setBlockPopulation(base.offset(0, i, 0), Block(3), age + 1);
 
 		// Top leaf
 		chunk.setBlockPopulation(base.offset(0, height, 0), LEAF, age);
@@ -80,7 +106,7 @@ namespace Structures
 		// Subsequent leaf layers
 		for (int _level = height - 1; _level > 5; _level -= 2)
 		{
-			int _radius = (height - _level + 1) / 2;
+			int _radius = static_cast<int>((height - _level + 1) * tanAngle + 0.6);
 			// Cardinal directions
 			for (int i = 1; i <= _radius; ++i)
 			{
@@ -106,12 +132,12 @@ namespace Structures
 
 
 
-	void placeTreeRainforestBasic(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
+	void RainforestBasic(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
 	{
 		const Block LEAF(4);
 
-		const unsigned long long age = 0;
-		const int height = prng.scaledInt(3.2, 9.9);
+		const unsigned age = 0;
+		const int height = prng.scaledInt(7.2, 6.9);
 
 		for (int i = 0; i < height - 2; ++i)
 			chunk.setBlockPopulation(base.offset(0, i, 0), Block(3), age + 1);
@@ -128,10 +154,10 @@ namespace Structures
 
 
 
-	void placeTreeRainforestShrub(Chunk& chunk, BlockPos base)
+	void RainforestShrub(Chunk& chunk, BlockPos base)
 	{
 		const Block LEAF(4);
-		const unsigned long long age = 0;
+		const unsigned age = 0;
 
 		chunk.setBlockPopulation(base, Block(3), age + 1);
 		chunk.setBlockPopulation(base.offset(0, 1, 0), LEAF, age);
@@ -143,13 +169,13 @@ namespace Structures
 
 
 
-	void placeTreeRainforestTall(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
+	void RainforestTall(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
 	{
 		const Block LOG(3);
 		const Block LEAF(4);
 
-		const unsigned long long age = 0;
-		const int height = prng.scaledInt(5.3, 15.7);
+		const unsigned age = 0;
+		const int height = prng.scaledInt(13.3, 13.7);
 
 		for (int i = 0; i < height; ++i) chunk.setBlockPopulation(base.offset(0, i, 0), LOG, age + 1);
 
@@ -186,12 +212,12 @@ namespace Structures
 
 
 
-	void placeTreeSavannahBaobab(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
+	void SavannahBaobab(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
 	{
 		const Block LOG(3);
 		const Block LEAF(4);
 
-		const int age = 0;
+		const unsigned age = 0;
 		const int height = prng.scaledInt(8.0, 7.0);
 
 		// Create trunk
@@ -234,7 +260,7 @@ namespace Structures
 
 
 
-	void addLeaves(Chunk& chunk, ChunkPRNG& prng, BlockPos base, unsigned long long age)
+	void addLeaves(Chunk& chunk, ChunkPRNG& prng, BlockPos base, unsigned age)
 	{
 		const int def[][2] = { {0, 0}, {-1, 0}, {1, 0}, {0, -1}, {0, 1} };
 		for (auto [a, b] : def) chunk.setBlockPopulation(base.offset(a, 0, b), Block(4), age);
@@ -277,12 +303,12 @@ namespace Structures
 
 
 
-	void placeTreeSavannahAcacia(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
+	void SavannahAcacia(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
 	{
 		const Block LOG(3);
 		const Block LEAF(4);
 
-		const unsigned long long age = 0;
+		const unsigned age = 0;
 		const int height = prng.scaledInt(6.3, 1.89);
 
 		for (int i = 0; i < height; ++i)
@@ -301,16 +327,15 @@ namespace Structures
 
 
 
-	void placeTreeAspen(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
+	void Aspen(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
 	{
 		const Block LEAF(12);
-		const Block LOG(13);
 
-		const unsigned long long age = 0;
+		const unsigned age = 0;
 		const int height = prng.scaledInt(6.2, 12.7);
 
 		// Trunk
-		for (int i = 0; i < height; ++i) chunk.setBlockPopulation(base.offset(0, i, 0), LOG, age + 1);
+		for (int i = 0; i < height; ++i) chunk.setBlockPopulation(base.offset(0, i, 0), Block(13), age + 1);
 
 		// Leaves
 		for (int lX = -1; lX <= 1; ++lX)
@@ -334,60 +359,44 @@ namespace Structures
 
 
 
-	void placeTreeOak(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
+	void Oak(Chunk& chunk, ChunkPRNG& prng, BlockPos base)
 	{
-		const Block LOG(3);
-		const Block LEAF(4);
+		const unsigned age = 0;
+		const int height = prng.scaledInt(5.4, 8.7);
+		const int leafMin = prng.scaledInt(5.1, 2.7);
+		const int leafMax = height + prng.scaledInt(4.4, 1.4);
 
-		const unsigned long long age = 0;
-		const int height = prng.scaledInt(5.3, 10.1);
+		bool leaves[11][11]{};
+		leaves[6][6] = true;
 
-		for (int i = 0; i < height; ++i) {
-			chunk.setBlockPopulation(base.offset(0, i, 0), LOG, age + 1);
-		}
-
-		int POS_TABLE[][3] = {
-			{ 0,  1,  0},
-			{ 0,  1, -1},
-			{ 0,  1,  1},
-			{-1,  1,  0},
-			{ 1,  1,  0},
-			{-1,  0, -1},
-			{-1,  0,  0},
-			{-1,  0,  1},
-			{ 0,  0, -1},
-			{ 0,  0,  0},
-			{ 0,  0,  1},
-			{ 1,  0, -1},
-			{ 1,  0,  0},
-			{ 1,  0,  1},
-			{-1, -1, -1},
-			{-1, -1,  0},
-			{-1, -1,  1},
-			{ 0, -1, -1},
-			{ 0, -1,  1},
-			{ 1, -1, -1},
-			{ 1, -1,  0},
-			{ 1, -1,  1},
-			{-2, -1, -1},
-			{-2, -1,  0},
-			{-2, -1,  1},
-			{ 2, -1, -1},
-			{ 2, -1,  0},
-			{ 2, -1,  1},
-			{-1, -1, -2},
-			{ 0, -1, -2},
-			{ 1, -1, -2},
-			{-1, -1,  2},
-			{ 0, -1,  2},
-			{ 1, -1,  2},
-			{ 0, -2, -1},
-			{ 0, -2,  1},
-			{-1, -2,  0},
-			{ 1, -2,  0}
-		};
-		for (auto [i, j, k] : POS_TABLE) {
-			chunk.setBlockPopulation(base.offset(i, height + j, k), LEAF, age);
+		for (int lY = 0; lY < leafMax; ++lY)
+		{
+			if (lY < height) chunk.setBlockPopulation(base.offset(0, lY, 0), Block(3), age);
+			if (leafMin <= lY)
+				for (int lX = 1; lX < 10; ++lX)
+					for (int lZ = 1; lZ < 10; ++lZ)
+					{
+						if (lY < height)
+						{
+							if (lX == 6 && lZ == 6) continue;
+							if ((lZ == 6 && (lX == 5 || lX == 7)) || (lX == 6 && (lZ == 5 || lZ == 7)))
+							{
+								leaves[lX][lZ] = true;
+								chunk.setBlockPopulation(base.offset(lX - 6, lY, lZ - 6), Block(4), age + 1);
+								continue;
+							}
+						}
+						if (prng.scaledInt(
+							1.0,
+							0.246 * (1.5 * leaves[lX][lZ] + leaves[lX - 1][lZ] + leaves[lX + 1][lZ] + leaves[lX][lZ - 1] + leaves[lX][lZ + 1])
+							- ((lY - leafMin) * 0.347) / (leafMax - leafMin)
+						))
+						{
+							leaves[lX][lZ] = true;
+							chunk.setBlockPopulation(base.offset(lX - 6, lY, lZ - 6), Block(4), age + 1);
+						}
+						else leaves[lX][lZ] = false;
+					}
 		}
 	}
 }

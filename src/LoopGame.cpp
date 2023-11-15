@@ -15,7 +15,7 @@ LoopGame::LoopGame(
 ) : timerFramerate(512),
 	renderer(_window, chunkMeshQueue, chunkMeshQueueDeletion),
 	world(chunkMeshQueue, chunkMeshQueueDeletion, NOISE_HEIGHTMAP),
-	player(EntityPosition({ 0.0, 50.0, 0.0 })),
+	player(EntityPosition({ 0.0, 100.0, 0.0 }), {0.8, 3.75, 0.8}),
 	window{ _window }
 {
 	// Set the user pointer for use in callback functions
@@ -80,8 +80,8 @@ void LoopGame::processInput(const double deltaTime)
 	glfwPollEvents();
 	double _playerSpeed = PLAYER_SPEED_DEFAULT * deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) _playerSpeed *= 10.0;
-	else if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) _playerSpeed *= 200.0;
-	_playerSpeed = std::min(_playerSpeed, 32.0);
+	else if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) _playerSpeed *= 100.0;
+	_playerSpeed = std::clamp(_playerSpeed, 0.0, 32.0);
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) player.displaceForward( _playerSpeed);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) player.displaceForward(-_playerSpeed);
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) player.displaceSideways(-_playerSpeed);

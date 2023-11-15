@@ -24,6 +24,7 @@ public:
 	int z;
 
 	BlockPos(int x, int y, int z);
+	BlockPos(double x, double y, double z);
 	BlockPos(EntityPosition position);
 	BlockPos direction(AxisDirection direction) const;
 	BlockOffset distance(BlockPos other) const;
