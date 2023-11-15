@@ -1,6 +1,0 @@
-Created opengl context
-Created renderer
-Created noise generators
-Loaded World
-Created game loop
-Application termination
