@@ -25,7 +25,7 @@ MeshText::MeshText()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
 	glVertexAttribPointer(0, 2, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Character), (void*)(0));
-	glVertexAttribPointer(1, 3, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Character), (void*)(2));
+	glVertexAttribPointer(1, 3, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Character), (void*)(offsetof(Character, u)));
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 
@@ -110,9 +110,9 @@ void MeshText::update(const char* text, int length)
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Character) * verticies.size(), verticies.data(), GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Character) * verticies.size(), verticies.data(), GL_STREAM_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 2 * indicies.size(), indicies.data(), GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 2 * indicies.size(), indicies.data(), GL_STREAM_DRAW);
 
 	glBindVertexArray(0);
 }

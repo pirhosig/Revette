@@ -27,16 +27,16 @@ MeshChunk::MeshChunk(std::unique_ptr<MeshDataChunk> meshData) :
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
 	glVertexAttribPointer(0, 4, GL_UNSIGNED_INT_2_10_10_10_REV, GL_FALSE, sizeof(Vertex), (void*)(0));
-	glVertexAttribPointer(1, 1, GL_UNSIGNED_SHORT, GL_FALSE, sizeof(Vertex), (void*)(4));
-	glVertexAttribPointer(2, 2, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void*)(6));
-	glVertexAttribPointer(3, 1, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void*)(8));
+	glVertexAttribPointer(1, 1, GL_UNSIGNED_SHORT,              GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, t)));
+	glVertexAttribPointer(2, 2, GL_UNSIGNED_BYTE,                GL_TRUE, sizeof(Vertex), (void*)(offsetof(Vertex, u)));
+	glVertexAttribPointer(3, 1, GL_UNSIGNED_BYTE,                GL_TRUE, sizeof(Vertex), (void*)(offsetof(Vertex, w)));
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
 	glEnableVertexAttribArray(3);
 
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * meshData->verticies.size(), meshData->verticies.data(), GL_DYNAMIC_DRAW);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * meshData->indicies.size(), meshData->indicies.data(), GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * meshData->verticies.size(), meshData->verticies.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * meshData->indicies.size(), meshData->indicies.data(), GL_STATIC_DRAW);
 
 	glBindVertexArray(NULL);
 }

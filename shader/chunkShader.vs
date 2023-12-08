@@ -1,4 +1,4 @@
-#version 330 core
+#version 460 core
 layout (location = 0) in vec4 vertexPos;
 layout (location = 1) in float vertexTextureIndex;
 layout (location = 2) in vec2 vertexTextureCoords;

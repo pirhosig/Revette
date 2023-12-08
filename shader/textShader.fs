@@ -1,4 +1,4 @@
-#version 330 core
+#version 460 core
 in vec3 textureCoords;
 
 out vec4 FragColor;

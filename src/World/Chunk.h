@@ -25,6 +25,13 @@ struct BlockChange
 
 class Chunk
 {
+private:
+	bool generated;
+	BlockContainer blockContainer;
+	std::vector<BlockChange> populationChangesAdjacent;
+	std::vector<BlockChange> populationChangesInside;
+	const ChunkPos position;
+
 public:
 	Chunk(ChunkPos _pos);
 	Chunk(const Chunk&) = delete;
@@ -38,15 +45,8 @@ public:
 	void setBlockPopulation(BlockPos blockPos, Block block, unsigned age);
 	bool isEmpty() const;
 
-	const ChunkPos position;
-
 private:
 	void addAdjacentPopulationChanges(std::unordered_map<BlockPos, std::pair<Block, unsigned>>& changes, ChunkPos pos) const;
-
-	bool generated;
-	BlockContainer blockContainer;
-	std::vector<BlockChange> populationChangesAdjacent;
-	std::vector<BlockChange> populationChangesInside;
 
 	friend class Structure;
 	friend class MeshDataChunk;

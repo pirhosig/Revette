@@ -7,7 +7,7 @@ class Chunk;
 
 
 
-#pragma pack(push, 1)
+#pragma pack(push, 4)
 struct Vertex
 {
 	uint32_t x: 10;
