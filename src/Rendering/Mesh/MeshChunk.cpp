@@ -10,9 +10,9 @@
 
 // Creates a chunk mesh using the passed data object, the data members of "meshData" are moved into this instance
 MeshChunk::MeshChunk(std::unique_ptr<MeshDataChunk> meshData) :
+	position(meshData->position), VAO{}, VBO{}, EBO{},
 	triangleCountOpaque{ meshData->triangleCountOpaque },
-	triangleCountTransparent{ meshData->triangleCountTransparent },
-	position(meshData->position), VAO{}, VBO{}, EBO{}
+	triangleCountTransparent{ meshData->triangleCountTransparent }
 {
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
@@ -38,7 +38,7 @@ MeshChunk::MeshChunk(std::unique_ptr<MeshDataChunk> meshData) :
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * meshData->verticies.size(), meshData->verticies.data(), GL_STATIC_DRAW);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * meshData->indicies.size(), meshData->indicies.data(), GL_STATIC_DRAW);
 
-	glBindVertexArray(NULL);
+	glBindVertexArray(0);
 }
 
 

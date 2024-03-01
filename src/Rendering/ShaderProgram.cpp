@@ -47,7 +47,7 @@ GLuint createShader(const char* shaderCode, const int shaderType)
 
 ShaderProgram::ShaderProgram(const char* shaderVertexPath, const char* shaderFragmentPath)
 {
-	programID = NULL;
+	programID = 0;
 
 	std::string codeVertex = readFile(shaderVertexPath);
 	std::string codeFragment = readFile(shaderFragmentPath);
@@ -77,7 +77,7 @@ ShaderProgram::ShaderProgram(const char* shaderVertexPath, const char* shaderFra
 
 ShaderProgram::~ShaderProgram()
 {
-	if (programID != NULL) glDeleteProgram(programID);
+	if (programID) glDeleteProgram(programID);
 }
 
 

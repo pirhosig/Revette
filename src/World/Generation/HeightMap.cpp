@@ -4,7 +4,7 @@
 
 
 
-HeightMap::HeightMap(ChunkPos2D noisePos, NoiseSource2D& noiseSource) : heightMax(SHRT_MIN), heightMin(SHRT_MAX)
+HeightMap::HeightMap(ChunkPos2D noisePos, NoiseSource2D& noiseSource) : heightMin(SHRT_MAX), heightMax(SHRT_MIN)
 {
 	std::array<float, CHUNK_AREA> noiseMap = noiseSource.genChunkNoise(noisePos);
 	for (int i = 0; i < CHUNK_AREA; ++i)

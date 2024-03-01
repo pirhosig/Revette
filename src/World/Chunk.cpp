@@ -22,7 +22,7 @@ inline int blockPositionIsInside(int x, int y, int z)
 
 
 
-Chunk::Chunk(ChunkPos _pos) : position(_pos), generated{ false } {}
+Chunk::Chunk(ChunkPos _pos) : generated{ false }, position(_pos) {}
 
 
 

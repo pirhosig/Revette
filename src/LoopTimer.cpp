@@ -2,7 +2,7 @@
 
 
 
-LoopTimer::LoopTimer(int timeNumber) : loopTimes(timeNumber, 0), timeCount(timeNumber)
+LoopTimer::LoopTimer(int timeNumber) : timeCount(timeNumber), loopTimes(timeNumber, 0)
 {
 	total = 0;
 	updateIndex = 0;

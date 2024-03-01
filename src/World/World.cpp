@@ -85,14 +85,14 @@ World::World(
 	const char* settingNoiseHeightmap
 ) :
 	loadCentre(0, 1, 0),
-	threadQueueMeshes{ queueMesh },
-	threadQueueMeshDeletion{ queueMeshDeletion },
 	generatorChunkNoise(
 		SEED,
 		settingNoiseHeightmap,
 		"EwAK1yM8FwAAAIC/AACAPwAAAAAAAIA/GQANAAMAAAAAAABACQAAAAAAPwAAAAAAARsAAQAAj8J1PA==",
 		"EwAK1yM8FwAAAIC/AACAPwAAAAAAAIA/GQANAAMAAAAAAABACQAAAAAAPwAAAAAAARsAAQAAj8J1PA=="
-	)
+	),
+	threadQueueMeshes{ queueMesh },
+	threadQueueMeshDeletion{ queueMeshDeletion }
 {
 	loadQueue.push(ChunkPriorityTicket(chunkLoadPriority(loadCentre, loadCentre), loadCentre));
 	chunkStatusMap.setChunkStatusLoad(loadCentre, StatusChunkLoad::QUEUED_LOAD);
@@ -267,6 +267,7 @@ void World::onLoadCentreChange()
 			// Check if this can populate
 			if (chunkStatusMap.getChunkStatusCanPopulate(_pos))
 				chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::QUEUED_POPULATE);
+			[[fallthrough]];
 		case StatusChunkLoad::POPULATED:
 			// Check if any neighbours should be loaded
 			for (auto [lX, lY, lZ] : CHUNK_NEIGHBOURS_CARDINAL)
@@ -418,7 +419,7 @@ const std::unique_ptr<Chunk>& World::getChunk(const ChunkPos chunkPos) const
 	try {
 		return mapChunks.at(chunkPos);
 	}
-	catch (std::out_of_range)
+	catch (const std::out_of_range& e)
 	{
 		std::string error = "Attempted to access non-existent chunk at ";
 		error += std::to_string(chunkPos.x) + " " + std::to_string(chunkPos.y) + " " + std::to_string(chunkPos.z);
@@ -441,7 +442,7 @@ const std::unique_ptr<Structure>& World::getStructure(const BlockPos blockPos) c
 	try {
 		return mapStructures.at(blockPos);
 	}
-	catch (std::out_of_range)
+	catch (const std::out_of_range& e)
 	{
 		std::string error = "Attempted to access non-existent chunk at ";
 		error += std::to_string(blockPos.x) + " " + std::to_string(blockPos.y) + " " + std::to_string(blockPos.z);

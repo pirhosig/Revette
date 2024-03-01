@@ -1,5 +1,7 @@
 #pragma once
 #include <array>
+#include <memory>
+
 #include <FastNoise/FastNoise.h>
 
 #include "../ChunkPos.h"

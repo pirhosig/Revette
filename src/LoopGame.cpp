@@ -56,6 +56,7 @@ void LoopGame::run()
 		world.tick(player);
 
 		// Render the frame
+		// TODO: Unfuck this
 		renderer.unloadMeshes(ChunkPos(player));
 		renderer.unqueueMeshes();
 		renderer.render(player);

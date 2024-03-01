@@ -30,6 +30,8 @@ MainLoop::MainLoop()
 	// Set the viewport to match the screen height and width
 	glViewport(0, 0, windowWidth, windowHeight);
 
+	glfwSwapInterval(1);
+
 	GlobalLog.Write("Created opengl context");
 }
 

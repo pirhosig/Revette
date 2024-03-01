@@ -4,7 +4,7 @@
 #include <stdexcept>
 
 #include <glad/glad.h>
-#include <stb_image.h>
+#include <lodepng.h>
 
 #include "../GlobalLog.h"
 
@@ -14,15 +14,15 @@ constexpr long long TEXTURE_PIXEL_MEMORY_SIZE = 4;
 constexpr GLenum PIXEL_FORMAT = GL_RGBA;
 
 
-TileTexture::TileTexture(const char* textureFilePath, std::size_t textureWidth, std::size_t textureHeight, bool mipmapsEnabled)
+TileTexture::TileTexture(const char* textureFilePath, std::size_t textureWidth, std::size_t textureHeight, bool mipmapsEnabled) : textureID{}
 {
-	textureID = 0;
-
-	int imageWidth{}, imageHeight{}, imageColourChannelCount{};
-	std::unique_ptr<unsigned char[]> imageDataArray(stbi_load(textureFilePath, &imageWidth, &imageHeight, &imageColourChannelCount, 0));
-	if (!imageDataArray)
+	unsigned imageWidth, imageHeight;
+	std::vector<unsigned char> image;
+	unsigned error = lodepng::decode(image, imageWidth, imageHeight, textureFilePath);
+	if (error)
 	{
-		GlobalLog.Write("Failed to load tile texture.");
+		GlobalLog.Write("Failed to load tile texture:");
+		GlobalLog.Write(lodepng_error_text(error));
 		throw std::runtime_error("Failed to load tile texture");
 	}
 
@@ -30,7 +30,7 @@ TileTexture::TileTexture(const char* textureFilePath, std::size_t textureWidth, 
 	const std::size_t atlasHeight = imageHeight / textureHeight;
 	const std::size_t atlasTextureCount = atlasWidth * atlasHeight;
 	const std::size_t textureMemorySize = textureWidth * textureHeight * TEXTURE_PIXEL_MEMORY_SIZE;
-	const GLenum pixelFormat = GL_RGBA; //((imageColourChannelCount == 3) ? GL_RGB : GL_RGBA);
+	const GLenum pixelFormat = GL_RGBA;
 
 	glGenTextures(1, &textureID);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, textureID);
@@ -76,10 +76,10 @@ TileTexture::TileTexture(const char* textureFilePath, std::size_t textureWidth, 
 
 			// Copy the texture line by line from the atlas to the array
 			std::size_t startLine = j * textureHeight;
-			for (int lineCount = 0; lineCount < textureHeight; ++lineCount)
+			for (size_t lineCount = 0; lineCount < textureHeight; ++lineCount)
 			{
 				std::size_t linePosition = startLine + lineCount;
-				unsigned char* lineBegin = imageDataArray.get() + ((linePosition * imageWidth) + (i * textureWidth)) * TEXTURE_PIXEL_MEMORY_SIZE;
+				unsigned char* lineBegin = image.data() + ((linePosition * imageWidth) + (i * textureWidth)) * TEXTURE_PIXEL_MEMORY_SIZE;
 				unsigned char* lineEnd = lineBegin + textureWidth * TEXTURE_PIXEL_MEMORY_SIZE;
 				unsigned char* textureDataPosition = textureDataArray.data() + textureWidth * lineCount * TEXTURE_PIXEL_MEMORY_SIZE;
 				std::copy(lineBegin, lineEnd, textureDataPosition);

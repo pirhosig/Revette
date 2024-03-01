@@ -109,7 +109,7 @@ try
 	}
 	return blockArrayBlocksByIndex.at(_blockIndex);
 }
-catch (std::out_of_range)
+catch (const std::out_of_range& e)
 {
 	throw EXCEPTION_WORLD::BlockIndexOutOfRange("Block index out of range");
 }
@@ -164,6 +164,7 @@ std::vector<bool> BlockContainer::getSolidFace(AxisDirection direction) const
 		{
 		case AxisDirection::Up:
 			_indexOffset = (CHUNK_SIZE - 1) * CHUNK_SIZE;
+			[[fallthrough]];
 		case AxisDirection::Down:
 			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX)
 				for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ)
@@ -171,6 +172,7 @@ std::vector<bool> BlockContainer::getSolidFace(AxisDirection direction) const
 			break;
 		case AxisDirection::North:
 			_indexOffset = (CHUNK_SIZE - 1) * CHUNK_AREA;
+			[[fallthrough]];
 		case AxisDirection::South:
 			for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY)
 				for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ)
@@ -178,6 +180,7 @@ std::vector<bool> BlockContainer::getSolidFace(AxisDirection direction) const
 			break;
 		case AxisDirection::East:
 			_indexOffset = CHUNK_SIZE - 1;
+			[[fallthrough]];
 		case AxisDirection::West:
 			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX)
 				for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY)
@@ -192,6 +195,7 @@ std::vector<bool> BlockContainer::getSolidFace(AxisDirection direction) const
 		{
 		case AxisDirection::Up:
 			_indexOffset = (CHUNK_SIZE - 1) * CHUNK_SIZE;
+			[[fallthrough]];
 		case AxisDirection::Down:
 			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX)
 				for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ)
@@ -199,6 +203,7 @@ std::vector<bool> BlockContainer::getSolidFace(AxisDirection direction) const
 			break;
 		case AxisDirection::North:
 			_indexOffset = (CHUNK_SIZE - 1) * CHUNK_AREA;
+			[[fallthrough]];
 		case AxisDirection::South:
 			for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY)
 				for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ)
@@ -206,6 +211,7 @@ std::vector<bool> BlockContainer::getSolidFace(AxisDirection direction) const
 			break;
 		case AxisDirection::East:
 			_indexOffset = CHUNK_SIZE - 1;
+			[[fallthrough]];
 		case AxisDirection::West:
 			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX)
 				for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY)
