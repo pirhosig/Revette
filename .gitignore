@@ -355,3 +355,4 @@ MigrationBackup/
 *.dll
 log.txt
 build/*
+.vscode/*
