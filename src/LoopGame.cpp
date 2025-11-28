@@ -10,7 +10,7 @@ const char* NOISE_HEIGHTMAP = "GQAbABkAGwANAAYAAAB7FA5AEwAAAIA9CQAAmpkZPwDNzEy9A
 
 LoopGame::LoopGame(
 	GLFWwindow* _window,
-	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> chunkMeshQueue,
+	std::shared_ptr<ThreadPointerQueue<MeshChunk::Data>> chunkMeshQueue,
 	std::shared_ptr<ThreadQueue<ChunkPos>> chunkMeshQueueDeletion
 ) : timerFramerate(512),
 	renderer(_window, chunkMeshQueue, chunkMeshQueueDeletion),
@@ -56,9 +56,6 @@ void LoopGame::run()
 		world.tick(player);
 
 		// Render the frame
-		// TODO: Unfuck this
-		renderer.unloadMeshes(ChunkPos(player));
-		renderer.unqueueMeshes();
 		renderer.render(player);
 	}
 }

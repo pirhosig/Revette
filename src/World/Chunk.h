@@ -10,7 +10,7 @@
 class GeneratorChunkParameters;
 class World;
 class Structure;
-class MeshDataChunk;
+class MeshChunk;
 
 
 
@@ -49,6 +49,5 @@ private:
 	void addAdjacentPopulationChanges(std::unordered_map<BlockPos, std::pair<Block, unsigned>>& changes, ChunkPos pos) const;
 
 	friend class Structure;
-	friend class MeshDataChunk;
-	friend class MeshChunkLOD;
+	friend class MeshChunk;
 };

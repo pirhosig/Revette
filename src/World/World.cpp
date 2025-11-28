@@ -80,7 +80,7 @@ const int CHUNK_NEIGHBOURS_CARDINAL[6][3] = { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1,
 
 
 World::World(
-	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> queueMesh,
+	std::shared_ptr<ThreadPointerQueue<MeshChunk::Data>> queueMesh,
 	std::shared_ptr<ThreadQueue<ChunkPos>> queueMeshDeletion,
 	const char* settingNoiseHeightmap
 ) :
@@ -380,7 +380,7 @@ void World::populateChunks()
 
 void World::meshChunks()
 {
-	std::queue<std::unique_ptr<MeshDataChunk>> meshDataQueue;
+	std::queue<std::unique_ptr<MeshChunk::Data>> meshDataQueue;
 
 	constexpr int MAX_MESH_COUNT = 20;
 	for (int i = 0; i < MAX_MESH_COUNT; ++i)
@@ -401,8 +401,8 @@ void World::meshChunks()
 			std::array<Chunk*, 6> neighbours{};
 			for (unsigned j = 0; j < 6; ++j)
 				neighbours[j] = getChunk(mPos.direction(static_cast<AxisDirection>(j))).get();
-			std::unique_ptr<MeshDataChunk> meshData = std::make_unique<MeshDataChunk>(getChunk(mPos).get(), neighbours);
-			if (meshData->indicies.size()) meshDataQueue.push(std::move(meshData));
+			auto meshData = std::make_unique<MeshChunk::Data>(getChunk(mPos).get(), neighbours);
+			if (!meshData->isEmpty()) meshDataQueue.push(std::move(meshData));
 		}
 		chunkStatusMap.setChunkStatusMesh(mPos, StatusChunkMesh::MESHED);
 	}

@@ -1,24 +1,20 @@
 #pragma once
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include "LoopTimer.h"
-#include "Rendering/Renderer.h"
-#include "World/World.h"
+#include "Window.h"
 
 
 
 class MainLoop
 {
+private:
+	Window window;
+
 public:
-	MainLoop();
+	MainLoop() = default;
+
+	MainLoop(MainLoop&&) = delete;
 	MainLoop(const MainLoop&) = delete;
-	~MainLoop();
+	MainLoop operator=(MainLoop&&) = delete;
+	MainLoop operator=(const MainLoop&) = delete;
 
 	void run();
-private:
-	GLFWwindow* window;
-
-	int windowWidth;
-	int windowHeight;
 };

@@ -1,35 +1,85 @@
 #pragma once
 #include <memory>
+#include <vector>
 
-#include <glad/glad.h>
-#include <glm/mat4x4.hpp>
-
+#include "../Buffer.h"
+#include "../LinearBufferSuballocator.h"
+#include "../Vertex.h"
+#include "../Vulkan_Headers.h"
 #include "../../World/ChunkPos.h"
-#include "MeshDataChunk.h"
-
-class ShaderProgram;
-
+class Chunk;
 
 
 
 class MeshChunk
 {
 public:
-	MeshChunk(std::unique_ptr<MeshDataChunk> meshData);
-	MeshChunk(const MeshChunk&) = delete;
-	~MeshChunk();
+	// In memory data class which can be used to construct a full MeshChunk which is backed by actual GPU buffers
+	class Data {
+	private:
+		ChunkPos position;
 
-	void drawOpaque(const ShaderProgram& shader, const glm::mat4& transformMatrix, ChunkPos playerPosition) const;
-	void drawTransparent(const ShaderProgram& shader, const glm::mat4& transformMatrix, ChunkPos playerPosition) const;
-	ChunkPos getPosition() const { return position; }
+		std::vector<Vertex> vertices;
+		std::vector<uint32_t> indices;
+
+		VkDeviceSize indexCountOpaque{};
+		VkDeviceSize indexCountTested{};
+		VkDeviceSize indexCountBlended{};
+
+	public:
+		Data(const Chunk* chunkCentre, const std::array<Chunk*, 6> neighbours);
+
+		Data(Data&&) = delete;
+		Data(const Data&) = delete;
+		Data operator=(Data&&) = delete;
+		Data operator=(const Data&) = delete;
+
+		bool isEmpty() const;
+		ChunkPos getPosition() const;
+
+		friend MeshChunk;
+	};
 
 private:
-	ChunkPos position;
+	std::unique_ptr<MeshChunk::Data> meshData;
 
-	GLuint VAO;
-	GLuint VBO;
-	GLuint EBO;
+	Buffer buffer;
 
-	GLuint triangleCountOpaque;
-	GLuint triangleCountTransparent;
+	VkDeviceSize offsetVertices;
+	VkDeviceSize offsetIndices;
+
+public:
+	MeshChunk(
+		VkBufferMemoryBarrier2& barrier,
+		std::unique_ptr<MeshChunk::Data> _meshData,
+		VmaAllocator allocator,
+		VkCommandBuffer transferCommandBuffer,
+		LinearBufferSuballocator& stagingBuffer
+	);
+
+	MeshChunk(MeshChunk&&) = delete;
+	MeshChunk(const MeshChunk&) = delete;
+	MeshChunk operator=(MeshChunk&&) = delete;
+	MeshChunk operator=(const MeshChunk&) = delete;
+
+	void drawOpaque(
+		VkCommandBuffer commandBuffer,
+		VkPipelineLayout pipelineLayout,
+		const glm::mat4& matrixProjectionView,
+		ChunkPos playerPosition
+	) const;
+	void drawTested(
+		VkCommandBuffer commandBuffer,
+		VkPipelineLayout pipelineLayout,
+		const glm::mat4& matrixProjectionView,
+		ChunkPos playerPosition
+	) const;
+	void drawBlended(
+		VkCommandBuffer commandBuffer,
+		VkPipelineLayout pipelineLayout,
+		const glm::mat4& matrixProjectionView,
+		ChunkPos playerPosition
+	) const;
+
+	ChunkPos getPosition() const;
 };

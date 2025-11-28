@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.20)
 
 project(Revette)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_executable(Revette 
@@ -12,14 +12,21 @@ add_executable(Revette
     src/LoopTimer.cpp
     src/main.cpp
     src/MainLoop.cpp
+    src/Window.cpp
 
+    src/Rendering/Buffer.cpp
+    src/Rendering/ChunkRenderer.cpp
+    src/Rendering/Fence.cpp
+    src/Rendering/FrameRenderer.cpp
+    src/Rendering/LinearBufferSuballocator.cpp
     src/Rendering/Renderer.cpp
-    src/Rendering/ShaderProgram.cpp
-    src/Rendering/TileTexture.cpp
-
+    src/Rendering/RenderResources.cpp
+    src/Rendering/RenderTarget.cpp
+    src/Rendering/SingleCommandBuffer.cpp
+    src/Rendering/Vertex.cpp
+    src/Rendering/Vulkan_Utils.cpp
+    src/Rendering/VulkanContext.cpp
     src/Rendering/Mesh/MeshChunk.cpp
-    src/Rendering/Mesh/MeshDataChunk.cpp
-    src/Rendering/Mesh/MeshText.cpp
 
     src/World/Block.cpp
     src/World/BlockContainer.cpp
@@ -42,21 +49,34 @@ add_executable(Revette
     src/World/Generation/Structures/StructurePlants.cpp
     src/World/Generation/Structures/StructuresRuins.cpp
 
-    deps/glad/src/glad.c
     deps/lodepng/lodepng.cpp
+    deps/VMA/vma_implementation.cpp
 )
+
+set_source_files_properties(
+    deps/lodepng/lodepng.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-w"
+)
+
+set_property(TARGET Revette PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 add_subdirectory(deps/FastNoise2)
 
-target_compile_options(Revette PUBLIC -O3 -Wall -Wextra)
+target_compile_options(Revette PUBLIC -O3 -march=native -Wall -Wextra -Werror -pedantic)
+target_link_options(Revette PUBLIC -flto=auto)
 
-find_package(OpenGL REQUIRED)
+find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 
-target_link_libraries(Revette PRIVATE glfw FastNoise)
+target_link_libraries(Revette PRIVATE vulkan glfw FastNoise)
 
-target_include_directories(Revette PRIVATE ${GLFW_INCLUDE_PATH} ${GLEW_INCLUDE_PATH} ${GLM_INCLUDE_PATH} deps/glad/include deps/lodepng/)
+target_include_directories(Revette PRIVATE
+    ${GLFW_INCLUDE_PATH}
+    ${GLM_INCLUDE_PATH}
+    deps/
+)
 
 
 

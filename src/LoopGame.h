@@ -1,5 +1,4 @@
 #pragma once
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include "LoopTimer.h"
@@ -12,7 +11,7 @@ class LoopGame
 public:
 	LoopGame(
 		GLFWwindow* _window,
-		std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> chunkMeshQueue,
+		std::shared_ptr<ThreadPointerQueue<MeshChunk::Data>> chunkMeshQueue,
 		std::shared_ptr<ThreadQueue<ChunkPos>> chunkMeshQueueDeletion
 	);
 

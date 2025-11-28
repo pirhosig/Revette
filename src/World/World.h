@@ -10,7 +10,7 @@
 #include "Generation/GeneratorChunkParameters.h"
 #include "Generation/GeneratorChunkNoise.h"
 #include "Generation/Structures/Structure.h"
-#include "../Rendering/Mesh/MeshDataChunk.h"
+#include "../Rendering/Mesh/MeshChunk.h"
 #include "../Threading/ThreadPointerQueue.h"
 
 
@@ -35,7 +35,7 @@ class World
 {
 public:
 	World(
-		std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> queueMesh,
+		std::shared_ptr<ThreadPointerQueue<MeshChunk::Data>> queueMesh,
 		std::shared_ptr<ThreadQueue<ChunkPos>> queueMeshDeletion,
 		const char* settingNoiseHeightmap
 	);
@@ -81,6 +81,6 @@ private:
 	std::unordered_map<ChunkPos2D, GeneratorChunkParameters> generatorChunkCache;
 	GeneratorChunkNoise generatorChunkNoise;
 
-	std::shared_ptr<ThreadPointerQueue<MeshDataChunk>> threadQueueMeshes;
+	std::shared_ptr<ThreadPointerQueue<MeshChunk::Data>> threadQueueMeshes;
 	std::shared_ptr<ThreadQueue<ChunkPos>> threadQueueMeshDeletion;
 };
