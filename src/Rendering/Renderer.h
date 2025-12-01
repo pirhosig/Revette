@@ -4,6 +4,7 @@
 
 #include "ChunkRenderer.h"
 #include "FrameRenderer.h"
+#include "GuiRenderer.h"
 #include "RenderResources.h"
 #include "RenderTarget.h"
 #include "VulkanContext.h"
@@ -24,7 +25,8 @@ private:
 	VulkanContext vulkanContext;
     RenderTarget renderTarget;
     RenderResources renderResources;
-    ChunkRenderer renderProgram;
+    ChunkRenderer chunkRenderer;
+	GuiRenderer guiRenderer;
 
     std::vector<FrameRenderer> frameRenderers;
 

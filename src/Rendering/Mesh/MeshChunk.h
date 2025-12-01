@@ -4,7 +4,6 @@
 
 #include "../Buffer.h"
 #include "../LinearBufferSuballocator.h"
-#include "../Vertex.h"
 #include "../Vulkan_Headers.h"
 #include "../../World/ChunkPos.h"
 class Chunk;
@@ -14,6 +13,19 @@ class Chunk;
 class MeshChunk
 {
 public:
+	struct alignas(8) Vertex {
+		uint32_t x: 10;
+		uint32_t y: 10;
+		uint32_t z: 10;
+		uint32_t u: 1;
+		uint32_t v: 1;
+		uint16_t texture;
+		uint8_t light;
+
+		static std::array<VkVertexInputBindingDescription, 1> getBindingDescriptions();
+		static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
+	};
+
 	// In memory data class which can be used to construct a full MeshChunk which is backed by actual GPU buffers
 	class Data {
 	private:

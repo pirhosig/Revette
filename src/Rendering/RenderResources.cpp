@@ -12,10 +12,19 @@
 
 
 
-constexpr uint32_t TEXTURE_SIZE = 16;
-constexpr std::array TEXTURE_PATHS{
-    "res/textures/texture_atlas.png"
+namespace {
+
+struct TextureLoadInfo{
+    const char* filepath;
+    uint32_t cellWidth;
+    uint32_t cellHeight;
 };
+constexpr std::array TEXTURE_INFOS{
+    TextureLoadInfo{"res/textures/texture_atlas.png", 16u, 16u},
+    TextureLoadInfo{"res/textures/character_set.png", 6u, 8u}
+};
+
+}
 
 
 
@@ -26,8 +35,8 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
     std::vector<LinearBufferSuballocator> uploadBuffers;
 
     Fence fenceUploadsComplete(device, {});
-    
-    for (auto path : TEXTURE_PATHS) {
+ 
+    for (auto [path, cellWidth, cellHeight] : TEXTURE_INFOS) {
         std::vector<unsigned char> imageData;
         unsigned width;
         unsigned height;
@@ -36,11 +45,11 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
         }
 
         // Error if the texture isn't a grid of TEXTURE_SIZE sized squares
-        if (width % TEXTURE_SIZE != 0 || height % TEXTURE_SIZE != 0) {
+        if (width % cellWidth != 0 || height % cellHeight != 0) {
             throw std::runtime_error("Invalid texture size");
         }
-        uint32_t textureGridWidth = width / TEXTURE_SIZE;
-        uint32_t textureGridHeight = height / TEXTURE_SIZE;
+        uint32_t textureGridWidth = width / cellWidth;
+        uint32_t textureGridHeight = height / cellHeight;
         uint32_t textureCount = textureGridWidth * textureGridHeight;
     
         VkDeviceSize imageSize = width * height * 4;
@@ -58,8 +67,8 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
             .imageType = VK_IMAGE_TYPE_2D,
             .format = VK_FORMAT_R8G8B8A8_SRGB,
             .extent{
-                .width = TEXTURE_SIZE,
-                .height = TEXTURE_SIZE,
+                .width = cellWidth,
+                .height = cellHeight,
                 .depth = 1
             },
             .mipLevels = 1,
@@ -117,7 +126,7 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
         copyRegions.reserve(textureCount);
         for (uint32_t row = 0; row < textureGridHeight; ++row) {
             for (uint32_t col = 0; col < textureGridWidth; ++col) {
-                uint32_t bufferOffset = (row * textureGridWidth * TEXTURE_SIZE * TEXTURE_SIZE + col * TEXTURE_SIZE) * 4;
+                uint32_t bufferOffset = (row * textureGridWidth * cellWidth * cellHeight + col * cellWidth) * 4;
                 uint32_t arrayIndex = row * textureGridWidth + col;
 
                 copyRegions.push_back(VkBufferImageCopy{
@@ -132,8 +141,8 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
                     },
                     .imageOffset{},
                     .imageExtent{
-                        .width = TEXTURE_SIZE,
-                        .height = TEXTURE_SIZE,
+                        .width = cellWidth,
+                        .height = cellHeight,
                         .depth = 1
                     }
                 });
@@ -243,9 +252,16 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
 
 
 void RenderResources::createDescriptorLayout() {
-    std::array<VkDescriptorSetLayoutBinding, 1> bindings{
+    std::array bindings{
         VkDescriptorSetLayoutBinding{
             .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .pImmutableSamplers{}
+        },
+        VkDescriptorSetLayoutBinding{
+            .binding = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .descriptorCount = 1,
             .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -275,7 +291,7 @@ void RenderResources::createDescriptorSet() {
         },
         VkDescriptorPoolSize{
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = 1
+            .descriptorCount = 2
         }
     };
     VkDescriptorPoolCreateInfo createInfo{

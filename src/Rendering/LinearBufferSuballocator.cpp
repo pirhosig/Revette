@@ -29,8 +29,11 @@ VkDeviceSize LinearBufferSuballocator::writeData(const void* src, VkDeviceSize s
     if (currentOffset + size > allocationSize) {
         throw std::runtime_error("Cannot write to linear buffer suballocator, budget exceeded.");
     }
-    void* dst = static_cast<char*>(buffer.getMappedPointer()) + currentOffset;
-    std::memcpy(dst, src, size);
+    std::memcpy(
+        static_cast<char*>(buffer.getMappedPointer()) + currentOffset,
+        src,
+        size
+    );
 
     return std::exchange(currentOffset, currentOffset + size);
 }

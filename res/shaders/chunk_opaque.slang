@@ -7,7 +7,8 @@ struct UniformBuffer {
 
 [[vk::binding(0, 0)]]
 struct Textures {
-    Sampler2DArray texture;
+    Sampler2DArray blocks;
+    Sampler2DArray gui;
 };
 ConstantBuffer<Textures> textures;
 
@@ -43,6 +44,6 @@ VertexOutput vertMain(VertexInput input) {
 
 [shader("fragment")]
 float4 fragMain(VertexOutput inVert) : SV_Target {
-    float4 texColour = textures.texture.Sample(inVert.fragTexCoordsPlusLight.xyz);
+    float4 texColour = textures.blocks.Sample(inVert.fragTexCoordsPlusLight.xyz);
     return float4(texColour.xyz * inVert.fragTexCoordsPlusLight.w, 1.0);
 }

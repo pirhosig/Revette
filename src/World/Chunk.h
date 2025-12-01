@@ -34,7 +34,11 @@ private:
 
 public:
 	Chunk(ChunkPos _pos);
+	
+	Chunk(Chunk&&) = delete;
 	Chunk(const Chunk&) = delete;
+	Chunk operator=(Chunk&&) = delete;
+	Chunk operator=(const Chunk&) = delete;
 
 	void GenerateChunk(const GeneratorChunkParameters& generatorParameters);
 	void PopulateChunk(World& world);

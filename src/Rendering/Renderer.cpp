@@ -61,7 +61,12 @@ Renderer::Renderer(
 		vulkanContext.getQueueGraphicsFamily(),
 		vulkanContext.getAllocator()
 	),
-	renderProgram(
+	chunkRenderer(
+		vulkanContext.getDevice(),
+		renderTarget,
+		renderResources.getDescriptorLayout()
+	),
+	guiRenderer(
 		vulkanContext.getDevice(),
 		renderTarget,
 		renderResources.getDescriptorLayout()
@@ -76,7 +81,8 @@ Renderer::Renderer(
             vulkanContext.getQueueGraphics(),
             renderTarget,
             renderResources,
-            renderProgram,
+            chunkRenderer,
+			guiRenderer,
             vulkanContext.getQueueGraphicsFamily(),
 			vulkanContext.getAllocator()
         );
@@ -105,35 +111,6 @@ void Renderer::render(const EntityPosition& playerPos)
 	unloadMeshes(ChunkPos(playerPos));
 
 	currentFrameRendererIndex = (currentFrameRendererIndex + 1) % frameRenderers.size();
-
-	// // Draw GUI
-	// glDisable(GL_BLEND);
-	// glDisable(GL_CULL_FACE);
-	// glDisable(GL_DEPTH_TEST);
-
-	// textShader.use();
-	// textureAtlasCharacters.bindTexture();
-	// textShader.setInt("characterArray", 0);
-	// textShader.setVec2("characterSize", glm::vec2(24.0 / 1920.0, 32.0 / 1080.0));
-
-	// // Update coordinates
-	// {
-	// 	char coordinateString[33]{};
-	// 	int _length = snprintf(
-	// 		&coordinateString[0],
-	// 		32,
-	// 		"%8.2lf %8.2lf %8.2lf",
-	// 		playerPos.pos.X,
-	// 		playerPos.pos.Y,
-	// 		playerPos.pos.Z
-	// 	);
-
-	// 	meshGUI.update(&coordinateString[0], _length);
-	// }
-
-	// meshGUI.draw();
-
-	// glfwSwapBuffers(mainWindow);
 }
 
 

@@ -4,6 +4,7 @@
 
 #include "ChunkRenderer.h"
 #include "Fence.h"
+#include "GuiRenderer.h"
 #include "LinearBufferSuballocator.h"
 #include "RenderResources.h"
 #include "RenderTarget.h"
@@ -18,7 +19,8 @@ private:
     VmaAllocator allocator;
     RenderTarget& renderTarget;
     RenderResources& renderResources;
-    ChunkRenderer& renderProgramBasic;
+    ChunkRenderer& chunkRenderer;
+    GuiRenderer& guiRenderer;
 
     LinearBufferSuballocator stagingBuffer;
     SingleCommandBuffer commandBuffer;
@@ -34,7 +36,8 @@ private:
         VkDevice _device,
         RenderTarget& _renderTarget,
         RenderResources& _renderResources,
-        ChunkRenderer& _renderProgramBasic,
+        ChunkRenderer& _chunkRenderer,
+        GuiRenderer& _guiRenderer,
         uint32_t queueFamilyIndex,
         VmaAllocator allocator
     );
@@ -59,7 +62,8 @@ public:
         VkQueue _queue,
         RenderTarget& _renderTarget,
         RenderResources& _renderResources,
-        ChunkRenderer& _renderProgramBasic,
+        ChunkRenderer& _chunkRenderer,
+        GuiRenderer& _guiRenderer,
         uint32_t queueFamilyIndex,
         VmaAllocator allocator
     );

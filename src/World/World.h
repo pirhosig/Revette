@@ -39,7 +39,12 @@ public:
 		std::shared_ptr<ThreadQueue<ChunkPos>> queueMeshDeletion,
 		const char* settingNoiseHeightmap
 	);
+
+	World(World&&) = delete;
 	World(const World&) = delete;
+	World operator=(World&&) = delete;
+	World operator=(const World&) = delete;
+	
 	void tick(Entity& player);
 
 	Block getBlock(BlockPos blockPos) const;

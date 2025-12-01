@@ -20,6 +20,7 @@ private:
 
     void createLayout(VkDescriptorSetLayout setLayout);
     void createPipelines(const RenderTarget& renderTarget);
+    
 public:
     ChunkRenderer(
         VkDevice _device,

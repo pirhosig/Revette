@@ -18,12 +18,12 @@ add_executable(Revette
     src/Rendering/ChunkRenderer.cpp
     src/Rendering/Fence.cpp
     src/Rendering/FrameRenderer.cpp
+    src/Rendering/GuiRenderer.cpp
     src/Rendering/LinearBufferSuballocator.cpp
     src/Rendering/Renderer.cpp
     src/Rendering/RenderResources.cpp
     src/Rendering/RenderTarget.cpp
     src/Rendering/SingleCommandBuffer.cpp
-    src/Rendering/Vertex.cpp
     src/Rendering/Vulkan_Utils.cpp
     src/Rendering/VulkanContext.cpp
     src/Rendering/Mesh/MeshChunk.cpp
@@ -63,7 +63,7 @@ set_property(TARGET Revette PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 add_subdirectory(deps/FastNoise2)
 
-target_compile_options(Revette PUBLIC -O3 -march=native -Wall -Wextra -Werror -pedantic)
+target_compile_options(Revette PUBLIC -O3 -march=native -Werror -Wall -Wextra -Wpedantic)
 target_link_options(Revette PUBLIC -flto=auto)
 
 find_package(Vulkan REQUIRED)

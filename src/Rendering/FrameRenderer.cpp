@@ -115,7 +115,7 @@ uint32_t FrameRenderer::beginFrame(
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue{
-            .color{0.0f, 0.0f, 0.0f, 0.0f}
+            .color{0.52f, 0.70f, 0.89f, 1.0f}
         }
     };
 
@@ -224,7 +224,7 @@ void FrameRenderer::drawChunks(
     const glm::mat4 view = glm::lookAt(cameraPos, cameraPos + front, glm::vec3(0.0, 1.0, 0.0));
     const glm::mat4 matrixProjectionView = projection * view;
 
-    renderProgramBasic.draw(
+    chunkRenderer.draw(
         commandBuffer.getBuffer(),
         matrixProjectionView,
         _playerChunk,
@@ -307,7 +307,8 @@ FrameRenderer::FrameRenderer(
     VkDevice _device,
     RenderTarget& _renderTarget,
     RenderResources& _renderResources,
-    ChunkRenderer& _renderProgramBasic,
+    ChunkRenderer& _chunkRenderer,
+    GuiRenderer& _guiRenderer,
     uint32_t queueFamilyIndex,
     VmaAllocator _allocator
 ) :
@@ -315,12 +316,13 @@ FrameRenderer::FrameRenderer(
     allocator{_allocator},
     renderTarget{_renderTarget},
     renderResources{_renderResources},
-    renderProgramBasic{_renderProgramBasic},
+    chunkRenderer{_chunkRenderer},
+    guiRenderer{_guiRenderer},
     // 8MB should be good, probably?
     stagingBuffer(
         allocator,
         (1u << 23),
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         false
     ),
     commandBuffer(device, queueFamilyIndex),
@@ -334,14 +336,16 @@ FrameRenderer::FrameRenderer(
     VkQueue _queue,
     RenderTarget& _renderTarget,
     RenderResources& _renderResources,
-    ChunkRenderer& _renderProgramBasic,
+    ChunkRenderer& _chunkRenderer,
+    GuiRenderer& _guiRenderer,
     uint32_t queueFamilyIndex,
     VmaAllocator allocator
 ) : FrameRenderer(
     _device,
     _renderTarget,
     _renderResources,
-    _renderProgramBasic,
+    _chunkRenderer,
+    _guiRenderer,
     queueFamilyIndex,
     allocator
 ) {
@@ -370,7 +374,8 @@ FrameRenderer::FrameRenderer(FrameRenderer&& old) :
     allocator{old.allocator},
     renderTarget{old.renderTarget},
     renderResources{old.renderResources},
-    renderProgramBasic{old.renderProgramBasic},
+    chunkRenderer{old.chunkRenderer},
+    guiRenderer{old.guiRenderer},
     stagingBuffer{std::move(old.stagingBuffer)},
     commandBuffer{std::move(old.commandBuffer)},
     fenceBegin{std::move(old.fenceBegin)},
@@ -410,7 +415,7 @@ void FrameRenderer::drawFrame(
     vkCmdBindDescriptorSets(
         commandBuffer.getBuffer(),
         VK_PIPELINE_BIND_POINT_GRAPHICS,
-        renderProgramBasic.getLayout(),
+        chunkRenderer.getLayout(),
         0,
         1,
         &descriptorSet,
@@ -419,6 +424,23 @@ void FrameRenderer::drawFrame(
     );
 
     drawChunks(playerPosition, chunkMeshes);
+
+    vkCmdBindDescriptorSets(
+        commandBuffer.getBuffer(),
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        guiRenderer.getLayout(),
+        0,
+        1,
+        &descriptorSet,
+        0,
+        {}
+    );
+    guiRenderer.draw(
+        commandBuffer.getBuffer(),
+        renderTarget.getExtext(),
+        stagingBuffer,
+        playerPosition
+    );
 
     endFrame(imageIndex);
 }
