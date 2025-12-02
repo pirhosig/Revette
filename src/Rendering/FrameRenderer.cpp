@@ -67,42 +67,70 @@ uint32_t FrameRenderer::beginFrame(
     // Reset and start new command buffer
     commandBuffer.reset();
 
+    std::vector<VkBufferMemoryBarrier2> bufferBarriers;
+    std::vector<VkImageMemoryBarrier2> imageBarriers;
+
     // Transition the acquired image into a colour attachment
-    transitionImageLayout(
-        commandBuffer.getBuffer(),
-        renderTarget.getSwapchainImage(imageIndex),
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
-        {},
-        VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-        VkImageSubresourceRange{
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel = 0,
-            .levelCount = 1,
-            .baseArrayLayer = 0,
-            .layerCount = 1
+    imageBarriers.push_back(VkImageMemoryBarrier2{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .pNext{},
+            .srcStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+            .srcAccessMask{},
+            .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .srcQueueFamilyIndex{},
+            .dstQueueFamilyIndex{},
+            .image = renderTarget.getSwapchainImage(imageIndex),
+            .subresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
         }
     );
     // Transition the depth attachment into the right format
-    transitionImageLayout(
-        commandBuffer.getBuffer(),
-        renderTarget.getDepthImage(),
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-        VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-        VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-        VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-        VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-        VkImageSubresourceRange{
-            .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
-            .baseMipLevel = 0,
-            .levelCount = 1,
-            .baseArrayLayer = 0,
-            .layerCount = 1
+    imageBarriers.push_back(VkImageMemoryBarrier2{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .pNext{},
+            .srcStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+            .srcAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+            .dstAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+            .srcQueueFamilyIndex{},
+            .dstQueueFamilyIndex{},
+            .image = renderTarget.getDepthImage(),
+            .subresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
         }
     );
+
+    // Upload new meshes
+    uploadMeshes(bufferBarriers, std::move(loadMeshes), chunkMeshes);
+
+    // Barrier for image transitions and mesh uploading
+    VkDependencyInfo dependencyInfo{
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .pNext{},
+        .dependencyFlags{},
+        .memoryBarrierCount{},
+        .pMemoryBarriers{},
+        .bufferMemoryBarrierCount = static_cast<uint32_t>(bufferBarriers.size()),
+        .pBufferMemoryBarriers = bufferBarriers.data(),
+        .imageMemoryBarrierCount = static_cast<uint32_t>(imageBarriers.size()),
+        .pImageMemoryBarriers = imageBarriers.data()
+    };
+    vkCmdPipelineBarrier2(commandBuffer.getBuffer(), &dependencyInfo);
 
     VkRenderingAttachmentInfo attachmentColour{
         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -118,7 +146,6 @@ uint32_t FrameRenderer::beginFrame(
             .color{0.52f, 0.70f, 0.89f, 1.0f}
         }
     };
-
     VkRenderingAttachmentInfo attachmentDepth{
         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .pNext{},
@@ -136,10 +163,6 @@ uint32_t FrameRenderer::beginFrame(
             }
         }
     };
-
-    // Upload new meshes
-    uploadMeshes(std::move(loadMeshes), chunkMeshes);
-
     VkRenderingInfo renderingInfo{
         .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
         .pNext{},
@@ -163,20 +186,19 @@ uint32_t FrameRenderer::beginFrame(
 
 
 void FrameRenderer::uploadMeshes(
+    std::vector<VkBufferMemoryBarrier2>& bufferBarriers,
     std::queue<std::unique_ptr<MeshChunk::Data>> loadMeshes,
     std::unordered_map<ChunkPos, std::unique_ptr<MeshChunk>>& chunkMeshes
 ) {
     stagingBuffer.reset();
 
-    std::vector<VkBufferMemoryBarrier2> barriers;
-    barriers.reserve(loadMeshes.size());
     while (loadMeshes.size()) {
         ChunkPos pos = loadMeshes.front()->getPosition();
-        barriers.push_back({});
+        bufferBarriers.push_back({});
         chunkMeshes.insert({
             pos,
             std::make_unique<MeshChunk>(
-                barriers.back(),
+                bufferBarriers.back(),
                 std::move(loadMeshes.front()),
                 allocator,
                 commandBuffer.getBuffer(),
@@ -185,19 +207,6 @@ void FrameRenderer::uploadMeshes(
         });
         loadMeshes.pop();
     }
-
-    VkDependencyInfo dependencyInfo{
-        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-        .pNext{},
-        .dependencyFlags{},
-        .memoryBarrierCount{},
-        .pMemoryBarriers{},
-        .bufferMemoryBarrierCount = static_cast<uint32_t>(barriers.size()),
-        .pBufferMemoryBarriers = barriers.data(),
-        .imageMemoryBarrierCount{},
-        .pImageMemoryBarriers{}
-    };
-    vkCmdPipelineBarrier2(commandBuffer.getBuffer(), &dependencyInfo);
 }
 
 
@@ -241,21 +250,27 @@ void FrameRenderer::endFrame(uint32_t imageIndex) {
     vkCmdEndRendering(commandBuffer.getBuffer());
 
     // Transition the image to the presentation format (mostly likely a no-op)
-    transitionImageLayout(
+    addPipelineImageBarrier(
         commandBuffer.getBuffer(),
-        renderTarget.getSwapchainImage(imageIndex),
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-        VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT,
-        {},
-        VkImageSubresourceRange{
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel = 0,
-            .levelCount = 1,
-            .baseArrayLayer = 0,
-            .layerCount = 1
+        VkImageMemoryBarrier2{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .pNext{},
+            .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT,
+            .dstAccessMask{},
+            .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+            .srcQueueFamilyIndex{},
+            .dstQueueFamilyIndex{},
+            .image = renderTarget.getSwapchainImage(imageIndex),
+            .subresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
         }
     );
 

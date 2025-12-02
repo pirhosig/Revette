@@ -29,32 +29,7 @@ std::vector<char> readBinaryFile(std::string& filepath) {
 
 
 
-void transitionImageLayout(
-    VkCommandBuffer commandBuffer,
-    VkImage image,
-    VkImageLayout oldLayout,
-    VkImageLayout newLayout,
-    VkPipelineStageFlags2 srcStageMask,
-    VkAccessFlags2 srcAccessMask,
-    VkPipelineStageFlags2 dstStageMask,
-    VkAccessFlags2 dstAccessMask,
-    VkImageSubresourceRange subresourceRange
-) {
-    VkImageMemoryBarrier2 barrier{
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        .pNext{},
-        .srcStageMask = srcStageMask,
-        .srcAccessMask = srcAccessMask,
-        .dstStageMask = dstStageMask,
-        .dstAccessMask = dstAccessMask,
-        .oldLayout = oldLayout,
-        .newLayout = newLayout,
-        .srcQueueFamilyIndex{},
-        .dstQueueFamilyIndex{},
-        .image = image,
-        .subresourceRange = subresourceRange
-    };
-
+void addPipelineImageBarrier(VkCommandBuffer commandBuffer, VkImageMemoryBarrier2 barrier) {
     VkDependencyInfo dependencyInfo{
         .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
         .pNext{},
@@ -66,7 +41,6 @@ void transitionImageLayout(
         .imageMemoryBarrierCount = 1,
         .pImageMemoryBarriers = &barrier
     };
-
     vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
 }
 

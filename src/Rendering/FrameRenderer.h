@@ -47,6 +47,7 @@ private:
         std::unordered_map<ChunkPos, std::unique_ptr<MeshChunk>>& chunkMeshes
     );
     void uploadMeshes(
+        std::vector<VkBufferMemoryBarrier2>& bufferBarriers,
         std::queue<std::unique_ptr<MeshChunk::Data>> loadMeshes,
         std::unordered_map<ChunkPos, std::unique_ptr<MeshChunk>>& chunkMeshes
     );

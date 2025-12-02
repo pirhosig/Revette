@@ -18,10 +18,11 @@ struct TextureLoadInfo{
     const char* filepath;
     uint32_t cellWidth;
     uint32_t cellHeight;
+    uint32_t mipLevelCount;
 };
 constexpr std::array TEXTURE_INFOS{
-    TextureLoadInfo{"res/textures/texture_atlas.png", 16u, 16u},
-    TextureLoadInfo{"res/textures/character_set.png", 6u, 8u}
+    TextureLoadInfo{"res/textures/texture_atlas.png", 16u, 16u, 4u},
+    TextureLoadInfo{"res/textures/character_set.png", 6u,  8u,  1u}
 };
 
 }
@@ -36,7 +37,7 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
 
     Fence fenceUploadsComplete(device, {});
  
-    for (auto [path, cellWidth, cellHeight] : TEXTURE_INFOS) {
+    for (auto [path, cellWidth, cellHeight, mipLevelCount] : TEXTURE_INFOS) {
         std::vector<unsigned char> imageData;
         unsigned width;
         unsigned height;
@@ -71,11 +72,11 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
                 .height = cellHeight,
                 .depth = 1
             },
-            .mipLevels = 1,
+            .mipLevels = mipLevelCount,
             .arrayLayers = textureCount,
             .samples = VK_SAMPLE_COUNT_1_BIT,
             .tiling = VK_IMAGE_TILING_OPTIMAL,
-            .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            .usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             .sharingMode{},
             .queueFamilyIndexCount{},
             .pQueueFamilyIndices{},
@@ -103,22 +104,28 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
             throw std::runtime_error("Failed to allocate texture image");
         }
     
-        // Transition the image into an optimal transfer destination
-        transitionImageLayout(
+        // Transition all mip levels of the image into an optimal transfer destination
+        addPipelineImageBarrier(
             commandBuffer.getBuffer(),
-            texture.image,
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            {},
-            {},
-            VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-            VK_ACCESS_2_TRANSFER_WRITE_BIT,
-            VkImageSubresourceRange{
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                .baseMipLevel = 0,
-                .levelCount = 1,
-                .baseArrayLayer = 0,
-                .layerCount = textureCount
+            VkImageMemoryBarrier2{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                .pNext{},
+                .srcStageMask{},
+                .srcAccessMask{},
+                .dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                .dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                .srcQueueFamilyIndex{},
+                .dstQueueFamilyIndex{},
+                .image = texture.image,
+                .subresourceRange{
+                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .baseMipLevel = 0,
+                    .levelCount = VK_REMAINING_MIP_LEVELS,
+                    .baseArrayLayer = 0,
+                    .layerCount = VK_REMAINING_ARRAY_LAYERS
+                }
             }
         );
 
@@ -157,25 +164,160 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
             static_cast<uint32_t>(copyRegions.size()),
             copyRegions.data()
         );
-    
-        // Transition the image into an optimal texture image
-        transitionImageLayout(
-            commandBuffer.getBuffer(),
-            texture.image,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-            VK_ACCESS_2_TRANSFER_WRITE_BIT,
-            VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-            VK_ACCESS_2_SHADER_READ_BIT,
-            VkImageSubresourceRange{
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                .baseMipLevel = 0,
-                .levelCount = 1,
-                .baseArrayLayer = 0,
-                .layerCount = textureCount
+
+        if (mipLevelCount > 1) {
+            uint32_t mipWidth = cellWidth;
+            uint32_t mipHeight = cellHeight;
+            for (uint32_t level = 1; level < mipLevelCount; ++level) {
+                if (mipWidth > 1) mipWidth /= 2;
+                if (mipHeight > 1) mipHeight /= 2;
+
+                // Transition the previous mip level from TRANSFER_DST_OPTIMAL to TRANSFER_SRC_OPTIMAL
+                addPipelineImageBarrier(
+                    commandBuffer.getBuffer(),
+                    VkImageMemoryBarrier2{
+                        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                        .pNext{},
+                        .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                        .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                        .dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                        .dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
+                        .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                        .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                        .srcQueueFamilyIndex{},
+                        .dstQueueFamilyIndex{},
+                        .image = texture.image,
+                        .subresourceRange{
+                            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                            .baseMipLevel = level - 1,
+                            .levelCount = 1,
+                            .baseArrayLayer = 0,
+                            .layerCount = VK_REMAINING_ARRAY_LAYERS
+                        }
+                    }
+                );
+
+                VkImageBlit2 blitRegion{
+                    .sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2,
+                    .pNext{},
+                    .srcSubresource{
+                        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                        .mipLevel = level - 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = textureCount
+                    },
+                    .srcOffsets{
+                        VkOffset3D{},
+                        VkOffset3D{static_cast<int32_t>(mipWidth), static_cast<int32_t>(mipHeight), 1},
+                    },
+                    .dstSubresource{
+                        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                        .mipLevel = level,
+                        .baseArrayLayer = 0,
+                        .layerCount = textureCount
+                    },
+                    .dstOffsets{
+                        VkOffset3D{},
+                        VkOffset3D{static_cast<int32_t>(mipWidth), static_cast<int32_t>(mipHeight), 1},
+                    }
+                };
+                VkBlitImageInfo2 blitInfo{
+                    .sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2,
+                    .pNext{},
+                    .srcImage = texture.image,
+                    .srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                    .dstImage = texture.image,
+                    .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    .regionCount = 1,
+                    .pRegions = &blitRegion,
+                    .filter = VK_FILTER_LINEAR
+                };
+                vkCmdBlitImage2(commandBuffer.getBuffer(), &blitInfo);
             }
-        );
+
+            // Transition the whole image into SHADER_READ_ONLY_OPTIMAL
+            // Currently the last mip level is in TRANSFER_DST_OPTIMAL and all others are TRANSFER_SRC_OPTIMAL
+            std::array imageBarriers{
+                VkImageMemoryBarrier2{
+                    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                    .pNext{},
+                    .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                    .srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
+                    .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                    .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+                    .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                    .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    .srcQueueFamilyIndex{},
+                    .dstQueueFamilyIndex{},
+                    .image = texture.image,
+                    .subresourceRange{
+                        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                        .baseMipLevel = 0,
+                        .levelCount = mipLevelCount - 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = VK_REMAINING_ARRAY_LAYERS
+                    }
+                },
+                VkImageMemoryBarrier2{
+                    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                    .pNext{},
+                    .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                    .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                    .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                    .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+                    .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    .srcQueueFamilyIndex{},
+                    .dstQueueFamilyIndex{},
+                    .image = texture.image,
+                    .subresourceRange{
+                        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                        .baseMipLevel = mipLevelCount - 1,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = VK_REMAINING_ARRAY_LAYERS
+                    }
+                }
+            };
+            VkDependencyInfo dependencyInfo{
+                .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+                .pNext{},
+                .dependencyFlags{},
+                .memoryBarrierCount{},
+                .pMemoryBarriers{},
+                .bufferMemoryBarrierCount{},
+                .pBufferMemoryBarriers{},
+                .imageMemoryBarrierCount = static_cast<uint32_t>(imageBarriers.size()),
+                .pImageMemoryBarriers = imageBarriers.data()
+            };
+            vkCmdPipelineBarrier2(commandBuffer.getBuffer(), &dependencyInfo);
+        }
+        else {
+            // Transition the image into SHADER_READ_ONLY_OPTIMAL
+            addPipelineImageBarrier(
+                commandBuffer.getBuffer(),
+                VkImageMemoryBarrier2{
+                    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                    .pNext{},
+                    .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                    .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                    .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                    .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+                    .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    .srcQueueFamilyIndex{},
+                    .dstQueueFamilyIndex{},
+                    .image = texture.image,
+                    .subresourceRange{
+                        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = VK_REMAINING_ARRAY_LAYERS
+                    }
+                }
+            );
+        }
 
         VkImageViewCreateInfo viewCreateInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -188,7 +330,7 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                 .baseMipLevel = 0,
-                .levelCount = 1,
+                .levelCount = VK_REMAINING_MIP_LEVELS,
                 .baseArrayLayer = 0,
                 .layerCount = VK_REMAINING_ARRAY_LAYERS
             }
