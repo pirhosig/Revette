@@ -46,62 +46,61 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 		// Some blocks must be placed beyond this point, so this optimisation is valid
 		blockContainer.blockArrayCreate();
 
-		for (int lX = 0; lX < CHUNK_SIZE; ++lX)
-			for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ)
-			{
-				int index = lZ * CHUNK_SIZE + lX;
+		for (int lX = 0; lX < CHUNK_SIZE; ++lX) {
+		for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
+			int index = lZ * CHUNK_SIZE + lX;
 
-				// Determine the default block to use based on the biome
-				Block defaultBlock(2);
-				switch (genParameters.biomeMap.biomeArray[index])
-				{
-				case BIOME::DESERT:
-					defaultBlock = Block(5);
-					break;
-				case BIOME::DESERT_DEEP:
-					defaultBlock = Block(17);
-					break;
-				case BIOME::FOREST_BOREAL:
-					defaultBlock = Block(11);
-					break;
-				case BIOME::FOREST_TEMPERATE:
-					defaultBlock = Block(1);
-					break;
-				case BIOME::RAINFOREST:
-					defaultBlock = Block(8);
-					break;
-				case BIOME::SAVANNAH:
-					defaultBlock = Block(16);
-					break;
-				case BIOME::SHRUBLAND:
-					defaultBlock = Block(16);
-					break;
-				case BIOME::TUNDRA:
-					defaultBlock = Block(7);
-					break;
-				default:
-					break;
-				}
-
-				for (int lY = 0; lY < CHUNK_SIZE; ++lY)
-				{
-					ChunkLocalBlockPos blockPos(lX, lY, lZ);
-					const auto _worldHeight = _chunkBottom + lY;
-					const auto _surfaceHeight = genParameters.heightMap.heightArray[index];
-
-					if (_worldHeight < SEA_LEVEL + 2)
-					{
-						if (_worldHeight <= _surfaceHeight)
-						{
-							if (_worldHeight < SEA_LEVEL - 2) setBlock(blockPos, Block(2));
-							else setBlock(blockPos, Block(5));
-						}
-						else if (_worldHeight < SEA_LEVEL) setBlock(blockPos, Block(6));
-					}
-					else if (_worldHeight < _surfaceHeight) setBlock(blockPos, Block(2));
-					else if (_worldHeight == _surfaceHeight) setBlock(blockPos, defaultBlock);
-				}
+			// Determine the default block to use based on the biome
+			Block defaultBlock(2);
+			switch (genParameters.biomeMap.biomeArray[index]) {
+			case BIOME::DESERT:
+				defaultBlock = Block(5);
+				break;
+			case BIOME::DESERT_DEEP:
+				defaultBlock = Block(17);
+				break;
+			case BIOME::FOREST_BOREAL:
+				defaultBlock = Block(11);
+				break;
+			case BIOME::FOREST_TEMPERATE:
+				defaultBlock = Block(1);
+				break;
+			case BIOME::RAINFOREST:
+				defaultBlock = Block(8);
+				break;
+			case BIOME::SAVANNAH:
+				defaultBlock = Block(16);
+				break;
+			case BIOME::SHRUBLAND:
+				defaultBlock = Block(16);
+				break;
+			case BIOME::TUNDRA:
+				defaultBlock = Block(7);
+				break;
+			default:
+				break;
 			}
+
+			for (int lY = 0; lY < CHUNK_SIZE; ++lY)
+			{
+				ChunkLocalBlockPos blockPos(lX, lY, lZ);
+				const auto _worldHeight = _chunkBottom + lY;
+				const auto _surfaceHeight = genParameters.heightMap.heightArray[index];
+
+				if (_worldHeight < SEA_LEVEL + 2)
+				{
+					if (_worldHeight <= _surfaceHeight)
+					{
+						if (_worldHeight < SEA_LEVEL - 2) setBlock(blockPos, Block(2));
+						else setBlock(blockPos, Block(5));
+					}
+					else if (_worldHeight < SEA_LEVEL) setBlock(blockPos, Block(6));
+				}
+				else if (_worldHeight < _surfaceHeight) setBlock(blockPos, Block(2));
+				else if (_worldHeight == _surfaceHeight) setBlock(blockPos, defaultBlock);
+			}
+		}
+		}
 	}
 
 	// Create population features
@@ -137,71 +136,83 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 	}
 
 
-	for (int lX = 0; lX < CHUNK_SIZE; ++lX)
-		for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ)
-		{
-			const int _index = lZ * CHUNK_SIZE + lX;
-			const int _surfaceLevel = genParameters.heightMap.heightArray[_index];
-			// Continue if surface air block is below chunk OR if the topmost block is above the chunk
-			if (_surfaceLevel + 1 < _chunkBottom || _surfaceLevel + 1 > _chunkTop) continue;
+	for (int lX = 0; lX < CHUNK_SIZE; ++lX) {
+	for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
+		const int _index = lZ * CHUNK_SIZE + lX;
+		const int _surfaceLevel = genParameters.heightMap.heightArray[_index];
 
-			// Currently no features generate below sea level, so this is sort of a hack until those features exist
-			if (_surfaceLevel < SEA_LEVEL + 3) continue;
-
-			// Variables defined for quick access, this could absolutely by optimised
-			// TODO: optimise this
-			const BlockPos _centre(_worldPosX + lX, _surfaceLevel + 1, _worldPosZ + lZ);
-			const uint16_t _foliageValue = prng.raw();
-
-			switch (genParameters.biomeMap.biomeArray[_index])
-			{
-			case BIOME::DESERT:
-				// Cactus
-				if (_foliageValue > 65439)
-				{
-					auto height = prng.scaledInt(1.13, 2.87);
-					for (int i = 0; i < height; ++i) setBlockPopulation(_centre.offset(0, i, 0), Block(9), 0);
-				}
-				// Desert Flower
-				else if (_foliageValue > 65394) setBlockPopulation(_centre, Block(14), 0);
-				else if (_foliageValue > 65391) setBlockPopulation(_centre, Block(10), 0);
-				break;
-			case BIOME::DESERT_DEEP:
-				break;
-			case BIOME::FOREST_BOREAL:
-				if      (_foliageValue > 65358) Structures::Trees::PineBasic(*this, prng, _centre);
-				else if (_foliageValue > 65325) Structures::Trees::PineMassive(*this, prng, _centre);
-				else if (_foliageValue > 65161) Structures::Trees::PineFancy(*this, prng, _centre);
-				break;
-			case BIOME::FOREST_TEMPERATE:
-				if      (_foliageValue > 64434) Structures::Trees::Oak(*this, prng, _centre);
-				else if (_foliageValue > 64342) Structures::Trees::Aspen(*this, prng, _centre);
-				else if (_foliageValue > 64093) setBlockPopulation(_centre, Block(15), 0);
-				else if (_foliageValue > 63988) setBlockPopulation(_centre, Block(10), 0);
-				break;
-			case BIOME::RAINFOREST:
-				// Rainforests are pretty bland like this ngl (slightly better now)
-				if      (_foliageValue > 60272) Structures::Trees::RainforestBasic(*this, prng, _centre);
-				else if (_foliageValue > 59989) Structures::Trees::RainforestTall(*this, prng, _centre);
-				else if (_foliageValue > 49596) Structures::Trees::RainforestShrub(*this, _centre);
-				else if (_foliageValue > 37063) setBlockPopulation(_centre, Block(10), 0);
-				break;
-			case BIOME::SAVANNAH:
-				if      (_foliageValue > 65530) Structures::Trees::SavannahBaobab(*this, prng, _centre);
-				else if (_foliageValue > 65423) Structures::Trees::SavannahAcacia(*this, prng, _centre);
-				else if (_foliageValue > 52428) setBlockPopulation(_centre, Block(10), 0);
-				break;
-			case BIOME::SHRUBLAND:
-				if      (_foliageValue > 52428) setBlockPopulation(_centre, Block(10), 0);
-				else if (_foliageValue > 52369) setBlockPopulation(_centre, Block(4), 0);
-				break;
-			case BIOME::TUNDRA:
-				if (_foliageValue > 65430) setBlockPopulation(_centre, Block(2), 0);
-				break;
-			default:
-				break;
-			}
+		// Continue if surface air block is below chunk OR if the topmost block is above the chunk
+		// Currently no features generate below sea level, so this is sort of a hack until those features exist
+		if (
+			_surfaceLevel + 1 < _chunkBottom ||
+			_surfaceLevel + 1 > _chunkTop ||
+			_surfaceLevel < SEA_LEVEL + 3
+		) {
+			continue;
 		}
+
+		// Variables defined for quick access
+		const BlockPos _centre(_worldPosX + lX, _surfaceLevel + 1, _worldPosZ + lZ);
+		const uint16_t _foliageValue = prng.raw();
+
+		switch (genParameters.biomeMap.biomeArray[_index]) {
+		case BIOME::DESERT:
+			// Cactus
+			if (_foliageValue > 65439)
+			{
+				auto height = prng.scaledInt(1.13, 2.87);
+				for (int i = 0; i < height; ++i) setBlockPopulation(_centre.offset(0, i, 0), Block(9), 0);
+			}
+			// Desert Flower
+			else if (_foliageValue > 65394) setBlockPopulation(_centre, Block(14), 0);
+			else if (_foliageValue > 65391) setBlockPopulation(_centre, Block(10), 0);
+			break;
+		
+		case BIOME::DESERT_DEEP:
+			break;
+		
+		case BIOME::FOREST_BOREAL:
+			if      (_foliageValue > 65358) Structures::Trees::PineBasic(*this, prng, _centre);
+			else if (_foliageValue > 65325) Structures::Trees::PineMassive(*this, prng, _centre);
+			else if (_foliageValue > 65161) Structures::Trees::PineFancy(*this, prng, _centre);
+			break;
+		
+		case BIOME::FOREST_TEMPERATE:
+			if      (_foliageValue > 64434) Structures::Trees::Oak(*this, prng, _centre);
+			else if (_foliageValue > 64342) Structures::Trees::Aspen(*this, prng, _centre);
+			else if (_foliageValue > 64093) setBlockPopulation(_centre, Block(15), 0);
+			else if (_foliageValue > 63988) setBlockPopulation(_centre, Block(10), 0);
+			break;
+		
+		case BIOME::RAINFOREST:
+			// Rainforests are pretty bland like this ngl (slightly better now)
+			if      (_foliageValue > 60272) Structures::Trees::RainforestBasic(*this, prng, _centre);
+			else if (_foliageValue > 59989) Structures::Trees::RainforestTall(*this, prng, _centre);
+			else if (_foliageValue > 49596) Structures::Trees::RainforestShrub(*this, _centre);
+			else if (_foliageValue > 37063) setBlockPopulation(_centre, Block(10), 0);
+			break;
+		
+		case BIOME::SAVANNAH:
+			if      (_foliageValue > 65530) Structures::Trees::SavannahBaobab(*this, prng, _centre);
+			else if (_foliageValue > 65423) Structures::Trees::SavannahAcacia(*this, prng, _centre);
+			else if (_foliageValue > 52428) setBlockPopulation(_centre, Block(10), 0);
+			break;
+		
+		case BIOME::SHRUBLAND:
+			if      (_foliageValue > 52428) setBlockPopulation(_centre, Block(10), 0);
+			else if (_foliageValue > 52369) setBlockPopulation(_centre, Block(4), 0);
+			break;
+		
+		case BIOME::TUNDRA:
+			if (_foliageValue > 65430) setBlockPopulation(_centre, Block(2), 0);
+			break;
+		
+		default:
+			break;
+		}
+	}
+	}
+
 	populationChangesInside.shrink_to_fit();
 	populationChangesAdjacent.shrink_to_fit();
 }

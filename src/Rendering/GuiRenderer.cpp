@@ -273,9 +273,9 @@ void GuiRenderer::draw(
         &coordinateString[0],
         40,
         "%8.2lf %8.2lf %8.2lf",
-        playerPosition.pos.X,
-        playerPosition.pos.Y,
-        playerPosition.pos.Z
+        playerPosition.pos.x,
+        playerPosition.pos.y,
+        playerPosition.pos.z
     );
     _length = std::min(_length, 40 - 1);
 

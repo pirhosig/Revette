@@ -152,13 +152,13 @@ void World::processEntities(Entity& player)
 
 void World::moveEntity(Entity& entity)
 {
-	if (entity.displacement.X == 0.0 && entity.displacement.Y == 0.0 && entity.displacement.Z == 0.0) return;
+	if (entity.displacement.x == 0.0 && entity.displacement.y == 0.0 && entity.displacement.z == 0.0) return;
 
-	BlockPos currentPos(entity.pos.X - entity.size.x, entity.pos.Y, entity.pos.Z - entity.size.z);
+	BlockPos currentPos(entity.pos.x - entity.size.x, entity.pos.y, entity.pos.z - entity.size.z);
 
-	const double _DX = std::clamp(entity.displacement.X, -CHUNK_SIZE_D, CHUNK_SIZE_D);
-	const double _DY = std::clamp(entity.displacement.Y, -CHUNK_SIZE_D, CHUNK_SIZE_D);
-	const double _DZ = std::clamp(entity.displacement.Z, -CHUNK_SIZE_D, CHUNK_SIZE_D);
+	const double _DX = std::clamp(entity.displacement.x, -CHUNK_SIZE_D, CHUNK_SIZE_D);
+	const double _DY = std::clamp(entity.displacement.y, -CHUNK_SIZE_D, CHUNK_SIZE_D);
+	const double _DZ = std::clamp(entity.displacement.z, -CHUNK_SIZE_D, CHUNK_SIZE_D);
 
 	const int stepX = sign(_DX);
 	const int stepY = sign(_DY);
@@ -168,9 +168,9 @@ void World::moveEntity(Entity& entity)
 	const double tDeltaY = std::clamp(1.0 / std::abs(_DY), 0.0, 1.0);
 	const double tDeltaZ = std::clamp(1.0 / std::abs(_DZ), 0.0, 1.0);
 
-	double tMaxX = stepX ? ((0 < stepX) ? std::ceil(entity.pos.X) - entity.pos.X : entity.pos.X - std::floor(entity.pos.X)) * tDeltaX : 1.0;
-	double tMaxY = stepY ? ((0 < stepY) ? std::ceil(entity.pos.Y) - entity.pos.Y : entity.pos.Y - std::floor(entity.pos.Y)) * tDeltaY : 1.0;
-	double tMaxZ = stepZ ? ((0 < stepZ) ? std::ceil(entity.pos.Z) - entity.pos.Z : entity.pos.Z - std::floor(entity.pos.Z)) * tDeltaZ : 1.0;
+	double tMaxX = stepX ? ((0 < stepX) ? std::ceil(entity.pos.x) - entity.pos.x : entity.pos.x - std::floor(entity.pos.x)) * tDeltaX : 1.0;
+	double tMaxY = stepY ? ((0 < stepY) ? std::ceil(entity.pos.y) - entity.pos.y : entity.pos.y - std::floor(entity.pos.y)) * tDeltaY : 1.0;
+	double tMaxZ = stepZ ? ((0 < stepZ) ? std::ceil(entity.pos.z) - entity.pos.z : entity.pos.z - std::floor(entity.pos.z)) * tDeltaZ : 1.0;
 
 	const int _sx = static_cast<int>(std::ceil(entity.size.x * 2)) - 1;
 	const int _sy = static_cast<int>(std::ceil(entity.size.y))     - 1;

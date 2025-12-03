@@ -221,9 +221,9 @@ void FrameRenderer::drawChunks(
     projection[1][1] *= -1.0;
     ChunkPos _playerChunk(playerPos);
     const glm::vec3 cameraPos = glm::vec3(
-        playerPos.pos.X - _playerChunk.x * CHUNK_SIZE,
-        playerPos.pos.Y - _playerChunk.y * CHUNK_SIZE + 3.0,
-        playerPos.pos.Z - _playerChunk.z * CHUNK_SIZE
+        playerPos.pos.x - _playerChunk.x * CHUNK_SIZE,
+        playerPos.pos.y - _playerChunk.y * CHUNK_SIZE + 3.0,
+        playerPos.pos.z - _playerChunk.z * CHUNK_SIZE
     ) * 0.5f;
     const glm::vec3 front = glm::normalize(glm::vec3(
         cos(rotationX) * cos(rotationY),

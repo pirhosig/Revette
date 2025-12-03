@@ -30,9 +30,9 @@ BlockPos::BlockPos(double _x, double _y, double _z) :
 {}
 
 BlockPos::BlockPos(EntityPosition position) :
-	x{ wrapCoordinate(static_cast<int>(position.pos.X)) },
-	y{ static_cast<int>(position.pos.Y) },
-	z{ wrapCoordinate(static_cast<int>(position.pos.Z)) }
+	x{ wrapCoordinate(static_cast<int>(position.pos.x)) },
+	y{ static_cast<int>(position.pos.y) },
+	z{ wrapCoordinate(static_cast<int>(position.pos.z)) }
 {}
 
 
