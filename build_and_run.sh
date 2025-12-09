@@ -1,1 +1,1 @@
-cmake --build build --parallel 6 && ./build/Revette
+cmake --build build --parallel 12 && ./build/Revette

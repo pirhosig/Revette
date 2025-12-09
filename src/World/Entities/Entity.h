@@ -4,17 +4,11 @@
 
 
 
-class Entity : public EntityPosition
-{
+class Entity {
 public:
-	Entity(EntityPosition pos, glm::dvec3 size);
-	long long getUUID() { return UUID; }
-
+	EntityPosition position;
 	const glm::dvec3 size;
 
-private:
-	static long long UUIDcounter;
-	static long long generateUUID();
-
-	const long long UUID;
+public:
+	Entity(EntityPosition _position, glm::dvec3 size);
 };

@@ -9,7 +9,7 @@
 #include "RenderTarget.h"
 #include "VulkanContext.h"
 #include "Mesh/MeshChunk.h"
-#include "../Threading/ThreadPointerQueue.h"
+#include "../Threading/SharedGameRendererState.h"
 #include "../Window.h"
 #include "../World/ChunkPos.h"
 #include "../World/ChunkPosHash.h"
@@ -21,6 +21,7 @@
 class Renderer
 {
 private:
+	// Vulkan Stuff
 	GLFWwindow* window;
 	VulkanContext vulkanContext;
     RenderTarget renderTarget;
@@ -29,24 +30,31 @@ private:
 	GuiRenderer guiRenderer;
 
     std::vector<FrameRenderer> frameRenderers;
-
-	// Mesh queue and storage
-	std::shared_ptr<ThreadPointerQueue<MeshChunk::Data>> threadQueueMeshes;
-	std::shared_ptr<ThreadQueue<ChunkPos>> threadQueueMeshDeletion;
-	std::unordered_map<ChunkPos, std::unique_ptr<MeshChunk>> meshesChunk;
-
+	
 	size_t currentFrameRendererIndex = 0;
 
+	// Drawables
+	std::unordered_map<ChunkPos, std::unique_ptr<MeshChunk>> meshesChunk;
+
+	// Threading Stuff
+	std::atomic_bool& applicationShouldTerminate;
+	std::shared_ptr<SharedGameRendererState> sharedGameState;
+
+	// User Input
+	double cursorLastX;
+	double cursorLastY;
+
 private:
+	void processFrame();
 	void unloadMeshes(const ChunkPos& playerChunk);
 	
 public:
 	Renderer(
-		GLFWwindow* window,
-		std::shared_ptr<ThreadPointerQueue<MeshChunk::Data>> chunkMeshQueue,
-		std::shared_ptr<ThreadQueue<ChunkPos>> chunkMeshQueueDeletion
+		GLFWwindow* _window,
+		std::atomic_bool& _applicationShouldTerminate,
+		std::shared_ptr<SharedGameRendererState> _sharedGameState
 	);
 	~Renderer();
 
-	void render(const EntityPosition& playerPos);
+	void run();
 };

@@ -1,11 +1,9 @@
 #include "Renderer.h"
 #include <algorithm>
-#include <stdio.h>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 #include "../GlobalLog.h"
+
+using namespace std::chrono_literals;
 
 
 
@@ -15,21 +13,20 @@ constexpr int RENDER_AHEAD_COUNT = 3;
 
 namespace {
 
-inline bool withinLoadDistance(ChunkPos _pos, ChunkPos _centre)
-{
+bool withinLoadDistance(ChunkPos _pos, ChunkPos _centre) {
 	auto _offset = _pos.offset(_centre);
-	return ((_offset.x * _offset.x + _offset.z * _offset.z <= LOAD_DISTANCE * LOAD_DISTANCE) &&
-		(std::abs(_offset.y) <= LOAD_DISTANCE_VERTICAL));
+	return (
+		(_offset.x * _offset.x + _offset.z * _offset.z <= LOAD_DISTANCE * LOAD_DISTANCE) &&
+		(std::abs(_offset.y) <= LOAD_DISTANCE_VERTICAL)
+	);
 }
 
 
 
-struct CmpChunkPos
-{
+struct CmpChunkPos {
 	ChunkPos centre;
 
-	bool operator()(const ChunkPos& a, const ChunkPos& b) const
-	{
+	bool operator()(const ChunkPos& a, const ChunkPos& b) const {
 		return centre.distance(a) < centre.distance(b);
 	}
 };
@@ -38,10 +35,48 @@ struct CmpChunkPos
 
 
 
+void Renderer::processFrame() {
+	std::queue<std::unique_ptr<MeshChunk::Data>> loadMeshQueue;
+	sharedGameState->chunkMeshQueue->getQueue(loadMeshQueue);
+	EntityPosition playerPos = sharedGameState->playerPosition.load();
+	frameRenderers[currentFrameRendererIndex].drawFrame(
+		std::move(loadMeshQueue),
+		playerPos,
+		meshesChunk
+	);
+	unloadMeshes(ChunkPos(playerPos));
+	
+	currentFrameRendererIndex = (currentFrameRendererIndex + 1) % frameRenderers.size();
+}
+
+
+
+// Need to defer deletion
+void Renderer::unloadMeshes(const ChunkPos& playerChunk) {
+	std::queue<ChunkPos> removeQueue;
+	
+	auto it = meshesChunk.begin();
+	while (it != meshesChunk.end())
+	{
+		if (!withinLoadDistance(it->first, playerChunk))
+		{
+			removeQueue.push(it->first);
+			frameRenderers[currentFrameRendererIndex].queueMeshForDeletion(std::move(it->second));
+			it = meshesChunk.erase(it);
+		}
+		else it++;
+	}
+	
+	// Add the removed chunks if any were removed
+	if (removeQueue.size()) sharedGameState->chunkMeshQueueDeletion->mergeQueue(removeQueue);
+}
+
+
+
 Renderer::Renderer(
 	GLFWwindow* _window,
-	std::shared_ptr<ThreadPointerQueue<MeshChunk::Data>> chunkMeshQueue,
-	std::shared_ptr<ThreadQueue<ChunkPos>> chunkMeshQueueDeletion
+	std::atomic_bool& _applicationShouldTerminate,
+	std::shared_ptr<SharedGameRendererState> _sharedGameState
 ) :
 	window{_window},
 	vulkanContext(
@@ -71,22 +106,22 @@ Renderer::Renderer(
 		renderTarget,
 		renderResources.getDescriptorLayout()
 	),
-	threadQueueMeshes{ chunkMeshQueue },
-	threadQueueMeshDeletion{ chunkMeshQueueDeletion }
+	applicationShouldTerminate{_applicationShouldTerminate},
+	sharedGameState{std::move(_sharedGameState)}
 {
 	frameRenderers.reserve(RENDER_AHEAD_COUNT);
 	for (int i = 0; i < RENDER_AHEAD_COUNT; ++i) {
-        frameRenderers.emplace_back(
-            vulkanContext.getDevice(),
-            vulkanContext.getQueueGraphics(),
-            renderTarget,
-            renderResources,
-            chunkRenderer,
+		frameRenderers.emplace_back(
+			vulkanContext.getDevice(),
+			vulkanContext.getQueueGraphics(),
+			renderTarget,
+			renderResources,
+			chunkRenderer,
 			guiRenderer,
-            vulkanContext.getQueueGraphicsFamily(),
+			vulkanContext.getQueueGraphicsFamily(),
 			vulkanContext.getAllocator()
-        );
-    }
+		);
+	}
 
 	GlobalLog.Write("Created renderer");
 }
@@ -99,39 +134,14 @@ Renderer::~Renderer() {
 
 
 
-void Renderer::render(const EntityPosition& playerPos)
-{
-	std::queue<std::unique_ptr<MeshChunk::Data>> loadMeshQueue;
-	threadQueueMeshes->getQueue(loadMeshQueue);
-	frameRenderers[currentFrameRendererIndex].drawFrame(
-		std::move(loadMeshQueue),
-		playerPos,
-		meshesChunk
-	);
-	unloadMeshes(ChunkPos(playerPos));
-
-	currentFrameRendererIndex = (currentFrameRendererIndex + 1) % frameRenderers.size();
-}
-
-
-
-// Need to defer deletion
-void Renderer::unloadMeshes(const ChunkPos& playerChunk)
-{
-	std::queue<ChunkPos> removeQueue;
-
-	auto it = meshesChunk.begin();
-	while (it != meshesChunk.end())
-	{
-		if (!withinLoadDistance(it->first, playerChunk))
-		{
-			removeQueue.push(it->first);
-			frameRenderers[currentFrameRendererIndex].queueMeshForDeletion(std::move(it->second));
-			it = meshesChunk.erase(it);
+void Renderer::run() {
+	while (applicationShouldTerminate.load() == false) {
+		if (std::chrono::steady_clock::now() > sharedGameState->nextTickTimestamp) {
+			sharedGameState->nextTickTimestamp += 20ms;
+			sharedGameState->currentTick++;
+			sharedGameState->currentTick.notify_all();
 		}
-		else it++;
+		
+		processFrame();
 	}
-
-	// Add the removed chunks if any were removed
-	if (removeQueue.size()) threadQueueMeshDeletion->mergeQueue(removeQueue);
 }

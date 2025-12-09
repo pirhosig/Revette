@@ -2,12 +2,4 @@
 
 
 
-Entity::Entity(EntityPosition pos, glm::dvec3 _size) : EntityPosition(pos), size{ _size }, UUID{ generateUUID() } {}
-
-
-
-long long Entity::UUIDcounter{ 0 };
-long long Entity::generateUUID()
-{
-	return UUIDcounter++;
-}
+Entity::Entity(EntityPosition _position, glm::dvec3 _size) : position{_position}, size{_size} {}

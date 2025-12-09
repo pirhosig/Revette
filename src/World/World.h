@@ -11,7 +11,7 @@
 #include "Generation/GeneratorChunkNoise.h"
 #include "Generation/Structures/Structure.h"
 #include "../Rendering/Mesh/MeshChunk.h"
-#include "../Threading/ThreadPointerQueue.h"
+#include "../Threading/SharedGameRendererState.h"
 
 
 
@@ -33,10 +33,40 @@ public:
 
 class World
 {
+private:
+	// Chunk storage
+	std::unordered_map<long long, Entity> mapEntities;
+	std::unordered_map<ChunkPos, std::unique_ptr<Chunk>> mapChunks;
+	std::unordered_map<BlockPos, std::unique_ptr<Structure>> mapStructures;
+
+	// Chunk loading information
+	ChunkPos loadCentre;
+	ChunkStatusMap chunkStatusMap;
+	std::priority_queue<ChunkPriorityTicket> loadQueue;
+	std::priority_queue<ChunkPriorityTicket> populateQueue;
+	std::priority_queue<ChunkPriorityTicket> meshQueue;
+
+	// Chunk generation tools
+	std::unordered_map<ChunkPos2D, GeneratorChunkParameters> generatorChunkCache;
+	GeneratorChunkNoise generatorChunkNoise;
+
+	std::shared_ptr<SharedGameRendererState> sharedRendererState;
+
+private:
+	void processEntities(Entity& player);
+	void moveEntity(Entity& entity);
+	bool blockIsCollidable(BlockPos blockPos) const;
+	void onLoadCentreChange();
+	void loadChunks();
+	void populateChunks();
+	void meshChunks();
+	void queueChunkForMeshing(const ChunkPos chunkPos);
+	void queueChunkForPopulation(const ChunkPos chunkPos);
+	const GeneratorChunkParameters& getGeneratorChunkParameters(const ChunkPos2D position);
+	
 public:
 	World(
-		std::shared_ptr<ThreadPointerQueue<MeshChunk::Data>> queueMesh,
-		std::shared_ptr<ThreadQueue<ChunkPos>> queueMeshDeletion,
+		std::shared_ptr<SharedGameRendererState> _sharedRendererState,
 		const char* settingNoiseHeightmap
 	);
 
@@ -54,38 +84,5 @@ public:
 	void addStructure(const BlockPos _blockPos, std::unique_ptr<Structure> _structure);
 	const std::unique_ptr<Structure>& getStructure(const BlockPos blockPos) const;
 
-private:
-	void processEntities(Entity& player);
-	void moveEntity(Entity& entity);
-	bool collides(BlockPos blockPos) const;
 
-	void onLoadCentreChange();
-	void loadChunks();
-	void populateChunks();
-	void meshChunks();
-
-
-	void queueChunkMeshing(const ChunkPos chunkPos);
-	void queueChunkPopulation(const ChunkPos chunkPos);
-
-	const GeneratorChunkParameters& getGeneratorChunkParameters(const ChunkPos2D position);
-
-	// Chunk storage
-	std::unordered_map<long long, Entity> mapEntities;
-	std::unordered_map<ChunkPos, std::unique_ptr<Chunk>> mapChunks;
-	std::unordered_map<BlockPos, std::unique_ptr<Structure>> mapStructures;
-
-	// Chunk loading information
-	ChunkPos loadCentre;
-	ChunkStatusMap chunkStatusMap;
-	std::priority_queue<ChunkPriorityTicket> loadQueue;
-	std::priority_queue<ChunkPriorityTicket> populateQueue;
-	std::priority_queue<ChunkPriorityTicket> meshQueue;
-
-	// Chunk generation tools
-	std::unordered_map<ChunkPos2D, GeneratorChunkParameters> generatorChunkCache;
-	GeneratorChunkNoise generatorChunkNoise;
-
-	std::shared_ptr<ThreadPointerQueue<MeshChunk::Data>> threadQueueMeshes;
-	std::shared_ptr<ThreadQueue<ChunkPos>> threadQueueMeshDeletion;
 };

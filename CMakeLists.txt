@@ -6,12 +6,13 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_executable(Revette 
+    src/main.cpp
+    
+    src/Application.cpp
     src/GlobalLog.cpp
     src/Logger.cpp
     src/LoopGame.cpp
     src/LoopTimer.cpp
-    src/main.cpp
-    src/MainLoop.cpp
     src/Window.cpp
 
     src/Rendering/Buffer.cpp
@@ -27,6 +28,8 @@ add_executable(Revette
     src/Rendering/Vulkan_Utils.cpp
     src/Rendering/VulkanContext.cpp
     src/Rendering/Mesh/MeshChunk.cpp
+
+    src/Threading/SharedGameRendererState.cpp
 
     src/World/Block.cpp
     src/World/BlockContainer.cpp
@@ -70,7 +73,13 @@ find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 
-target_link_libraries(Revette PRIVATE vulkan glfw FastNoise)
+target_link_libraries(
+    Revette PRIVATE
+    vulkan
+    glfw
+    FastNoise
+    atomic
+)
 
 target_include_directories(Revette PRIVATE
     ${GLFW_INCLUDE_PATH}
