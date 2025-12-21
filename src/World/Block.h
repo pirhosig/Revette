@@ -4,8 +4,7 @@
 
 
 
-class BlockOffset
-{
+struct BlockOffset {
 public:
 	int x;
 	int y;
@@ -16,8 +15,7 @@ public:
 
 
 
-class BlockPos
-{
+struct BlockPos {
 public:
 	int x;
 	int y;
@@ -36,8 +34,7 @@ public:
 
 
 
-class Block
-{
+struct Block {
 public:
 	Block();
 	Block(int type);

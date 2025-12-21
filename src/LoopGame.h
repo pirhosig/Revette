@@ -6,8 +6,7 @@ class GLFWwindow;
 
 
 
-class LoopGame
-{
+class LoopGame {
 private:
 	std::atomic_bool& applicationShouldTerminate;
 	std::shared_ptr<SharedGameRendererState> sharedRendererState;

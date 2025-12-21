@@ -35,13 +35,15 @@ LoopGame::LoopGame(
 }
 
 
-
-void LoopGame::run()
-{
+void LoopGame::run() {
 	double timeFrameLast = glfwGetTime();
+	uint64_t currentTick = 0;
 
 	// Run game until ESC is pressed
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS) {
+		sharedRendererState->currentTick.wait(currentTick);
+		currentTick++;
+
 		double timeFrameBegin = glfwGetTime();
 		double deltaTime = timeFrameBegin - timeFrameLast;
 		timeFrameLast = timeFrameBegin;
@@ -120,5 +122,3 @@ void LoopGame::cursorPositionCallback(double xpos, double ypos) {
 	constexpr double sensitivity = 0.1;
 	player.position.rotate(deltaX * sensitivity, -deltaY * sensitivity);
 }
-
-

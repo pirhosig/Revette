@@ -10,8 +10,7 @@ class Chunk;
 
 
 
-class MeshChunk
-{
+class MeshChunk {
 public:
 	struct alignas(8) Vertex {
 		uint32_t x: 10;
@@ -27,30 +26,7 @@ public:
 	};
 
 	// In memory data class which can be used to construct a full MeshChunk which is backed by actual GPU buffers
-	class Data {
-	private:
-		ChunkPos position;
-
-		std::vector<Vertex> vertices;
-		std::vector<uint32_t> indices;
-
-		VkDeviceSize indexCountOpaque{};
-		VkDeviceSize indexCountTested{};
-		VkDeviceSize indexCountBlended{};
-
-	public:
-		Data(const Chunk* chunkCentre, const std::array<Chunk*, 6> neighbours);
-
-		Data(Data&&) = delete;
-		Data(const Data&) = delete;
-		Data operator=(Data&&) = delete;
-		Data operator=(const Data&) = delete;
-
-		bool isEmpty() const;
-		ChunkPos getPosition() const;
-
-		friend MeshChunk;
-	};
+	class Data;
 
 private:
 	std::unique_ptr<MeshChunk::Data> meshData;
@@ -94,4 +70,31 @@ public:
 	) const;
 
 	ChunkPos getPosition() const;
+};
+
+
+
+class MeshChunk::Data {
+private:
+	ChunkPos position;
+
+	std::vector<Vertex> vertices;
+	std::vector<uint32_t> indices;
+
+	VkDeviceSize indexCountOpaque{};
+	VkDeviceSize indexCountTested{};
+	VkDeviceSize indexCountBlended{};
+
+public:
+	Data(const Chunk* chunkCentre, const std::array<Chunk*, 6> neighbours);
+
+	Data(Data&&) = delete;
+	Data(const Data&) = delete;
+	Data operator=(Data&&) = delete;
+	Data operator=(const Data&) = delete;
+
+	bool isEmpty() const;
+	ChunkPos getPosition() const;
+
+	friend MeshChunk;
 };

@@ -1,8 +1,7 @@
 #pragma once
 
 
-enum class AxisDirection
-{
+enum class AxisDirection {
 	Up,
 	Down,
 	North,

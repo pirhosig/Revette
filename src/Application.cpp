@@ -39,9 +39,7 @@ catch (const std::exception& error) {
 
 void Application::run() {
 	std::atomic_bool applicationShouldTerminate;
-	std::shared_ptr<SharedGameRendererState> sharedGameRendererState{
-		std::make_shared<decltype(sharedGameRendererState)::element_type>()
-	};
+	auto sharedGameRendererState{std::make_shared<SharedGameRendererState>()};
 
 	std::jthread renderThread(
 		runRenderThread,
