@@ -4,7 +4,6 @@
 #include "Block.h"
 #include "BlockHash.h"
 #include "Chunk.h"
-#include "ChunkPosHash.h"
 #include "ChunkStatusMap.h"
 #include "Entities/Entity.h"
 #include "Generation/GeneratorChunkParameters.h"

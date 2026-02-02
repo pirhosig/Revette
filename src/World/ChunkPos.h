@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include "Block.h"
 #include "../Constants.h"
 
@@ -31,7 +32,7 @@ public:
 	ChunkOffset offset(ChunkPos other) const;
 
 	bool operator<(const ChunkPos& other) const;
-	bool operator==(const ChunkPos& other) const { return ((x == other.x) && (y == other.y) && (z == other.z)); }
+	bool operator==(const ChunkPos& other) const = default;
 };
 
 
@@ -46,7 +47,7 @@ public:
 	ChunkPos2D(ChunkPos chunkPos) : x(chunkPos.x), z(chunkPos.z) {}
 
 	bool operator<(const ChunkPos2D& other) const;
-	bool operator==(const ChunkPos2D& other) const { return ((x == other.x) && (z == other.z)); }
+	bool operator==(const ChunkPos2D& other) const = default;
 };
 
 
@@ -68,4 +69,31 @@ public:
 	}
 
 	BlockPos asBlockPos(ChunkPos chunkPos) const;
+};
+
+
+
+template <>
+struct std::hash<ChunkPos>
+{
+	std::size_t operator()(const ChunkPos& pos) const noexcept
+	{
+		std::size_t hash = std::hash<int>{}(pos.x);
+		hash ^= std::hash<int>{}(pos.y) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		hash ^= std::hash<int>{}(pos.z) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		return hash;
+	}
+};
+
+
+
+template <>
+struct std::hash<ChunkPos2D>
+{
+	std::size_t operator()(const ChunkPos2D& pos) const noexcept
+	{
+		std::size_t hash = std::hash<int>{}(pos.x);
+		hash ^= std::hash<int>{}(pos.z) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		return hash;
+	}
 };
