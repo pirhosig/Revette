@@ -66,7 +66,7 @@ set_property(TARGET Revette PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 add_subdirectory(deps/FastNoise2)
 
-target_compile_options(Revette PUBLIC -O3 -march=native -Werror -Wall -Wextra -Wpedantic)
+target_compile_options(Revette PUBLIC -O3 -march=native -Werror -Wall -Wextra -Wpedantic -Wfloat-conversion)
 target_link_options(Revette PUBLIC -flto=auto)
 
 find_package(Vulkan REQUIRED)

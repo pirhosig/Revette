@@ -217,7 +217,7 @@ void FrameRenderer::drawChunks(
     double rotationY = glm::radians(std::clamp(playerPos.yRotation, -89.9, 89.9));
     double rotationX = glm::radians(playerPos.xRotation);
     glm::mat4 projection = glm::perspective(glm::radians(45.0), 1920.0 / 1080.0, 0.25, 1024.0);
-    projection[1][1] *= -1.0;
+    projection[1][1] *= -1.0f;
     ChunkPos _playerChunk(playerPos);
     const glm::vec3 cameraPos = glm::vec3(
         playerPos.pos.x - _playerChunk.x * CHUNK_SIZE,
