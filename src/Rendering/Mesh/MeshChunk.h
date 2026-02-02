@@ -81,9 +81,9 @@ private:
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
 
-	VkDeviceSize indexCountOpaque{};
-	VkDeviceSize indexCountTested{};
-	VkDeviceSize indexCountBlended{};
+	uint32_t indexCountOpaque{};
+	uint32_t indexCountTested{};
+	uint32_t indexCountBlended{};
 
 public:
 	Data(const Chunk* chunkCentre, const std::array<Chunk*, 6> neighbours);

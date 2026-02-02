@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "Block.h"
-#include "BlockContainter.h"
+#include "BlockContainer.h"
 #include "ChunkPos.h"
 
 class GeneratorChunkParameters;
@@ -47,7 +47,7 @@ public:
 	std::vector<bool> getSolidFaceMask(AxisDirection direction) const;
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
 	void setBlockPopulation(BlockPos blockPos, Block block, unsigned age);
-	bool isEmpty() const;
+	bool shouldSkipMeshing() const;
 
 private:
 	void addAdjacentPopulationChanges(std::unordered_map<BlockPos, std::pair<Block, unsigned>>& changes, ChunkPos pos) const;

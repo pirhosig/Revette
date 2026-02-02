@@ -423,7 +423,7 @@ void World::meshChunks() {
 		);
 
 		// Create a mesh if the chunk is not empty
-		if (!getChunk(mPos)->isEmpty()) {
+		if (!getChunk(mPos)->shouldSkipMeshing()) {
 			std::array<Chunk*, 6> neighbours{};
 			for (unsigned j = 0; j < 6; ++j) {
 				neighbours[j] = getChunk(mPos.direction(static_cast<AxisDirection>(j))).get();

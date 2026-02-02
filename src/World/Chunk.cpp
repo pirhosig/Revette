@@ -40,11 +40,11 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 	// Fill the chunk if all of the chunk falls below the terrain height
 	// This code is sort of horrible, but it runs hella fast compared to what was here before
 	// Nvm this code is now even faster, and also looks okay
-	if (_chunkTop < genParameters.heightMap.heightMin) blockContainer.blockArrayDelete(Block(2));
+	if (_chunkTop < genParameters.heightMap.heightMin) blockContainer.setSingleBlock(Block(2));
 	else
 	{
 		// Some blocks must be placed beyond this point, so this optimisation is valid
-		blockContainer.blockArrayCreate();
+		blockContainer.setSizeByte();
 
 		for (int lX = 0; lX < CHUNK_SIZE; ++lX) {
 		for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
@@ -290,9 +290,8 @@ void Chunk::setBlock(ChunkLocalBlockPos blockPos, Block block)
 
 
 
-bool Chunk::isEmpty() const
-{
-	return blockContainer.isEmpty();
+bool Chunk::shouldSkipMeshing() const {
+	return blockContainer.isAir() || blockContainer.isSolid();
 }
 
 

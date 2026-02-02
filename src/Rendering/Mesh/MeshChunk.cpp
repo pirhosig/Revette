@@ -193,7 +193,7 @@ MeshChunk::Data::Data(const Chunk* chunkCentre, const std::array<Chunk*, 6> neig
  : position(chunkCentre->position)
 {
 	// Skip loop if chunk is empty
-	if (chunkCentre->isEmpty()) return;
+	if (chunkCentre->shouldSkipMeshing()) return;
 
 	// Cache transparency
 	auto _trans = chunkCentre->blockContainer.getSolid();
@@ -453,9 +453,9 @@ MeshChunk::Data::Data(const Chunk* chunkCentre, const std::array<Chunk*, 6> neig
 	}
 	}
 
-	indexCountOpaque = _indicesOpaque.size();
-	indexCountTested = _indicesTested.size();
-	indexCountBlended = _indicesBlended.size();
+	indexCountOpaque  = static_cast<uint32_t>(_indicesOpaque.size());
+	indexCountTested  = static_cast<uint32_t>(_indicesTested.size());
+	indexCountBlended = static_cast<uint32_t>(_indicesBlended.size());
 
 	// Merge the vertex and index vectors into one
 	vertices = std::move(_verticesOpaque);
@@ -655,7 +655,7 @@ void MeshChunk::drawBlended(
 		meshData->indexCountBlended,
 		1,
 		meshData->indexCountOpaque + meshData->indexCountTested,
-		((meshData->indexCountOpaque + meshData->indexCountTested) / 3) * 2,
+		static_cast<int32_t>((meshData->indexCountOpaque + meshData->indexCountTested) / 3) * 2,
 		0
 	);
 }

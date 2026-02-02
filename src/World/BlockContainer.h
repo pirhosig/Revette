@@ -8,15 +8,17 @@
 
 
 
-class BlockContainer
-{
+class BlockContainer {
 public:
-	BlockContainer() : emptyBlock{ Block(0) } {};
-	BlockContainer(const BlockContainer&) = delete;
+	std::variant<Block, std::unique_ptr<uint8_t[]>, std::unique_ptr<uint16_t[]>> blockArray;
+	std::vector<Block> blockArrayBlocksByIndex;
 
-	void blockArrayCreate();
-	void blockArrayDelete(Block block);
-	void blockArrayExtend();
+public:
+	BlockContainer();
+
+	void setSingleBlock(Block block);
+	void setSizeByte();
+	void setSizeShort();
 
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
 	Block getBlockRaw(unsigned int index) const;
@@ -25,13 +27,8 @@ public:
 
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
 	void setBlockRaw(int arrayIndex, int blockIndex);
-	int getPalleteIndex(Block block);
+	int getOrAddPalleteIndex(Block block);
 
-	bool isEmpty() const;
-
-	Block emptyBlock;
-
-	std::variant<std::monostate, std::unique_ptr<uint8_t[]>, std::unique_ptr<uint16_t[]>> blockArray;
-	std::vector<Block> blockArrayBlocksByIndex;
+	bool isAir() const;
+	bool isSolid() const;
 };
-
