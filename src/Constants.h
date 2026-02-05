@@ -22,4 +22,4 @@ constexpr int WORLD_DIAMETER_BLOCK = WORLD_RADIUS_BLOCK * 2;
 
 constexpr float WORLD_RADIUS_BLOCK_F = static_cast<float>(WORLD_RADIUS_BLOCK);
 
-constexpr short SEA_LEVEL = 64;
+constexpr int SEA_LEVEL = 64;

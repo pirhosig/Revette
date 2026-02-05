@@ -35,7 +35,7 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 	const int _chunkTop = _chunkBottom + CHUNK_SIZE - 1;
 
 	// Return if all of the chunk falls above the terrain height
-	if (genParameters.heightMap.heightMax + 1 < _chunkBottom && _chunkBottom > 0) return;
+	if (genParameters.heightMap.heightMax + 1 < _chunkBottom && _chunkBottom > SEA_LEVEL) return;
 
 	// Fill the chunk if all of the chunk falls below the terrain height
 	// This code is sort of horrible, but it runs hella fast compared to what was here before

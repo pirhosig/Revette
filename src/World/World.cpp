@@ -95,8 +95,8 @@ World::World(
 	generatorChunkNoise(
 		SEED,
 		settingNoiseHeightmap,
-		"EwAK1yM8FwAAAIC/AACAPwAAAAAAAIA/GQANAAMAAAAAAABACQAAAAAAPwAAAAAAARsAAQAAj8J1PA==",
-		"EwAK1yM8FwAAAIC/AACAPwAAAAAAAIA/GQANAAMAAAAAAABACQAAAAAAPwAAAAAAARsAAQAAj8J1PA=="
+		"KQkNCQY@CRRQ=",
+		"KQkNCQY@CRRQ="
 	),
 	sharedRendererState{std::move(_sharedRendererState)}
 {

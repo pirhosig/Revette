@@ -4,7 +4,7 @@
 
 
 
-const char* NOISE_HEIGHTMAP = "GQAbABkAGwANAAYAAAB7FA5AEwAAAIA9CQAAmpkZPwDNzEy9AJqZGT8BJAAFAAAAEwDNzEw+FgABAAAA//8BAAAAAIBCAAAAAEE=";
+const char* NOISE_HEIGHTMAP = "FQkXCRUJDQAH@BCGZmBkAJBg@AIBEBAOamRk/C83MTD0EAg8JBg@AIBFBAOamRk/DAMAAKBBBAMAAEBBBA==";
 
 
 
@@ -16,7 +16,7 @@ LoopGame::LoopGame(
 	applicationShouldTerminate{_applicationShouldTerminate},
 	sharedRendererState{std::move(_sharedRendererState)},
 	world(sharedRendererState, NOISE_HEIGHTMAP),
-	player(EntityPosition({ 0.0, 100.0, 0.0 }), {0.8, 3.75, 0.8}),
+	player(EntityPosition({ 0.0, 150.0, 0.0 }), {0.8, 3.75, 0.8}),
 	window{ _window }
 {
 	// Set user pointer for glfw callback functions

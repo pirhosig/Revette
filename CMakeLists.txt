@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.21)
 
 project(Revette)
 
@@ -64,21 +64,29 @@ set_source_files_properties(
 
 set_property(TARGET Revette PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
-add_subdirectory(deps/FastNoise2)
-
-target_compile_options(Revette PUBLIC -O3 -march=native -Werror -Wall -Wextra -Wpedantic -Wfloat-conversion)
+target_compile_options(Revette PUBLIC
+    -O3
+    -march=native
+    -Werror
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Wfloat-conversion
+)
 target_link_options(Revette PUBLIC -flto=auto)
 
-find_package(Vulkan REQUIRED)
+find_package(FastNoise2 CONFIG REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
+find_package(Vulkan REQUIRED)
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 
-target_link_libraries(
-    Revette PRIVATE
-    vulkan
-    glfw
-    FastNoise
+target_link_libraries(Revette PRIVATE
     atomic
+    glfw
+    FastNoise2::FastNoise
+    vulkan
+    GPUOpen::VulkanMemoryAllocator
 )
 
 target_include_directories(Revette PRIVATE
