@@ -1,5 +1,6 @@
 #include "RenderTarget.h"
 
+#include <algorithm>
 #include <stdexcept>
 
 #include "Vulkan_Utils.h"

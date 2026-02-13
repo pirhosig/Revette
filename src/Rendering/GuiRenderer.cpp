@@ -1,5 +1,7 @@
 #include "GuiRenderer.h"
+
 #include <algorithm>
+#include <array>
 #include <stdexcept>
 
 #include "Vulkan_Utils.h"
