@@ -13,25 +13,8 @@ constexpr int SEED = 24383737;
 
 namespace {
 
-bool withinLoadDistance(ChunkPos _pos, ChunkPos _centre) {
-	auto _offset = _pos.offset(_centre);
-	return (
-		(_offset.x * _offset.x + _offset.z * _offset.z <= LOAD_DISTANCE * LOAD_DISTANCE) &&
-		(std::abs(_offset.y) <= LOAD_DISTANCE_VERTICAL)
-	);
-}
-
-
-
-bool withinLoadDistance2D(ChunkPos _pos, ChunkPos _centre) {
-	auto _offset = _pos.offset(_centre);
-	return (_offset.x * _offset.x + _offset.z * _offset.z <= LOAD_DISTANCE * LOAD_DISTANCE);
-}
-
-
-
 int chunkLoadPriority(ChunkPos pos, ChunkPos centre) {
-	return std::clamp(200 - static_cast<int>(centre.distance(pos)), 0, 200);
+	return std::clamp(200 - static_cast<int>(centre.distanceEuclidean(pos)), 0, 200);
 }
 
 
@@ -88,9 +71,11 @@ constexpr int CHUNK_NEIGHBOURS_CARDINAL[6][3] = {
 
 
 World::World(
+	const Settings& _settings,
 	std::shared_ptr<SharedGameRendererState> _sharedRendererState,
 	const char* settingNoiseHeightmap
 ) :
+	settings{_settings},
 	loadCentre(0, 1, 0),
 	generatorChunkNoise(
 		SEED,
@@ -257,10 +242,19 @@ void World::onLoadCentreChange() {
 	// I pray to god that this never breaks because I sure as hell do not know how it works.
 	// Update: well fuck, it doesn't quite work
 
+	ChunkPos2D _loadCentre2D(loadCentre);
+	const long long _loadDistanceHorizontalSquared = (
+		static_cast<long long>(settings.getLoadDistanceHorizontal()) *
+		settings.getLoadDistanceHorizontal()
+	);
+
 	// Pass 1: unload all chunks that should be unloaded
 	std::vector<ChunkPos> unloadQueue;
 	for (auto& [_pos, _status] : chunkStatusMap.statusMap) {
-		if (!withinLoadDistance(_pos, loadCentre)) {
+		if (
+			_loadCentre2D.distanceEuclideanSquared(_pos) > _loadDistanceHorizontalSquared ||
+			std::abs(loadCentre.y - _pos.y) > settings.getLoadDistanceVertical()
+		) {
 			unloadQueue.push_back(_pos);
 		}
 	}
@@ -270,7 +264,7 @@ void World::onLoadCentreChange() {
 		chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::NON_EXISTENT);
 		mapChunks.erase(_pos);
 		// Check if cached generation data can be cleared
-		if (!withinLoadDistance2D(_pos, loadCentre)) {
+		if (_loadCentre2D.distanceEuclideanSquared(_pos) > _loadDistanceHorizontalSquared) {
 			generatorChunkCache.erase(ChunkPos2D(_pos));
 		}
 	}
@@ -288,7 +282,9 @@ void World::onLoadCentreChange() {
 			// Check if any neighbours should be loaded
 			for (auto [lX, lY, lZ] : CHUNK_NEIGHBOURS_CARDINAL) {
 				ChunkPos nPos(_pos.x + lX, _pos.y + lY, _pos.z + lZ);
-				if (withinLoadDistance(nPos, loadCentre) &&
+				if (
+					_loadCentre2D.distanceEuclideanSquared(_pos) <= _loadDistanceHorizontalSquared &&
+					std::abs(loadCentre.y - _pos.y) <= settings.getLoadDistanceVertical() &&
 					chunkStatusMap.getChunkStatusLoad(nPos) == StatusChunkLoad::NON_EXISTENT
 				) {
 					chunkStatusMap.setChunkStatusLoad(nPos, StatusChunkLoad::QUEUED_LOAD);
@@ -352,10 +348,19 @@ void World::loadChunks() {
 		// Generate the chunk
 		insertRes.first->second->GenerateChunk(getGeneratorChunkParameters(ChunkPos2D(lPos)));
 		chunkStatusMap.setChunkStatusLoad(lPos, StatusChunkLoad::GENERATED);
+
 		// Check if it, or its neighbours can populate or load
+		ChunkPos2D _loadCentre2D(loadCentre);
+		const long long _loadDistanceHorizontalSquared = (
+			static_cast<long long>(settings.getLoadDistanceHorizontal()) *
+			settings.getLoadDistanceHorizontal()
+		);
 		for (auto [lX, lY, lZ] : CHUNK_NEIGHBOURHOOD) {
 			ChunkPos _pos(lPos.x + lX, lPos.y + lY, lPos.z + lZ);
-			if (withinLoadDistance(_pos, loadCentre)) {
+			if (
+				_loadCentre2D.distanceEuclideanSquared(_pos) <= _loadDistanceHorizontalSquared &&
+				std::abs(loadCentre.y - _pos.y) <= settings.getLoadDistanceVertical()
+			) {
 				auto _status = chunkStatusMap.getChunkStatusLoad(_pos);
 				if (_status == StatusChunkLoad::NON_EXISTENT) {
 					loadQueue.push(ChunkPriorityTicket(chunkLoadPriority(_pos, loadCentre), _pos));

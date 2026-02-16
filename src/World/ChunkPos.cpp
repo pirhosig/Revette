@@ -60,10 +60,21 @@ ChunkPos ChunkPos::direction(AxisDirection direction) const
 
 
 
-double ChunkPos::distance(ChunkPos other) const
+double ChunkPos::distanceEuclidean(ChunkPos other) const
 {
 	ChunkOffset _offset = offset(other);
 	return std::hypot(_offset.x, _offset.y, _offset.z);
+}
+
+
+
+long long ChunkPos::distanceEuclideanSquared(ChunkPos other) const {
+	ChunkOffset _offset = offset(other);
+	return (
+		static_cast<long long>(_offset.x) * _offset.x +
+		static_cast<long long>(_offset.y) * _offset.y +
+		static_cast<long long>(_offset.z) * _offset.z
+	);
 }
 
 
@@ -84,6 +95,14 @@ bool ChunkPos::operator<(const ChunkPos& other) const
 
 
 ChunkPos2D::ChunkPos2D(int _x, int _z) : x(wrapCoordinate(_x)), z(wrapCoordinate(_z)) {}
+
+
+
+long long ChunkPos2D::distanceEuclideanSquared(ChunkPos2D other) const {
+	long long offsetX = other.x - x;
+	long long offsetZ = other.z - z;
+	return offsetX * offsetX + offsetZ * offsetZ;
+}
 
 
 

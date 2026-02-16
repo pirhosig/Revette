@@ -18,7 +18,7 @@ private:
     VulkanContext() = default;
 
     void createInstance(bool debugEnabled);
-    void createDebugMessenger();
+    void createDebugMessenger(bool debugEnabled);
     void createSurface(struct GLFWwindow* window);
     void selectPhysicalDevice();
     void createDevice();

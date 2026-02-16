@@ -5,16 +5,18 @@
 
 #include "LoopGame.h"
 #include "GlobalLog.h"
+#include "Settings.h"
 #include "Rendering/Renderer.h"
 
 
 
 void runGameThread(
+	const Settings& settings,
 	GLFWwindow* window,
 	std::atomic_bool& applicationShouldTerminate,
 	std::shared_ptr<SharedGameRendererState> sharedRendererState
 ) try {
-	LoopGame loop(window, applicationShouldTerminate, std::move(sharedRendererState));
+	LoopGame loop(settings, window, applicationShouldTerminate, std::move(sharedRendererState));
 	loop.run();
 }
 catch (const std::exception& error) {
@@ -24,11 +26,12 @@ catch (const std::exception& error) {
 
 
 void runRenderThread(
+	const Settings& settings,
 	GLFWwindow* window,
 	std::atomic_bool& applicationShouldTerminate,
 	std::shared_ptr<SharedGameRendererState> sharedGameState
 ) try {
-	Renderer renderer(window, applicationShouldTerminate, std::move(sharedGameState));
+	Renderer renderer(settings, window, applicationShouldTerminate, std::move(sharedGameState));
 	renderer.run();
 }
 catch (const std::exception& error) {
@@ -38,11 +41,14 @@ catch (const std::exception& error) {
 
 
 void Application::run() {
+	Settings settings;
+
 	std::atomic_bool applicationShouldTerminate;
 	auto sharedGameRendererState{std::make_shared<SharedGameRendererState>()};
 
 	std::jthread renderThread(
 		runRenderThread,
+		std::cref(settings),
 		window.get(),
 		std::ref(applicationShouldTerminate),
 		sharedGameRendererState
@@ -50,6 +56,7 @@ void Application::run() {
 
 	std::jthread gameThread(
 		runGameThread,
+		std::cref(settings),
 		window.get(),
 		std::ref(applicationShouldTerminate),
 		sharedGameRendererState

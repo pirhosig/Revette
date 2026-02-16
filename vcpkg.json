@@ -1,6 +1,7 @@
 {
   "dependencies": [
+    "fast-noise-2",
     "vulkan-memory-allocator",
-    "fast-noise-2"
+    "simdjson"
   ]
 }

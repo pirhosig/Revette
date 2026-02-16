@@ -9,13 +9,14 @@ const char* NOISE_HEIGHTMAP = "FQkXCRUJDQAH@BCGZmBkAJBg@AIBEBAOamRk/C83MTD0EAg8J
 
 
 LoopGame::LoopGame(
+	const Settings& settings,
 	GLFWwindow* _window,
 	std::atomic_bool& _applicationShouldTerminate,
 	std::shared_ptr<SharedGameRendererState> _sharedRendererState
 ) :
 	applicationShouldTerminate{_applicationShouldTerminate},
 	sharedRendererState{std::move(_sharedRendererState)},
-	world(sharedRendererState, NOISE_HEIGHTMAP),
+	world(settings, sharedRendererState, NOISE_HEIGHTMAP),
 	player(EntityPosition({ 0.0, 150.0, 0.0 }), {0.8, 3.75, 0.8}),
 	window{ _window }
 {

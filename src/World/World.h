@@ -9,6 +9,7 @@
 #include "Generation/GeneratorChunkParameters.h"
 #include "Generation/GeneratorChunkNoise.h"
 #include "Generation/Structures/Structure.h"
+#include "../Settings.h"
 #include "../Rendering/Mesh/MeshChunk.h"
 #include "../Threading/SharedGameRendererState.h"
 
@@ -33,6 +34,8 @@ public:
 class World
 {
 private:
+	const Settings& settings;
+
 	// Chunk storage
 	std::unordered_map<long long, Entity> mapEntities;
 	std::unordered_map<ChunkPos, std::unique_ptr<Chunk>> mapChunks;
@@ -65,6 +68,7 @@ private:
 	
 public:
 	World(
+		const Settings& _settings,
 		std::shared_ptr<SharedGameRendererState> _sharedRendererState,
 		const char* settingNoiseHeightmap
 	);

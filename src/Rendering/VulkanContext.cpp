@@ -99,7 +99,10 @@ void VulkanContext::createInstance(bool debugEnabled) {
 
 
 
-void VulkanContext::createDebugMessenger() {
+void VulkanContext::createDebugMessenger(bool debugEnabled) {
+    // If debug mode is not enabled then do nothing
+    if (!debugEnabled) return;
+
     auto createFunction = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
         vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT")
     );
@@ -239,7 +242,7 @@ void VulkanContext::createAllocator() {
 
 VulkanContext::VulkanContext(GLFWwindow* window, bool debugEnabled) {
     createInstance(debugEnabled);
-    createDebugMessenger();
+    createDebugMessenger(debugEnabled);
     createSurface(window);
     selectPhysicalDevice();
     createDevice();

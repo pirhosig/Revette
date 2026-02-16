@@ -28,7 +28,8 @@ public:
 	ChunkPos(int _x, int _y, int _z);
 	ChunkPos(BlockPos blockPos);
 	ChunkPos direction(AxisDirection direction) const;
-	double distance(ChunkPos other) const;
+	double distanceEuclidean(ChunkPos other) const;
+	long long distanceEuclideanSquared(ChunkPos other) const;
 	ChunkOffset offset(ChunkPos other) const;
 
 	bool operator<(const ChunkPos& other) const;
@@ -45,6 +46,8 @@ public:
 
 	ChunkPos2D(int _x, int _z);
 	ChunkPos2D(ChunkPos chunkPos) : x(chunkPos.x), z(chunkPos.z) {}
+
+	long long distanceEuclideanSquared(ChunkPos2D other) const;
 
 	bool operator<(const ChunkPos2D& other) const;
 	bool operator==(const ChunkPos2D& other) const = default;

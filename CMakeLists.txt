@@ -13,6 +13,7 @@ add_executable(Revette
     src/Logger.cpp
     src/LoopGame.cpp
     src/LoopTimer.cpp
+    src/Settings.cpp
     src/Window.cpp
 
     src/Rendering/Buffer.cpp
@@ -78,6 +79,7 @@ target_link_options(Revette PUBLIC -flto=auto)
 find_package(FastNoise2 CONFIG REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
+find_package(simdjson CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 
@@ -85,6 +87,7 @@ target_link_libraries(Revette PRIVATE
     atomic
     glfw
     FastNoise2::FastNoise
+    simdjson::simdjson
     vulkan
     GPUOpen::VulkanMemoryAllocator
 )

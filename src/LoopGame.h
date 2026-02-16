@@ -26,6 +26,7 @@ private:
 
 public:
 	LoopGame(
+		const Settings& settings,
 		GLFWwindow* _window,
 		std::atomic_bool& _applicationShouldTerminate,
 		std::shared_ptr<SharedGameRendererState> _sharedRendererState

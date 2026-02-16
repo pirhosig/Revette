@@ -13,21 +13,11 @@ constexpr int RENDER_AHEAD_COUNT = 3;
 
 namespace {
 
-bool withinLoadDistance(ChunkPos _pos, ChunkPos _centre) {
-	auto _offset = _pos.offset(_centre);
-	return (
-		(_offset.x * _offset.x + _offset.z * _offset.z <= LOAD_DISTANCE * LOAD_DISTANCE) &&
-		(std::abs(_offset.y) <= LOAD_DISTANCE_VERTICAL)
-	);
-}
-
-
-
 struct CmpChunkPos {
 	ChunkPos centre;
 
 	bool operator()(const ChunkPos& a, const ChunkPos& b) const {
-		return centre.distance(a) < centre.distance(b);
+		return centre.distanceEuclidean(a) < centre.distanceEuclidean(b);
 	}
 };
 
@@ -55,11 +45,18 @@ void Renderer::processFrame() {
 void Renderer::unloadMeshes(const ChunkPos& playerChunk) {
 	std::queue<ChunkPos> removeQueue;
 	
+	ChunkPos2D _playerChunk2D(playerChunk);
+	const long long _loadDistanceHorizontalSquared = (
+		static_cast<long long>(settings.getLoadDistanceHorizontal()) *
+		settings.getLoadDistanceHorizontal()
+	);
+
 	auto it = meshesChunk.begin();
-	while (it != meshesChunk.end())
-	{
-		if (!withinLoadDistance(it->first, playerChunk))
-		{
+	while (it != meshesChunk.end()) {
+		if (
+			_playerChunk2D.distanceEuclideanSquared(it->first) > _loadDistanceHorizontalSquared ||
+			std::abs(playerChunk.y - it->first.y) > settings.getLoadDistanceVertical()
+		) {
 			removeQueue.push(it->first);
 			frameRenderers[currentFrameRendererIndex].queueMeshForDeletion(std::move(it->second));
 			it = meshesChunk.erase(it);
@@ -74,14 +71,16 @@ void Renderer::unloadMeshes(const ChunkPos& playerChunk) {
 
 
 Renderer::Renderer(
+	const Settings& _settings,
 	GLFWwindow* _window,
 	std::atomic_bool& _applicationShouldTerminate,
 	std::shared_ptr<SharedGameRendererState> _sharedGameState
 ) :
+	settings{_settings},
 	window{_window},
 	vulkanContext(
 		window,
-		true
+		settings.getValidationLayersEnabled()
 	),
 	renderTarget(
 		window,

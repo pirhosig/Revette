@@ -9,8 +9,9 @@
 #include "RenderTarget.h"
 #include "VulkanContext.h"
 #include "Mesh/MeshChunk.h"
-#include "../Threading/SharedGameRendererState.h"
+#include "../Settings.h"
 #include "../Window.h"
+#include "../Threading/SharedGameRendererState.h"
 #include "../World/ChunkPos.h"
 #include "../World/Entities/EntityPosition.h"
 
@@ -20,6 +21,8 @@
 class Renderer
 {
 private:
+	const Settings& settings;
+
 	// Vulkan Stuff
 	GLFWwindow* window;
 	VulkanContext vulkanContext;
@@ -49,6 +52,7 @@ private:
 	
 public:
 	Renderer(
+		const Settings& _settings,
 		GLFWwindow* _window,
 		std::atomic_bool& _applicationShouldTerminate,
 		std::shared_ptr<SharedGameRendererState> _sharedGameState
