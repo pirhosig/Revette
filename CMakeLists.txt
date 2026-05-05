@@ -80,7 +80,7 @@ find_package(FastNoise2 CONFIG REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 find_package(simdjson CONFIG REQUIRED)
-find_package(Vulkan REQUIRED)
+find_package(volk CONFIG REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 
 target_link_libraries(Revette PRIVATE
@@ -88,7 +88,7 @@ target_link_libraries(Revette PRIVATE
     glfw
     FastNoise2::FastNoise
     simdjson::simdjson
-    vulkan
+    volk::volk
     GPUOpen::VulkanMemoryAllocator
 )
 

@@ -217,8 +217,8 @@ void VulkanContext::createDevice() {
 
 void VulkanContext::createAllocator() {
     VmaVulkanFunctions vulkanFunctions{};
-    vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
-    vulkanFunctions.vkGetDeviceProcAddr = &vkGetDeviceProcAddr;
+    vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+    vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
     VmaAllocatorCreateInfo createInfo{
         .flags{},
         .physicalDevice = physicalDevice,
@@ -240,12 +240,21 @@ void VulkanContext::createAllocator() {
 
 
 
-VulkanContext::VulkanContext(GLFWwindow* window, bool debugEnabled) {
+VulkanContext::VulkanContext(GLFWwindow* window, bool debugEnabled) : VulkanContext() {
+    if (volkInitialize() != VK_SUCCESS) {
+        throw std::runtime_error("Failed to initialize volk.");
+    }
+
     createInstance(debugEnabled);
+    volkLoadInstance(instance);
+
     createDebugMessenger(debugEnabled);
     createSurface(window);
     selectPhysicalDevice();
+
     createDevice();
+    volkLoadDevice(device);
+
     createAllocator();
 }
 

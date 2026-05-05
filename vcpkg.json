@@ -1,7 +1,8 @@
 {
   "dependencies": [
     "fast-noise-2",
+    "simdjson",
     "vulkan-memory-allocator",
-    "simdjson"
+    "volk"
   ]
 }
