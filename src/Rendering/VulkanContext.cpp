@@ -217,8 +217,6 @@ void VulkanContext::createDevice() {
 
 void VulkanContext::createAllocator() {
     VmaVulkanFunctions vulkanFunctions{};
-    vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
-    vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
     VmaAllocatorCreateInfo createInfo{
         .flags{},
         .physicalDevice = physicalDevice,
@@ -232,6 +230,7 @@ void VulkanContext::createAllocator() {
         .vulkanApiVersion = VULKAN_VERSION,
         .pTypeExternalMemoryHandleTypes{}
     };
+    vmaImportVulkanFunctionsFromVolk(&createInfo, &vulkanFunctions);
 
     if (vmaCreateAllocator(&createInfo, &allocator) != VK_SUCCESS)  {
         throw std::runtime_error("Failed to create allocator");
