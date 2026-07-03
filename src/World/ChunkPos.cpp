@@ -85,15 +85,6 @@ ChunkOffset ChunkPos::offset(ChunkPos other) const
 }
 
 
-
-bool ChunkPos::operator<(const ChunkPos& other) const
-{
-	if (x != other.x) return x < other.x;
-	else if (y != other.y) return y < other.y;
-	else return z < other.z;
-}
-
-
 ChunkPos2D::ChunkPos2D(int _x, int _z) : x(wrapCoordinate(_x)), z(wrapCoordinate(_z)) {}
 
 
@@ -102,14 +93,6 @@ long long ChunkPos2D::distanceEuclideanSquared(ChunkPos2D other) const {
 	long long offsetX = other.x - x;
 	long long offsetZ = other.z - z;
 	return offsetX * offsetX + offsetZ * offsetZ;
-}
-
-
-
-bool ChunkPos2D::operator<(const ChunkPos2D& other) const
-{
-	if (x != other.x) return x < other.x;
-	return z < other.z;
 }
 
 

@@ -28,8 +28,7 @@ public:
 	BlockOffset distance(BlockPos other) const;
 	BlockPos offset(int _x, int _y, int _z) const;
 
-	bool operator<(const BlockPos& other) const;
-	bool operator==(const BlockPos& other) const;
+	bool operator==(const BlockPos&) const = default;
 };
 
 
@@ -41,5 +40,5 @@ public:
 
 	int blockType;
 
-	bool operator==(const Block& other) const { return blockType == other.blockType; }
+	bool operator==(const Block&) const = default;
 };

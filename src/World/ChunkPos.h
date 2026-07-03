@@ -32,7 +32,6 @@ public:
 	long long distanceEuclideanSquared(ChunkPos other) const;
 	ChunkOffset offset(ChunkPos other) const;
 
-	bool operator<(const ChunkPos& other) const;
 	bool operator==(const ChunkPos& other) const = default;
 };
 
@@ -49,8 +48,7 @@ public:
 
 	long long distanceEuclideanSquared(ChunkPos2D other) const;
 
-	bool operator<(const ChunkPos2D& other) const;
-	bool operator==(const ChunkPos2D& other) const = default;
+	bool operator==(const ChunkPos2D&) const = default;
 };
 
 

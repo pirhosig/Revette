@@ -68,22 +68,6 @@ BlockPos BlockPos::offset(int _x, int _y, int _z) const { return BlockPos(x + _x
 
 
 
-bool BlockPos::operator<(const BlockPos& other) const
-{
-	if (x != other.x) return x < other.x;
-	else if (y != other.y) return y < other.y;
-	else return z < other.z;
-}
-
-
-
-bool BlockPos::operator==(const BlockPos& other) const
-{
-	return x == other.x && y == other.y && z == other.z;
-}
-
-
-
 Block::Block() : blockType{ 0 } {}
 
 

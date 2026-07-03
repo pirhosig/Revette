@@ -11,20 +11,6 @@ constexpr int RENDER_AHEAD_COUNT = 3;
 
 
 
-namespace {
-
-struct CmpChunkPos {
-	ChunkPos centre;
-
-	bool operator()(const ChunkPos& a, const ChunkPos& b) const {
-		return centre.distanceEuclidean(a) < centre.distanceEuclidean(b);
-	}
-};
-
-}
-
-
-
 void Renderer::processFrame() {
 	std::queue<std::unique_ptr<MeshChunk::Data>> loadMeshQueue;
 	sharedGameState->chunkMeshQueue->getQueue(loadMeshQueue);
