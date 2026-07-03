@@ -41,7 +41,7 @@ void Renderer::unloadMeshes(const ChunkPos& playerChunk) {
 	while (it != meshesChunk.end()) {
 		if (
 			_playerChunk2D.distanceEuclideanSquared(it->first) > _loadDistanceHorizontalSquared ||
-			std::abs(playerChunk.y - it->first.y) > settings.getLoadDistanceVertical()
+			std::abs(playerChunk.getY() - it->first.getY()) > settings.getLoadDistanceVertical()
 		) {
 			removeQueue.push(it->first);
 			frameRenderers[currentFrameRendererIndex].queueMeshForDeletion(std::move(it->second));

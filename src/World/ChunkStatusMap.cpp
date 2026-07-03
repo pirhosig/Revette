@@ -62,7 +62,7 @@ void ChunkStatusMap::setChunkStatusLoad(const ChunkPos chunkPos, StatusChunkLoad
 						if (i == 0 && j == 0 && k == 0) continue;
 						statusMap[chunkPos].setNeighbourLoadStatus(
 							i, j, k,
-							getChunkStatusLoad(ChunkPos(chunkPos.x + i, chunkPos.y + j, chunkPos.z + k))
+							getChunkStatusLoad(ChunkPos(chunkPos.getX() + i, chunkPos.getY() + j, chunkPos.getZ() + k))
 						);
 					}
 		}
@@ -74,7 +74,7 @@ void ChunkStatusMap::setChunkStatusLoad(const ChunkPos chunkPos, StatusChunkLoad
 			for (int k = -1; k <= 1; ++k)
 			{
 				if (i == 0 && j == 0 && k == 0) continue;
-				ChunkPos pos(chunkPos.x + i, chunkPos.y + j, chunkPos.z + k);
+				ChunkPos pos(chunkPos.getX() + i, chunkPos.getY() + j, chunkPos.getZ() + k);
 				if (chunkExists(pos)) statusMap.at(pos).setNeighbourLoadStatus(-i, -j, -k, status);
 			}
 }

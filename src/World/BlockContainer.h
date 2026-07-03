@@ -21,13 +21,12 @@ public:
 	void setSizeShort();
 
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
-	Block getBlockRaw(unsigned int index) const;
 	std::vector<bool> getSolid() const;
 	std::vector<bool> getSolidFace(AxisDirection direction) const;
 
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
-	void setBlockRaw(int arrayIndex, int blockIndex);
-	int getOrAddPalleteIndex(Block block);
+	void setBlockRaw(uint16_t arrayIndex, uint16_t blockIndex);
+	uint16_t getOrAddPalleteIndex(Block block);
 
 	bool isAir() const;
 	bool isSolid() const;

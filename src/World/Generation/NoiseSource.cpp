@@ -9,8 +9,8 @@ std::array<float, CHUNK_AREA> NoiseSource2D::genChunkNoise(ChunkPos2D chunkPos) 
 	std::array<float, CHUNK_AREA> noise;
 	generator->GenUniformGrid2D(
 		noise.data(),
-		chunkPos.x * CHUNK_SIZE,
-		chunkPos.z * CHUNK_SIZE,
+		chunkPos.getX() * CHUNK_SIZE,
+		chunkPos.getZ() * CHUNK_SIZE,
 		CHUNK_SIZE,
 		CHUNK_SIZE,
 		1.0f,

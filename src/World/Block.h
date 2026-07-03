@@ -4,41 +4,49 @@
 
 
 
-struct BlockOffset {
-public:
-	int x;
-	int y;
-	int z;
+class BlockOffset {
+	int32_t x;
+	int32_t y;
+	int32_t z;
 
-	BlockOffset(int _x, int _y, int _z);
+public:
+	BlockOffset(int32_t _x, int32_t _y, int32_t _z);
+
+	int32_t getX() const;
+	int32_t getY() const;
+	int32_t getZ() const;
 };
 
 
 
-struct BlockPos {
-public:
-	int x;
-	int y;
-	int z;
+class BlockPos {
+	int32_t x;
+	int32_t y;
+	int32_t z;
 
-	BlockPos(int x, int y, int z);
+public:
+	BlockPos(int32_t x, int32_t y, int32_t z);
 	BlockPos(double x, double y, double z);
 	BlockPos(EntityPosition position);
-	BlockPos direction(AxisDirection direction) const;
-	BlockOffset distance(BlockPos other) const;
-	BlockPos offset(int _x, int _y, int _z) const;
 
 	bool operator==(const BlockPos&) const = default;
+	int32_t getX() const;
+	int32_t getY() const;
+	int32_t getZ() const;
+
+	BlockPos direction(AxisDirection direction) const;
+	BlockOffset distance(BlockPos other) const;
+	BlockPos offset(int32_t _x, int32_t _y, int32_t _z) const;
 };
 
 
 
 struct Block {
+	int32_t blockType;
+
 public:
 	Block();
-	Block(int type);
-
-	int blockType;
+	Block(int32_t type);
 
 	bool operator==(const Block&) const = default;
 };

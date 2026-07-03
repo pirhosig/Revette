@@ -68,9 +68,9 @@ namespace {
 
 	uint32_t getPositionHash(BlockPos pos, uint32_t seedHash)
 	{
-		uint32_t hY = basicHash(static_cast<uint32_t>(pos.y) + 0xe1);
-		uint32_t hZ = basicHash(static_cast<uint32_t>(pos.z) + 0xac83);
-		return seedHash ^ basicHash(static_cast<uint32_t>(pos.x)) ^ hY ^ hZ;
+		uint32_t hY = basicHash(static_cast<uint32_t>(pos.getY()) + 0xe1);
+		uint32_t hZ = basicHash(static_cast<uint32_t>(pos.getZ()) + 0xac83);
+		return seedHash ^ basicHash(static_cast<uint32_t>(pos.getX())) ^ hY ^ hZ;
 	}
 }
 
@@ -212,11 +212,11 @@ MeshChunk::Data::Data(const Chunk* chunkCentre, const std::array<Chunk*, 6> neig
 	std::vector<uint32_t> _indicesBlended;
 
 	// Loop and check for each block whether it is solid, and so whether it needs to be added
-	for (int i = 0; i < CHUNK_SIZE; ++i) {
-	for (int j = 0; j < CHUNK_SIZE; ++j) {
-	for (int k = 0; k < CHUNK_SIZE; ++k) {
-		int _index = i * CHUNK_AREA + j * CHUNK_SIZE + k;
-		Block block = chunkCentre->blockContainer.getBlockRaw(_index);
+	for (uint16_t x = 0; x < CHUNK_SIZE; ++x) {
+	for (uint16_t y = 0; y < CHUNK_SIZE; ++y) {
+	for (uint16_t z = 0; z < CHUNK_SIZE; ++z) {
+		uint16_t _index = (x << 10) + (y << 5) + z;
+		Block block = chunkCentre->blockContainer.getBlock(_index);
 		// Skip if air block
 		if (block.blockType == 0) continue;
 
@@ -235,14 +235,14 @@ MeshChunk::Data::Data(const Chunk* chunkCentre, const std::array<Chunk*, 6> neig
 				{{ 0, 1, 0 }, { 1, 1, 0 }, { 1, 0, 0 }, { 0, 0, 0 }}  // West
 			};
 			int rotationOffset = IS_ROTATEABLE[block.blockType] ?
-				static_cast<int>(getPositionHash(ChunkLocalBlockPos(i, j, k).asBlockPos(position), basicHash(1)) % 4) : 0;
+				static_cast<int>(getPositionHash(ChunkLocalBlockPos(x, y, z).asBlockPos(position), basicHash(1)) % 4) : 0;
 			bool faceIsVisible[6] = {
-				!(j != CHUNK_SIZE - 1 ? _trans[_index + CHUNK_SIZE] : neighbourSolidMasks[0][i * CHUNK_SIZE + k]),
-				!(j != 0 ? _trans[_index - CHUNK_SIZE] : neighbourSolidMasks[1][i * CHUNK_SIZE + k]),
-				!(i != CHUNK_SIZE - 1 ? _trans[_index + CHUNK_AREA] : neighbourSolidMasks[2][j * CHUNK_SIZE + k]),
-				!(i != 0 ? _trans[_index - CHUNK_AREA] : neighbourSolidMasks[3][j * CHUNK_SIZE + k]),
-				!(k != CHUNK_SIZE - 1 ? _trans[_index + 1] : neighbourSolidMasks[4][i * CHUNK_SIZE + j]),
-				!(k != 0 ? _trans[_index - 1] : neighbourSolidMasks[5][i * CHUNK_SIZE + j])
+				!(y != CHUNK_SIZE - 1 ? _trans[_index + CHUNK_SIZE] : neighbourSolidMasks[0][x * CHUNK_SIZE + z]),
+				!(y != 0 ? _trans[_index - CHUNK_SIZE] : neighbourSolidMasks[1][x * CHUNK_SIZE + z]),
+				!(x != CHUNK_SIZE - 1 ? _trans[_index + CHUNK_AREA] : neighbourSolidMasks[2][y * CHUNK_SIZE + z]),
+				!(x != 0 ? _trans[_index - CHUNK_AREA] : neighbourSolidMasks[3][y * CHUNK_SIZE + z]),
+				!(z != CHUNK_SIZE - 1 ? _trans[_index + 1] : neighbourSolidMasks[4][x * CHUNK_SIZE + y]),
+				!(z != 0 ? _trans[_index - 1] : neighbourSolidMasks[5][x * CHUNK_SIZE + y])
 			};
 			// Loop over each of the block faces
 			for (int l = 0; l < 6; ++l)
@@ -253,9 +253,9 @@ MeshChunk::Data::Data(const Chunk* chunkCentre, const std::array<Chunk*, 6> neig
 					for (int v = 0; v < 4; ++v)
 					{
 						_verticesOpaque.push_back(Vertex{
-							.x = static_cast<uint16_t>(i + FACE_TABLE[l][v][0]) * 16u,
-							.y = static_cast<uint16_t>(j + FACE_TABLE[l][v][1]) * 16u,
-							.z = static_cast<uint16_t>(k + FACE_TABLE[l][v][2]) * 16u,
+							.x = static_cast<uint16_t>(x + FACE_TABLE[l][v][0]) * 16u,
+							.y = static_cast<uint16_t>(y + FACE_TABLE[l][v][1]) * 16u,
+							.z = static_cast<uint16_t>(z + FACE_TABLE[l][v][2]) * 16u,
 							.u = TEXTURE_COORDINATES[(v + rotationOffset) % 4][0],
 							.v = TEXTURE_COORDINATES[(v + rotationOffset) % 4][1],
 							.texture = BLOCK_TEXTURES[block.blockType][l],
@@ -287,14 +287,12 @@ MeshChunk::Data::Data(const Chunk* chunkCentre, const std::array<Chunk*, 6> neig
 		// Cross shaped plant
 		case 1: [[unlikely]]
 		{
-			ChunkLocalBlockPos localPos(i, j, k);
-
-			uint16_t _dU = static_cast<uint16_t>(localPos.y + 1) * 16u;
-			uint16_t _dD = static_cast<uint16_t>(localPos.y)     * 16u;
-			uint16_t _dN = static_cast<uint16_t>(localPos.x + 1) * 16u;
-			uint16_t _dS = static_cast<uint16_t>(localPos.x)     * 16u;
-			uint16_t _dE = static_cast<uint16_t>(localPos.z + 1) * 16u;
-			uint16_t _dW = static_cast<uint16_t>(localPos.z)     * 16u;
+			uint16_t _dU = static_cast<uint16_t>(y + 1) * 16u;
+			uint16_t _dD = static_cast<uint16_t>(y)     * 16u;
+			uint16_t _dN = static_cast<uint16_t>(x + 1) * 16u;
+			uint16_t _dS = static_cast<uint16_t>(x)     * 16u;
+			uint16_t _dE = static_cast<uint16_t>(z + 1) * 16u;
+			uint16_t _dW = static_cast<uint16_t>(z)     * 16u;
 			uint16_t _tex = BLOCK_TEXTURES[block.blockType][0];
 
 			uint32_t baseIndex = static_cast<uint32_t>(_verticesTested.size());
@@ -405,11 +403,11 @@ MeshChunk::Data::Data(const Chunk* chunkCentre, const std::array<Chunk*, 6> neig
 		case 2:
 		{
 			// Skip if block above is same type
-			if (((j != CHUNK_SIZE - 1) ? chunkCentre->getBlock(ChunkLocalBlockPos(i, j + 1, k)).blockType :
-				neighbours[0]->getBlock(ChunkLocalBlockPos(i, 0, k)).blockType) == block.blockType) continue;
+			if (((y != CHUNK_SIZE - 1) ? chunkCentre->getBlock(ChunkLocalBlockPos(x, y + 1, z)).blockType :
+				neighbours[0]->getBlock(ChunkLocalBlockPos(x, 0, z)).blockType) == block.blockType) continue;
 
 			int rotationOffset = IS_ROTATEABLE[block.blockType] ?
-				static_cast<int>(getPositionHash(ChunkLocalBlockPos(i, j, k).asBlockPos(position), basicHash(1)) % 4) : 0;
+				static_cast<int>(getPositionHash(ChunkLocalBlockPos(x, y, z).asBlockPos(position), basicHash(1)) % 4) : 0;
 
 			const uint16_t FACE_TABLE[4][2] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
 			
@@ -420,9 +418,9 @@ MeshChunk::Data::Data(const Chunk* chunkCentre, const std::array<Chunk*, 6> neig
 				for (int v = 0; v < 4; ++v)
 				{
 					_verticesBlended.push_back(Vertex{
-						.x = static_cast<uint16_t>(i + FACE_TABLE[v][0]) * 16u,
-						.y = static_cast<uint16_t>(j) * 16u + 13u,
-						.z = static_cast<uint16_t>(k + FACE_TABLE[v][1]) * 16u,
+						.x = static_cast<uint16_t>(x + FACE_TABLE[v][0]) * 16u,
+						.y = static_cast<uint16_t>(y) * 16u + 13u,
+						.z = static_cast<uint16_t>(z + FACE_TABLE[v][1]) * 16u,
 						.u = TEXTURE_COORDINATES[(v + rotationOffset) % 4][0],
 						.v = TEXTURE_COORDINATES[(v + rotationOffset) % 4][1],
 						.texture = BLOCK_TEXTURES[block.blockType][l],
@@ -566,7 +564,7 @@ void startDraw(
 ) {
 	glm::mat4 matrixMVP = matrixProjectionView * glm::translate(
 		glm::mat4(1.0f),
-		glm::vec3(offset.x * CHUNK_SIZE, offset.y * CHUNK_SIZE, offset.z * CHUNK_SIZE) * 0.5f
+		glm::vec3(offset.getX() * CHUNK_SIZE, offset.getY() * CHUNK_SIZE, offset.getZ() * CHUNK_SIZE) * 0.5f
 	);
 
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &buffer, &offsetVertices);

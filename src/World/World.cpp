@@ -253,7 +253,7 @@ void World::onLoadCentreChange() {
 	for (auto& [_pos, _status] : chunkStatusMap.statusMap) {
 		if (
 			_loadCentre2D.distanceEuclideanSquared(_pos) > _loadDistanceHorizontalSquared ||
-			std::abs(loadCentre.y - _pos.y) > settings.getLoadDistanceVertical()
+			std::abs(loadCentre.getY() - _pos.getY()) > settings.getLoadDistanceVertical()
 		) {
 			unloadQueue.push_back(_pos);
 		}
@@ -281,10 +281,10 @@ void World::onLoadCentreChange() {
 		case StatusChunkLoad::POPULATED:
 			// Check if any neighbours should be loaded
 			for (auto [lX, lY, lZ] : CHUNK_NEIGHBOURS_CARDINAL) {
-				ChunkPos nPos(_pos.x + lX, _pos.y + lY, _pos.z + lZ);
+				ChunkPos nPos(_pos.getX() + lX, _pos.getY() + lY, _pos.getZ() + lZ);
 				if (
 					_loadCentre2D.distanceEuclideanSquared(_pos) <= _loadDistanceHorizontalSquared &&
-					std::abs(loadCentre.y - _pos.y) <= settings.getLoadDistanceVertical() &&
+					std::abs(loadCentre.getY() - _pos.getY()) <= settings.getLoadDistanceVertical() &&
 					chunkStatusMap.getChunkStatusLoad(nPos) == StatusChunkLoad::NON_EXISTENT
 				) {
 					chunkStatusMap.setChunkStatusLoad(nPos, StatusChunkLoad::QUEUED_LOAD);
@@ -356,10 +356,10 @@ void World::loadChunks() {
 			settings.getLoadDistanceHorizontal()
 		);
 		for (auto [lX, lY, lZ] : CHUNK_NEIGHBOURHOOD) {
-			ChunkPos _pos(lPos.x + lX, lPos.y + lY, lPos.z + lZ);
+			ChunkPos _pos(lPos.getX() + lX, lPos.getY() + lY, lPos.getZ() + lZ);
 			if (
 				_loadCentre2D.distanceEuclideanSquared(_pos) <= _loadDistanceHorizontalSquared &&
-				std::abs(loadCentre.y - _pos.y) <= settings.getLoadDistanceVertical()
+				std::abs(loadCentre.getY() - _pos.getY()) <= settings.getLoadDistanceVertical()
 			) {
 				auto _status = chunkStatusMap.getChunkStatusLoad(_pos);
 				if (_status == StatusChunkLoad::NON_EXISTENT) {
@@ -395,7 +395,7 @@ void World::populateChunks() {
 			{ 0, 0, 0 }, { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 }
 		};
 		for (auto [_dx, _dy, _dz] : NEIGHBOURHOOD) {
-			ChunkPos meshPos(_pos.x + _dx, _pos.y + _dy, _pos.z + _dz);
+			ChunkPos meshPos(_pos.getX() + _dx, _pos.getY() + _dy, _pos.getZ() + _dz);
 			if (chunkStatusMap.getChunkStatusCanMesh(meshPos)) {
 				queueChunkForMeshing(meshPos);
 			}
@@ -457,7 +457,7 @@ const std::unique_ptr<Chunk>& World::getChunk(const ChunkPos chunkPos) const {
 	catch (const std::out_of_range& e)
 	{
 		std::string error = "Attempted to access non-existent chunk at ";
-		error += std::to_string(chunkPos.x) + " " + std::to_string(chunkPos.y) + " " + std::to_string(chunkPos.z);
+		error += std::to_string(chunkPos.getX()) + " " + std::to_string(chunkPos.getY()) + " " + std::to_string(chunkPos.getZ());
 		throw EXCEPTION_WORLD::ChunkNonExistence(error);
 	}
 }
@@ -478,7 +478,7 @@ const std::unique_ptr<Structure>& World::getStructure(const BlockPos blockPos) c
 	catch (const std::out_of_range& e)
 	{
 		std::string error = "Attempted to access non-existent chunk at ";
-		error += std::to_string(blockPos.x) + " " + std::to_string(blockPos.y) + " " + std::to_string(blockPos.z);
+		error += std::to_string(blockPos.getX()) + " " + std::to_string(blockPos.getY()) + " " + std::to_string(blockPos.getZ());
 		throw EXCEPTION_WORLD::StructureNonExistence(error);
 	}
 }

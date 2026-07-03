@@ -37,13 +37,6 @@ const bool IS_SOLID[] = {
 	true
 };
 
-
-
-inline int flattenIndex(const ChunkLocalBlockPos blockPos) {
-	// assert(blockPositionIsInside(blockPos.x, blockPos.y, blockPos.z) && "Block outside chunk.");
-	return static_cast<unsigned>(blockPos.x) * CHUNK_AREA + static_cast<unsigned>(blockPos.y) * CHUNK_SIZE + blockPos.z;
-}
-
 }
 
 
@@ -117,28 +110,22 @@ void BlockContainer::setSizeShort() {
 
 
 Block BlockContainer::getBlock(ChunkLocalBlockPos blockPos) const {
-	return getBlockRaw(flattenIndex(blockPos));
-}
-
-
-
-Block BlockContainer::getBlockRaw(unsigned int index) const {
-	int _blockIndex{};
+	int blockTypeIndex{};
 	switch (blockArray.index()) {
 	case 0:
 		return std::get<0>(blockArray);
 		break;
 	case 1:
-		_blockIndex = std::get<1>(blockArray)[index];
+		blockTypeIndex = std::get<1>(blockArray)[blockPos.asIndex()];
 		break;
 	case 2:
-		_blockIndex = std::get<2>(blockArray)[index];
+		blockTypeIndex = std::get<2>(blockArray)[blockPos.asIndex()];
 		break;
 	default:
 		return Block(0);
 		break;
 	}
-	return blockArrayBlocksByIndex[_blockIndex];
+	return blockArrayBlocksByIndex[blockTypeIndex];
 }
 
 
@@ -273,13 +260,13 @@ std::vector<bool> BlockContainer::getSolidFace(AxisDirection direction) const {
 
 void BlockContainer::setBlock(ChunkLocalBlockPos blockPos, Block block) {
 	if (std::holds_alternative<Block>(blockArray)) setSizeByte();
-	setBlockRaw(flattenIndex(blockPos), getOrAddPalleteIndex(block));
+	setBlockRaw(blockPos.asIndex(), getOrAddPalleteIndex(block));
 }
 
 
 
 // Directly sets the value in the block array, without any safety checks
-void BlockContainer::setBlockRaw(int arrayIndex, int blockIndex) {
+void BlockContainer::setBlockRaw(uint16_t arrayIndex, uint16_t blockIndex) {
 	if (std::holds_alternative<std::unique_ptr<uint8_t[]>>(blockArray)) {
 		std::get<std::unique_ptr<uint8_t[]>>(blockArray)[arrayIndex] = static_cast<uint8_t>(blockIndex);
 	}
@@ -290,15 +277,15 @@ void BlockContainer::setBlockRaw(int arrayIndex, int blockIndex) {
 
 
 
-int BlockContainer::getOrAddPalleteIndex(Block block) {
-	for (int i = 0; i < static_cast<int>(blockArrayBlocksByIndex.size()); ++i) {
+uint16_t BlockContainer::getOrAddPalleteIndex(Block block) {
+	for (uint16_t i = 0; i < static_cast<uint16_t>(blockArrayBlocksByIndex.size()); ++i) {
 		if (blockArrayBlocksByIndex[i] == block) return i;
 	}
 	blockArrayBlocksByIndex.push_back(block);
 	if (blockArrayBlocksByIndex.size() > 256) {
 		setSizeShort();
 	}
-	return static_cast<int>(blockArrayBlocksByIndex.size() - 1);
+	return static_cast<uint32_t>(blockArrayBlocksByIndex.size() - 1);
 }
 
 

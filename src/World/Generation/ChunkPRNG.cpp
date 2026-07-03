@@ -16,9 +16,9 @@ inline uint32_t basicHash(uint32_t x)
 
 uint32_t positionHash(ChunkPos chunkPos)
 {
-	auto hashX = basicHash(static_cast<uint32_t>(chunkPos.x));
-	auto hashY = basicHash(static_cast<uint32_t>(chunkPos.y));
-	auto hashZ = basicHash(static_cast<uint32_t>(chunkPos.z));
+	auto hashX = basicHash(static_cast<uint32_t>(chunkPos.getX()));
+	auto hashY = basicHash(static_cast<uint32_t>(chunkPos.getY()));
+	auto hashZ = basicHash(static_cast<uint32_t>(chunkPos.getZ()));
 	return (hashX << 11) ^ (hashX >> 21) ^ (hashY << 4) ^ (hashY >> 28) ^ hashZ;
 }
 

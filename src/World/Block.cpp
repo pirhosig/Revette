@@ -5,9 +5,9 @@
 #include "../Constants.h"
 
 
+namespace {
 
-inline int wrapCoordinate(int x)
-{
+inline int wrapCoordinate(int32_t x) {
 	if (-WORLD_RADIUS_BLOCK <= x && x < WORLD_RADIUS_BLOCK) return x;
 	x %= WORLD_DIAMETER_BLOCK;
 	if (x < -WORLD_RADIUS_BLOCK)      x += WORLD_DIAMETER_BLOCK;
@@ -15,31 +15,54 @@ inline int wrapCoordinate(int x)
 	return x;
 }
 
-
-
-BlockOffset::BlockOffset(int _x, int _y, int _z) : x{ wrapCoordinate(_x) }, y{ _y }, z{ wrapCoordinate(_z) } {}
+}
 
 
 
-BlockPos::BlockPos(int _x, int _y, int _z) : x{ wrapCoordinate(_x) }, y{ _y }, z{ wrapCoordinate(_z) } {}
-
-BlockPos::BlockPos(double _x, double _y, double _z) :
-	x{ wrapCoordinate(static_cast<int>(std::floor(_x))) },
-	y{ static_cast<int>(std::floor(_y)) },
-	z{ wrapCoordinate(static_cast<int>(std::floor(_z))) }
-{}
-
-BlockPos::BlockPos(EntityPosition position) :
-	x{ wrapCoordinate(static_cast<int>(position.pos.x)) },
-	y{ static_cast<int>(position.pos.y) },
-	z{ wrapCoordinate(static_cast<int>(position.pos.z)) }
+BlockOffset::BlockOffset(int32_t _x, int32_t _y, int32_t _z) :
+	x{ wrapCoordinate(_x) },
+	y{ _y },
+	z{ wrapCoordinate(_z) }
 {}
 
 
 
-BlockPos BlockPos::direction(AxisDirection direction) const
-{
-	const int directionValues[6][3]
+int32_t BlockOffset::getX() const { return x; }
+int32_t BlockOffset::getY() const { return x; }
+int32_t BlockOffset::getZ() const { return x; }
+
+
+
+BlockPos::BlockPos(int32_t _x, int32_t _y, int32_t _z) :
+	x{ wrapCoordinate(_x) },
+	y{ _y },
+	z{ wrapCoordinate(_z) }
+{}
+
+BlockPos::BlockPos(double _x, double _y, double _z) : BlockPos(
+	static_cast<int32_t>(std::floor(_x)),
+	static_cast<int32_t>(std::floor(_y)),
+	static_cast<int32_t>(std::floor(_z))
+)
+{}
+
+BlockPos::BlockPos(EntityPosition position) : BlockPos(
+	position.pos.x,
+	position.pos.y,
+	position.pos.z
+)
+{}
+
+
+
+int32_t BlockPos::getX() const { return x; }
+int32_t BlockPos::getY() const { return y; }
+int32_t BlockPos::getZ() const { return z; }
+
+
+
+BlockPos BlockPos::direction(AxisDirection direction) const {
+	static constexpr int directionValues[6][3]
 	{
 		{ 0,  1,  0},
 		{ 0, -1,  0},
@@ -60,15 +83,19 @@ BlockPos BlockPos::direction(AxisDirection direction) const
 
 
 
-BlockOffset BlockPos::distance(BlockPos other) const { return BlockOffset(other.x - x, other.y - y, other.z - z); }
+BlockOffset BlockPos::distance(BlockPos other) const {
+	return BlockOffset(other.x - x, other.y - y, other.z - z);
+}
 
 
 
-BlockPos BlockPos::offset(int _x, int _y, int _z) const { return BlockPos(x + _x, y + _y, z + _z); }
+BlockPos BlockPos::offset(int32_t _x, int32_t _y, int32_t _z) const {
+	return BlockPos(x + _x, y + _y, z + _z);
+}
 
 
 
 Block::Block() : blockType{ 0 } {}
 
 
-Block::Block(int type) : blockType{ type } {}
+Block::Block(int32_t type) : blockType{ type } {}

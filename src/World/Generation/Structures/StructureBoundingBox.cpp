@@ -9,7 +9,7 @@ StructureBoundingBox::StructureBoundingBox(BlockPos lower, BlockPos upper) : low
 bool StructureBoundingBox::intersects(StructureBoundingBox& other) const
 {
 	return
-		(upperCorner.x >= other.lowerCorner.x) && (other.upperCorner.x >= lowerCorner.x) &&
-		(upperCorner.y >= other.lowerCorner.y) && (other.upperCorner.y >= lowerCorner.y) &&
-		(upperCorner.z >= other.lowerCorner.z) && (other.upperCorner.z >= lowerCorner.z);
+		(upperCorner.getX() >= other.lowerCorner.getX()) && (other.upperCorner.getX() >= lowerCorner.getX()) &&
+		(upperCorner.getY() >= other.lowerCorner.getY()) && (other.upperCorner.getY() >= lowerCorner.getY()) &&
+		(upperCorner.getZ() >= other.lowerCorner.getZ()) && (other.upperCorner.getZ() >= lowerCorner.getZ());
 }

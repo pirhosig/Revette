@@ -5,83 +5,82 @@
 
 
 
-class ChunkOffset
-{
-public:
+class ChunkOffset {
 	int x;
 	int y;
 	int z;
 
-	ChunkOffset(int _x, int _y, int _z);
+public:
+	ChunkOffset(int32_t _x, int32_t _y, int32_t _z);
+
+	int32_t getX() const;
+	int32_t getY() const;
+	int32_t getZ() const;
 };
 
 
 
 
-class ChunkPos
-{
-public:
-	int x;
-	int y;
-	int z;
+class ChunkPos {
+	int32_t x;
+	int32_t y;
+	int32_t z;
 
-	ChunkPos(int _x, int _y, int _z);
+public:
+	ChunkPos(int32_t _x, int32_t _y, int32_t _z);
 	ChunkPos(BlockPos blockPos);
+
+	bool operator==(const ChunkPos&) const = default;
+	int32_t getX() const;
+	int32_t getY() const;
+	int32_t getZ() const;
+
 	ChunkPos direction(AxisDirection direction) const;
 	double distanceEuclidean(ChunkPos other) const;
-	long long distanceEuclideanSquared(ChunkPos other) const;
+	int64_t distanceEuclideanSquared(ChunkPos other) const;
 	ChunkOffset offset(ChunkPos other) const;
-
-	bool operator==(const ChunkPos& other) const = default;
 };
 
 
 
-class ChunkPos2D
-{
+class ChunkPos2D {
+	int32_t x;
+	int32_t z;
+
 public:
-	int x;
-	int z;
-
-	ChunkPos2D(int _x, int _z);
-	ChunkPos2D(ChunkPos chunkPos) : x(chunkPos.x), z(chunkPos.z) {}
-
-	long long distanceEuclideanSquared(ChunkPos2D other) const;
+	ChunkPos2D(int32_t _x, int32_t _z);
+	ChunkPos2D(ChunkPos chunkPos);
 
 	bool operator==(const ChunkPos2D&) const = default;
+	int32_t getX() const;
+	int32_t getZ() const;
+
+	int64_t distanceEuclideanSquared(ChunkPos2D other) const;
 };
 
 
 
-class ChunkLocalBlockPos
-{
-public:
-	int x;
-	int y;
-	int z;
+class ChunkLocalBlockPos {
+	uint16_t pos;
 
-	ChunkLocalBlockPos(int x, int y, int z) : x(x), y(y), z(z) {}
-	ChunkLocalBlockPos(BlockPos blockPos)
-	{
-		ChunkPos chunkPos(blockPos);
-		x = blockPos.x - (chunkPos.x * CHUNK_SIZE);
-		y = blockPos.y - (chunkPos.y * CHUNK_SIZE);
-		z = blockPos.z - (chunkPos.z * CHUNK_SIZE);
-	}
+public:
+	ChunkLocalBlockPos(uint16_t _pos);
+	ChunkLocalBlockPos(uint16_t x, uint16_t y, uint16_t z);
+	ChunkLocalBlockPos(BlockPos blockPos);
 
 	BlockPos asBlockPos(ChunkPos chunkPos) const;
+	uint16_t asIndex() const;
 };
 
 
 
 template <>
-struct std::hash<ChunkPos>
-{
+struct std::hash<ChunkPos> {
 	std::size_t operator()(const ChunkPos& pos) const noexcept
 	{
-		std::size_t hash = std::hash<int>{}(pos.x);
-		hash ^= std::hash<int>{}(pos.y) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-		hash ^= std::hash<int>{}(pos.z) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		std::size_t hash = std::hash<int>{}(pos.getX());
+		hash ^= std::hash<int>{}(pos.getY()) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		hash ^= std::hash<int>{}(pos.getZ()) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
 		return hash;
 	}
 };
@@ -89,12 +88,11 @@ struct std::hash<ChunkPos>
 
 
 template <>
-struct std::hash<ChunkPos2D>
-{
+struct std::hash<ChunkPos2D> {
 	std::size_t operator()(const ChunkPos2D& pos) const noexcept
 	{
-		std::size_t hash = std::hash<int>{}(pos.x);
-		hash ^= std::hash<int>{}(pos.z) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		std::size_t hash = std::hash<int>{}(pos.getX());
+		hash ^= std::hash<int>{}(pos.getZ()) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
 		return hash;
 	}
 };

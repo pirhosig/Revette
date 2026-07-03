@@ -31,7 +31,7 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 	if (generated) throw EXCEPTION_WORLD::ChunkRegeneration("Attempted to re-generate chunk");
 	generated = true;
 
-	const int _chunkBottom = position.y * CHUNK_SIZE;
+	const int _chunkBottom = position.getY() * CHUNK_SIZE;
 	const int _chunkTop = _chunkBottom + CHUNK_SIZE - 1;
 
 	// Return if all of the chunk falls above the terrain height
@@ -112,8 +112,8 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 	// Update: it somehow works
 	ChunkPRNG prng(position);
 
-	int _worldPosX = position.x * CHUNK_SIZE;
-	int _worldPosZ = position.z * CHUNK_SIZE;
+	int _worldPosX = position.getX() * CHUNK_SIZE;
+	int _worldPosZ = position.getZ() * CHUNK_SIZE;
 
 	// Ruin placement code. Ruins are a general class of structures that can be placed in funky ways
 	// Try to place a ruin at a random point in the chunk
@@ -257,7 +257,7 @@ void Chunk::PopulateChunk(World& world)
 
 	// Get changes from neighbours
 	for (auto [lX, lY, lZ] : CHUNK_NEIGHBOURS)
-		world.getChunk(ChunkPos(position.x + lX, position.y + lY, position.z + lZ))->
+		world.getChunk(ChunkPos(position.getX() + lX, position.getY() + lY, position.getZ() + lZ))->
 			addAdjacentPopulationChanges(_changes, position);
 
 	for (auto& [_pos, _change] : _changes)
