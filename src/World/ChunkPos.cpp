@@ -120,8 +120,8 @@ int32_t ChunkPos2D::getZ() const { return z; }
 
 
 int64_t ChunkPos2D::distanceEuclideanSquared(ChunkPos2D other) const {
-	int64_t offsetX = other.x - x;
-	int64_t offsetZ = other.z - z;
+	int64_t offsetX = wrapCoordinate(other.x - x);
+	int64_t offsetZ = wrapCoordinate(other.z - z);
 	return offsetX * offsetX + offsetZ * offsetZ;
 }
 
