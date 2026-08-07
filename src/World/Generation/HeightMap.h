@@ -1,19 +1,18 @@
 #pragma once
 #include <array>
 
+#include "Core/RevetteCore.h"
 #include "../ChunkPos.h"
-#include "../../Constants.h"
-class NoiseSource2D;
 
 
 
 class HeightMap
 {
 public:
-	std::array<short, CHUNK_AREA> heightArray;
-	short heightMin;
-	short heightMax;
+	std::array<i16, CHUNK_AREA> heightArray;
+	i16 heightMin;
+	i16 heightMax;
 
-	HeightMap(ChunkPos2D noisePos, NoiseSource2D& noiseSource);
+	HeightMap(ChunkPos2D noisePos, class NoiseSource2D& noiseSource);
 	HeightMap(const HeightMap&) = delete;
 };

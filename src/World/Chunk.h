@@ -3,22 +3,17 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Core/RevetteCore.h"
 #include "Block.h"
 #include "BlockContainer.h"
 #include "ChunkPos.h"
 
-class GeneratorChunkParameters;
-class World;
-class Structure;
-class MeshChunk;
 
 
-
-struct BlockChange
-{
+struct BlockChange {
 	BlockPos pos;
 	Block block{Block(0)};
-	unsigned age{0};
+	u32 age{0};
 };
 
 
@@ -40,17 +35,17 @@ public:
 	Chunk operator=(Chunk&&) = delete;
 	Chunk operator=(const Chunk&) = delete;
 
-	void GenerateChunk(const GeneratorChunkParameters& generatorParameters);
-	void PopulateChunk(World& world);
+	void GenerateChunk(const class GeneratorChunkParameters& generatorParameters);
+	void PopulateChunk(class World& world);
 
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
 	std::vector<bool> getSolidFaceMask(AxisDirection direction) const;
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);
-	void setBlockPopulation(BlockPos blockPos, Block block, unsigned age);
+	void setBlockPopulation(BlockPos blockPos, Block block, u32 age);
 	bool shouldSkipMeshing() const;
 
 private:
-	void addAdjacentPopulationChanges(std::unordered_map<BlockPos, std::pair<Block, unsigned>>& changes, ChunkPos pos) const;
+	void addAdjacentPopulationChanges(std::unordered_map<BlockPos, std::pair<Block, u32>>& changes, ChunkPos pos) const;
 
 	friend class Structure;
 	friend class MeshChunk;

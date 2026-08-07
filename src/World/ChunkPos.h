@@ -1,7 +1,8 @@
 #pragma once
 #include <functional>
+#include "Core/RevetteCore.h"
 #include "Block.h"
-#include "../Constants.h"
+
 
 
 
@@ -11,65 +12,65 @@ class ChunkOffset {
 	int z;
 
 public:
-	ChunkOffset(int32_t _x, int32_t _y, int32_t _z);
+	ChunkOffset(i32 _x, i32 _y, i32 _z);
 
-	int32_t getX() const;
-	int32_t getY() const;
-	int32_t getZ() const;
+	i32 getX() const;
+	i32 getY() const;
+	i32 getZ() const;
 };
 
 
 
 
 class ChunkPos {
-	int32_t x;
-	int32_t y;
-	int32_t z;
+	i32 x;
+	i32 y;
+	i32 z;
 
 public:
-	ChunkPos(int32_t _x, int32_t _y, int32_t _z);
+	ChunkPos(i32 _x, i32 _y, i32 _z);
 	ChunkPos(BlockPos blockPos);
 
 	bool operator==(const ChunkPos&) const = default;
-	int32_t getX() const;
-	int32_t getY() const;
-	int32_t getZ() const;
+	i32 getX() const;
+	i32 getY() const;
+	i32 getZ() const;
 
 	ChunkPos direction(AxisDirection direction) const;
 	double distanceEuclidean(ChunkPos other) const;
-	int64_t distanceEuclideanSquared(ChunkPos other) const;
+	i64 distanceEuclideanSquared(ChunkPos other) const;
 	ChunkOffset offset(ChunkPos other) const;
 };
 
 
 
 class ChunkPos2D {
-	int32_t x;
-	int32_t z;
+	i32 x;
+	i32 z;
 
 public:
-	ChunkPos2D(int32_t _x, int32_t _z);
+	ChunkPos2D(i32 _x, i32 _z);
 	ChunkPos2D(ChunkPos chunkPos);
 
 	bool operator==(const ChunkPos2D&) const = default;
-	int32_t getX() const;
-	int32_t getZ() const;
+	i32 getX() const;
+	i32 getZ() const;
 
-	int64_t distanceEuclideanSquared(ChunkPos2D other) const;
+	i64 distanceEuclideanSquared(ChunkPos2D other) const;
 };
 
 
 
 class ChunkLocalBlockPos {
-	uint16_t pos;
+	u16 pos;
 
 public:
-	ChunkLocalBlockPos(uint16_t _pos);
-	ChunkLocalBlockPos(uint16_t x, uint16_t y, uint16_t z);
+	ChunkLocalBlockPos(u16 _pos);
+	ChunkLocalBlockPos(u16 x, u16 y, u16 z);
 	ChunkLocalBlockPos(BlockPos blockPos);
 
 	BlockPos asBlockPos(ChunkPos chunkPos) const;
-	uint16_t asIndex() const;
+	u16 asIndex() const;
 };
 
 

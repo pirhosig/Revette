@@ -5,65 +5,52 @@
 
 namespace {
 
-inline int32_t chunkFloor(int32_t x)
-{
-	if (x < 0) return ((x - CHUNK_SIZE + 1) / CHUNK_SIZE);
-	else return (x / CHUNK_SIZE);
-}
-
-
-
-inline int32_t wrapCoordinate(int32_t x)
-{
-	if (-WORLD_RADIUS_CHUNK <= x && x < WORLD_RADIUS_CHUNK) return x;
-	x %= WORLD_DIAMETER_CHUNK;
-	if (x < -WORLD_RADIUS_CHUNK)      x += WORLD_DIAMETER_CHUNK;
-	else if (WORLD_RADIUS_CHUNK <= x) x -= WORLD_DIAMETER_CHUNK;
-	return x;
+inline i32 wrapChunkCoordinate(i32 x) {
+	return (x << (31 - WORLD_RADIUS_CHUNK_LOG)) >> (31 - WORLD_RADIUS_CHUNK_LOG);
 }
 
 }
 
 
 
-ChunkOffset::ChunkOffset(int32_t _x, int32_t _y, int32_t _z) :
-	x(wrapCoordinate(_x)),
+ChunkOffset::ChunkOffset(i32 _x, i32 _y, i32 _z) :
+	x(wrapChunkCoordinate(_x)),
 	y(_y),
-	z(wrapCoordinate(_z))
+	z(wrapChunkCoordinate(_z))
 {}
 
 
 
-int32_t ChunkOffset::getX() const { return x; }
-int32_t ChunkOffset::getY() const { return y; }
-int32_t ChunkOffset::getZ() const { return z; }
+i32 ChunkOffset::getX() const { return x; }
+i32 ChunkOffset::getY() const { return y; }
+i32 ChunkOffset::getZ() const { return z; }
 
 
 
-ChunkPos::ChunkPos(int32_t _x, int32_t _y, int32_t _z) :
-	x(wrapCoordinate(_x)),
+ChunkPos::ChunkPos(i32 _x, i32 _y, i32 _z) :
+	x(wrapChunkCoordinate(_x)),
 	y(_y),
-	z(wrapCoordinate(_z))
+	z(wrapChunkCoordinate(_z))
 {}
 
 
 
 ChunkPos::ChunkPos(BlockPos blockPos) :
-	x(chunkFloor(blockPos.getX())),
-	y(chunkFloor(blockPos.getY())),
-	z(chunkFloor(blockPos.getZ()))
+	x{blockPos.getX() >> CHUNK_SIZE_LOG},
+	y{blockPos.getY() >> CHUNK_SIZE_LOG},
+	z{blockPos.getZ() >> CHUNK_SIZE_LOG}
 {}
 
 
 
-int32_t ChunkPos::getX() const { return x; }
-int32_t ChunkPos::getY() const { return y; }
-int32_t ChunkPos::getZ() const { return z; }
+i32 ChunkPos::getX() const { return x; }
+i32 ChunkPos::getY() const { return y; }
+i32 ChunkPos::getZ() const { return z; }
 
 
 
 ChunkPos ChunkPos::direction(AxisDirection direction) const {
-	static constexpr int32_t directionValues[6][3] {
+	static constexpr i32 directionValues[6][3] {
 		{ 0,  1,  0},
 		{ 0, -1,  0},
 		{ 1,  0,  0},
@@ -72,7 +59,7 @@ ChunkPos ChunkPos::direction(AxisDirection direction) const {
 		{ 0,  0, -1}
 	};
 
-	const int32_t directionIndex = static_cast<int32_t>(direction);
+	const i32 directionIndex = static_cast<i32>(direction);
 
 	return ChunkPos(
 		x + directionValues[directionIndex][0],
@@ -90,12 +77,12 @@ double ChunkPos::distanceEuclidean(ChunkPos other) const {
 
 
 
-int64_t ChunkPos::distanceEuclideanSquared(ChunkPos other) const {
+i64 ChunkPos::distanceEuclideanSquared(ChunkPos other) const {
 	ChunkOffset _offset = offset(other);
 	return (
-		static_cast<int64_t>(_offset.getX()) * _offset.getX() +
-		static_cast<int64_t>(_offset.getY()) * _offset.getY() +
-		static_cast<int64_t>(_offset.getZ()) * _offset.getZ()
+		static_cast<i64>(_offset.getX()) * _offset.getX() +
+		static_cast<i64>(_offset.getY()) * _offset.getY() +
+		static_cast<i64>(_offset.getZ()) * _offset.getZ()
 	);
 }
 
@@ -106,7 +93,7 @@ ChunkOffset ChunkPos::offset(ChunkPos other) const {
 }
 
 
-ChunkPos2D::ChunkPos2D(int32_t _x, int32_t _z) : x(wrapCoordinate(_x)), z(wrapCoordinate(_z)) {}
+ChunkPos2D::ChunkPos2D(i32 _x, i32 _z) : x(wrapChunkCoordinate(_x)), z(wrapChunkCoordinate(_z)) {}
 
 
 
@@ -114,20 +101,20 @@ ChunkPos2D::ChunkPos2D(ChunkPos chunkPos) : x(chunkPos.getX()), z(chunkPos.getZ(
 
 
 
-int32_t ChunkPos2D::getX() const { return x; }
-int32_t ChunkPos2D::getZ() const { return z; }
+i32 ChunkPos2D::getX() const { return x; }
+i32 ChunkPos2D::getZ() const { return z; }
 
 
 
-int64_t ChunkPos2D::distanceEuclideanSquared(ChunkPos2D other) const {
-	int64_t offsetX = wrapCoordinate(other.x - x);
-	int64_t offsetZ = wrapCoordinate(other.z - z);
+i64 ChunkPos2D::distanceEuclideanSquared(ChunkPos2D other) const {
+	i64 offsetX = wrapChunkCoordinate(other.x - x);
+	i64 offsetZ = wrapChunkCoordinate(other.z - z);
 	return offsetX * offsetX + offsetZ * offsetZ;
 }
 
 
 
-ChunkLocalBlockPos::ChunkLocalBlockPos(uint16_t x, uint16_t y, uint16_t z) {
+ChunkLocalBlockPos::ChunkLocalBlockPos(u16 x, u16 y, u16 z) {
 	// Truncate the range of each position to [0, 32)
 	x &= (32 - 1);
 	y &= (32 - 1);
@@ -137,7 +124,7 @@ ChunkLocalBlockPos::ChunkLocalBlockPos(uint16_t x, uint16_t y, uint16_t z) {
 
 
 
-ChunkLocalBlockPos::ChunkLocalBlockPos(uint16_t _pos) {
+ChunkLocalBlockPos::ChunkLocalBlockPos(u16 _pos) {
 	pos = _pos & ((1u << 15) - 1);
 }
 
@@ -145,9 +132,9 @@ ChunkLocalBlockPos::ChunkLocalBlockPos(uint16_t _pos) {
 
 ChunkLocalBlockPos::ChunkLocalBlockPos(BlockPos blockPos) {
 	ChunkPos chunkPos(blockPos);
-	uint16_t x = static_cast<uint16_t>(blockPos.getX() - (chunkPos.getX() * CHUNK_SIZE));
-	uint16_t y = static_cast<uint16_t>(blockPos.getY() - (chunkPos.getY() * CHUNK_SIZE));
-	uint16_t z = static_cast<uint16_t>(blockPos.getZ() - (chunkPos.getZ() * CHUNK_SIZE));
+	u16 x = static_cast<u16>(blockPos.getX() - (chunkPos.getX() * CHUNK_SIZE));
+	u16 y = static_cast<u16>(blockPos.getY() - (chunkPos.getY() * CHUNK_SIZE));
+	u16 z = static_cast<u16>(blockPos.getZ() - (chunkPos.getZ() * CHUNK_SIZE));
 	pos = (x << 10) | (y << 5) | z;
 }
 
@@ -167,7 +154,7 @@ BlockPos ChunkLocalBlockPos::asBlockPos(ChunkPos chunkPos) const
 
 
 
-uint16_t ChunkLocalBlockPos::asIndex() const {
+u16 ChunkLocalBlockPos::asIndex() const {
 	return pos;
 }
 

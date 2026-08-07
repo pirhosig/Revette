@@ -1,52 +1,53 @@
 #pragma once
+#include "Core/RevetteCore.h"
 #include "AxisDirection.h"
 #include "Entities/EntityPosition.h"
 
 
 
 class BlockOffset {
-	int32_t x;
-	int32_t y;
-	int32_t z;
+	i32 x;
+	i32 y;
+	i32 z;
 
 public:
-	BlockOffset(int32_t _x, int32_t _y, int32_t _z);
+	BlockOffset(i32 _x, i32 _y, i32 _z);
 
-	int32_t getX() const;
-	int32_t getY() const;
-	int32_t getZ() const;
+	i32 getX() const;
+	i32 getY() const;
+	i32 getZ() const;
 };
 
 
 
 class BlockPos {
-	int32_t x;
-	int32_t y;
-	int32_t z;
+	i32 x;
+	i32 y;
+	i32 z;
 
 public:
-	BlockPos(int32_t x, int32_t y, int32_t z);
+	BlockPos(i32 x, i32 y, i32 z);
 	BlockPos(double x, double y, double z);
 	BlockPos(EntityPosition position);
 
 	bool operator==(const BlockPos&) const = default;
-	int32_t getX() const;
-	int32_t getY() const;
-	int32_t getZ() const;
+	i32 getX() const;
+	i32 getY() const;
+	i32 getZ() const;
 
 	BlockPos direction(AxisDirection direction) const;
 	BlockOffset distance(BlockPos other) const;
-	BlockPos offset(int32_t _x, int32_t _y, int32_t _z) const;
+	BlockPos offset(i32 _x, i32 _y, i32 _z) const;
 };
 
 
 
 struct Block {
-	int32_t blockType;
+	i32 blockType;
 
 public:
 	Block();
-	Block(int32_t type);
+	Block(i32 type);
 
 	bool operator==(const Block&) const = default;
 };

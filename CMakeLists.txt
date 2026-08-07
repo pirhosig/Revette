@@ -96,6 +96,7 @@ target_include_directories(Revette PRIVATE
     ${GLFW_INCLUDE_PATH}
     ${GLM_INCLUDE_PATH}
     deps/
+    src/
 )
 
 

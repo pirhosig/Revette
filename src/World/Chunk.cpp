@@ -9,14 +9,12 @@
 #include "Generation/Structures/StructurePlants.h"
 #include "Generation/Structures/StructuresRuins.h"
 #include "World.h"
-#include "../Constants.h"
 #include "../Exceptions.h"
 #include "../Math/ProbabilityTable.h"
 
 
 
-inline int blockPositionIsInside(int x, int y, int z)
-{
+inline i32 blockPositionIsInside(i32 x, i32 y, i32 z) {
 	return (x >= 0) && (x < CHUNK_SIZE) && (y >= 0) && (y < CHUNK_SIZE) && (z >= 0) && (z < CHUNK_SIZE);
 }
 
@@ -26,13 +24,12 @@ Chunk::Chunk(ChunkPos _pos) : generated{ false }, position(_pos) {}
 
 
 
-void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
-{
+void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters) {
 	if (generated) throw EXCEPTION_WORLD::ChunkRegeneration("Attempted to re-generate chunk");
 	generated = true;
 
-	const int _chunkBottom = position.getY() * CHUNK_SIZE;
-	const int _chunkTop = _chunkBottom + CHUNK_SIZE - 1;
+	const i32 _chunkBottom = position.getY() * CHUNK_SIZE;
+	const i32 _chunkTop = _chunkBottom + CHUNK_SIZE - 1;
 
 	// Return if all of the chunk falls above the terrain height
 	if (genParameters.heightMap.heightMax + 1 < _chunkBottom && _chunkBottom > SEA_LEVEL) return;
@@ -46,9 +43,9 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 		// Some blocks must be placed beyond this point, so this optimisation is valid
 		blockContainer.setSizeByte();
 
-		for (int lX = 0; lX < CHUNK_SIZE; ++lX) {
-		for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
-			int index = lZ * CHUNK_SIZE + lX;
+		for (i32 lX = 0; lX < CHUNK_SIZE; ++lX) {
+		for (i32 lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
+			i32 index = lZ * CHUNK_SIZE + lX;
 
 			// Determine the default block to use based on the biome
 			Block defaultBlock(2);
@@ -81,7 +78,7 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 				break;
 			}
 
-			for (int lY = 0; lY < CHUNK_SIZE; ++lY)
+			for (i32 lY = 0; lY < CHUNK_SIZE; ++lY)
 			{
 				ChunkLocalBlockPos blockPos(lX, lY, lZ);
 				const auto _worldHeight = _chunkBottom + lY;
@@ -112,17 +109,17 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 	// Update: it somehow works
 	ChunkPRNG prng(position);
 
-	int _worldPosX = position.getX() * CHUNK_SIZE;
-	int _worldPosZ = position.getZ() * CHUNK_SIZE;
+	i32 _worldPosX = position.getX() * CHUNK_SIZE;
+	i32 _worldPosZ = position.getZ() * CHUNK_SIZE;
 
 	// Ruin placement code. Ruins are a general class of structures that can be placed in funky ways
-	// Try to place a ruin at a random point in the chunk
+	// Try to place a ruin at a random poi32 in the chunk
 	{
 		uint16_t _randpos = prng.raw();
-		int pX = _randpos % CHUNK_SIZE;
-		int pZ = (_randpos / CHUNK_SIZE) % CHUNK_SIZE;
-		int _idx = pZ * CHUNK_SIZE + pX;
-		int _ground = genParameters.heightMap.heightArray[_idx];
+		i32 pX = _randpos % CHUNK_SIZE;
+		i32 pZ = (_randpos / CHUNK_SIZE) % CHUNK_SIZE;
+		i32 _idx = pZ * CHUNK_SIZE + pX;
+		i32 _ground = genParameters.heightMap.heightArray[_idx];
 
 		switch (genParameters.biomeMap.biomeArray[_idx])
 		{
@@ -136,10 +133,10 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 	}
 
 
-	for (int lX = 0; lX < CHUNK_SIZE; ++lX) {
-	for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
-		const int _index = lZ * CHUNK_SIZE + lX;
-		const int _surfaceLevel = genParameters.heightMap.heightArray[_index];
+	for (i32 lX = 0; lX < CHUNK_SIZE; ++lX) {
+	for (i32 lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
+		const i32 _index = lZ * CHUNK_SIZE + lX;
+		const i32 _surfaceLevel = genParameters.heightMap.heightArray[_index];
 
 		// Continue if surface air block is below chunk OR if the topmost block is above the chunk
 		// Currently no features generate below sea level, so this is sort of a hack until those features exist
@@ -161,7 +158,7 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 			if (_foliageValue > 65439)
 			{
 				auto height = prng.scaledInt(1.13, 2.87);
-				for (int i = 0; i < height; ++i) setBlockPopulation(_centre.offset(0, i, 0), Block(9), 0);
+				for (i32 i = 0; i < height; ++i) setBlockPopulation(_centre.offset(0, i, 0), Block(9), 0);
 			}
 			// Desert Flower
 			else if (_foliageValue > 65394) setBlockPopulation(_centre, Block(14), 0);
@@ -221,7 +218,7 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters)
 
 void Chunk::PopulateChunk(World& world)
 {
-	const int CHUNK_NEIGHBOURS[26][3] = {
+	const i32 CHUNK_NEIGHBOURS[26][3] = {
 		{-1, -1, -1},
 		{-1, -1,  0},
 		{-1, -1,  1},
@@ -269,22 +266,19 @@ void Chunk::PopulateChunk(World& world)
 
 
 
-Block Chunk::getBlock(ChunkLocalBlockPos blockPos) const
-{
+Block Chunk::getBlock(ChunkLocalBlockPos blockPos) const {
 	return blockContainer.getBlock(blockPos);
 }
 
 
 
-std::vector<bool> Chunk::getSolidFaceMask(AxisDirection direction) const
-{
+std::vector<bool> Chunk::getSolidFaceMask(AxisDirection direction) const {
 	return blockContainer.getSolidFace(direction);
 }
 
 
 
-void Chunk::setBlock(ChunkLocalBlockPos blockPos, Block block)
-{
+void Chunk::setBlock(ChunkLocalBlockPos blockPos, Block block) {
 	blockContainer.setBlock(blockPos, block);
 }
 
@@ -296,16 +290,17 @@ bool Chunk::shouldSkipMeshing() const {
 
 
 
-void Chunk::setBlockPopulation(BlockPos blockPos, Block block, unsigned age)
-{
+void Chunk::setBlockPopulation(BlockPos blockPos, Block block, u32 age) {
 	if (ChunkPos(blockPos) == position) populationChangesInside.push_back({ blockPos, block, age });
 	else populationChangesAdjacent.push_back({ blockPos, block, age });
 }
 
 
 
-void Chunk::addAdjacentPopulationChanges(std::unordered_map<BlockPos, std::pair<Block, unsigned>>& changes, ChunkPos pos) const
-{
+void Chunk::addAdjacentPopulationChanges(
+	std::unordered_map<BlockPos, std::pair<Block, u32>>& changes,
+	ChunkPos pos
+) const {
 	for (auto& _change : populationChangesAdjacent)
 		if (_change.pos == pos && (!changes.contains(_change.pos) || changes.at(_change.pos).second < _change.age))
 			changes[_change.pos] = { _change.block, _change.age };

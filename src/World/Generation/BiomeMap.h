@@ -2,7 +2,7 @@
 #include <array>
 #include "Biomes/Biomes.h"
 #include "../ChunkPos.h"
-#include "../../Constants.h"
+#include "Core/RevetteCore.h"
 class NoiseSource2D;
 
 

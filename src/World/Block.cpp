@@ -2,24 +2,18 @@
 
 #include <cmath>
 
-#include "../Constants.h"
-
 
 namespace {
 
-inline int wrapCoordinate(int32_t x) {
-	if (-WORLD_RADIUS_BLOCK <= x && x < WORLD_RADIUS_BLOCK) return x;
-	x %= WORLD_DIAMETER_BLOCK;
-	if (x < -WORLD_RADIUS_BLOCK)      x += WORLD_DIAMETER_BLOCK;
-	else if (WORLD_RADIUS_BLOCK <= x) x -= WORLD_DIAMETER_BLOCK;
-	return x;
+inline i32 wrapCoordinate(i32 x) {
+	return (x << (31 - WORLD_RADIUS_BLOCK_LOG)) >> (31 - WORLD_RADIUS_BLOCK_LOG);
 }
 
 }
 
 
 
-BlockOffset::BlockOffset(int32_t _x, int32_t _y, int32_t _z) :
+BlockOffset::BlockOffset(i32 _x, i32 _y, i32 _z) :
 	x{ wrapCoordinate(_x) },
 	y{ _y },
 	z{ wrapCoordinate(_z) }
@@ -27,22 +21,22 @@ BlockOffset::BlockOffset(int32_t _x, int32_t _y, int32_t _z) :
 
 
 
-int32_t BlockOffset::getX() const { return x; }
-int32_t BlockOffset::getY() const { return x; }
-int32_t BlockOffset::getZ() const { return x; }
+i32 BlockOffset::getX() const { return x; }
+i32 BlockOffset::getY() const { return x; }
+i32 BlockOffset::getZ() const { return x; }
 
 
 
-BlockPos::BlockPos(int32_t _x, int32_t _y, int32_t _z) :
+BlockPos::BlockPos(i32 _x, i32 _y, i32 _z) :
 	x{ wrapCoordinate(_x) },
 	y{ _y },
 	z{ wrapCoordinate(_z) }
 {}
 
 BlockPos::BlockPos(double _x, double _y, double _z) : BlockPos(
-	static_cast<int32_t>(std::floor(_x)),
-	static_cast<int32_t>(std::floor(_y)),
-	static_cast<int32_t>(std::floor(_z))
+	static_cast<i32>(std::floor(_x)),
+	static_cast<i32>(std::floor(_y)),
+	static_cast<i32>(std::floor(_z))
 )
 {}
 
@@ -55,9 +49,9 @@ BlockPos::BlockPos(EntityPosition position) : BlockPos(
 
 
 
-int32_t BlockPos::getX() const { return x; }
-int32_t BlockPos::getY() const { return y; }
-int32_t BlockPos::getZ() const { return z; }
+i32 BlockPos::getX() const { return x; }
+i32 BlockPos::getY() const { return y; }
+i32 BlockPos::getZ() const { return z; }
 
 
 
@@ -89,7 +83,7 @@ BlockOffset BlockPos::distance(BlockPos other) const {
 
 
 
-BlockPos BlockPos::offset(int32_t _x, int32_t _y, int32_t _z) const {
+BlockPos BlockPos::offset(i32 _x, i32 _y, i32 _z) const {
 	return BlockPos(x + _x, y + _y, z + _z);
 }
 
@@ -98,4 +92,4 @@ BlockPos BlockPos::offset(int32_t _x, int32_t _y, int32_t _z) const {
 Block::Block() : blockType{ 0 } {}
 
 
-Block::Block(int32_t type) : blockType{ type } {}
+Block::Block(i32 type) : blockType{ type } {}
