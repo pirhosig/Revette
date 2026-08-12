@@ -562,8 +562,8 @@ void startDraw(
 	VkDeviceSize offsetVertices,
 	VkDeviceSize offsetIndices
 ) {
-	glm::mat4 matrixMVP = matrixProjectionView * glm::translate(
-		glm::mat4(1.0f),
+	auto matrixMVP = glm::translate(
+		matrixProjectionView,
 		glm::vec3(offset.getX() * CHUNK_SIZE, offset.getY() * CHUNK_SIZE, offset.getZ() * CHUNK_SIZE) * 0.5f
 	);
 
