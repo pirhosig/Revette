@@ -4,19 +4,17 @@
 
 
 
-const char* NOISE_HEIGHTMAP = "FQkXCRUJDQAH@BCGZmBkAJBg@AIBEBAOamRk/C83MTD0EAg8JBg@AIBFBAOamRk/DAMAAKBBBAMAAEBBBA==";
+const char* const NOISE_HEIGHTMAP = "FQkXCRUJDQAH@BCGZmBkAJBg@AIBEBAOamRk/C83MTD0EAg8JBg@AIBFBAOamRk/DAMAAKBBBAMAAEBBBA==";
 
 
 
 LoopGame::LoopGame(
+	GlobalApplicationState& _globalApplicationState,
 	const Settings& settings,
-	GLFWwindow* _window,
-	std::atomic_bool& _applicationShouldTerminate,
-	std::shared_ptr<SharedGameRendererState> _sharedRendererState
+	class GLFWwindow* _window
 ) :
-	applicationShouldTerminate{_applicationShouldTerminate},
-	sharedRendererState{std::move(_sharedRendererState)},
-	world(settings, sharedRendererState, NOISE_HEIGHTMAP),
+	globalApplicationState{_globalApplicationState},
+	world(globalApplicationState, settings, NOISE_HEIGHTMAP),
 	player(EntityPosition({ 0.0, 150.0, 0.0 }), {0.8, 3.75, 0.8}),
 	window{ _window }
 {
@@ -30,10 +28,12 @@ LoopGame::LoopGame(
 	// Get the current mouse position to avoid a larger jitter on the first frame
 	glfwGetCursorPos(window, &cursorLastX, &cursorLastY);
 
-	sharedRendererState->playerPosition.store(player.position.pos);
+	globalApplicationState.playerPosition.store(player.position);
+	globalApplicationState.playerChunkPosition.store(ChunkPos(player.position));
 
 	GlobalLog.Write("Created game loop");
 }
+
 
 
 void LoopGame::run() {
@@ -42,7 +42,7 @@ void LoopGame::run() {
 
 	// Run game until ESC is pressed
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS) {
-		sharedRendererState->currentTick.wait(currentTick);
+		globalApplicationState.currentGameClockTick.wait(currentTick);
 		currentTick++;
 
 		double timeFrameBegin = glfwGetTime();
@@ -54,12 +54,12 @@ void LoopGame::run() {
 		// Process the game events
 		world.tick(player);
 
-		sharedRendererState->playerPosition.store(player.position);
+		globalApplicationState.playerPosition.store(player.position);
+		globalApplicationState.playerChunkPosition.store(ChunkPos(player.position));
 	}
 
-	applicationShouldTerminate.store(true);
+	globalApplicationState.applicationShouldTerminate.store(true);
 }
-
 
 
 

@@ -1,14 +1,13 @@
 #pragma once
+#include "Application/GlobalApplicationState.h"
 #include "Rendering/Renderer.h"
 #include "World/World.h"
-class GLFWwindow;
 
 
 
 class LoopGame {
 private:
-	std::atomic_bool& applicationShouldTerminate;
-	std::shared_ptr<SharedGameRendererState> sharedRendererState;
+	GlobalApplicationState& globalApplicationState;
 
 	double cursorLastX;
 	double cursorLastY;
@@ -17,18 +16,17 @@ private:
 
 	Entity player;
 
-	GLFWwindow* window;
+	class GLFWwindow* window;
 
 private:
 	void processInput(const double deltaTime);
 	void cursorPositionCallback(double xpos, double ypos);
 
 public:
-	LoopGame(
+	explicit LoopGame(
+		GlobalApplicationState& _globalApplicationState,
 		const Settings& settings,
-		GLFWwindow* _window,
-		std::atomic_bool& _applicationShouldTerminate,
-		std::shared_ptr<SharedGameRendererState> _sharedRendererState
+		class GLFWwindow* _window
 	);
 
 	void run();

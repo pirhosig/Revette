@@ -1,4 +1,5 @@
 #include "World.h"
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 
@@ -71,10 +72,11 @@ constexpr int CHUNK_NEIGHBOURS_CARDINAL[6][3] = {
 
 
 World::World(
+	GlobalApplicationState& _globalApplicationState,
 	const Settings& _settings,
-	std::shared_ptr<SharedGameRendererState> _sharedRendererState,
 	const char* settingNoiseHeightmap
 ) :
+	globalApplicationState{_globalApplicationState},
 	settings{_settings},
 	loadCentre(0, 1, 0),
 	generatorChunkNoise(
@@ -82,8 +84,7 @@ World::World(
 		settingNoiseHeightmap,
 		"KQkNCQY@CRRQ=",
 		"KQkNCQY@CRRQ="
-	),
-	sharedRendererState{std::move(_sharedRendererState)}
+	)
 {
 	loadQueue.push(ChunkPriorityTicket(chunkLoadPriority(loadCentre, loadCentre), loadCentre));
 	chunkStatusMap.setChunkStatusLoad(loadCentre, StatusChunkLoad::QUEUED_LOAD);
@@ -103,9 +104,10 @@ void World::tick(Entity& player) {
 		}
 	}
 
-	ChunkPos _playerChunk(player.position);
-	if (_playerChunk != loadCentre) {
-		loadCentre = _playerChunk;
+	if (ChunkPos playerChunkPos(player.position);
+		playerChunkPos != loadCentre
+	) {
+		loadCentre = playerChunkPos;
 		onLoadCentreChange();
 	}
 
@@ -148,9 +150,9 @@ void World::moveEntity(Entity& entity) {
 
 	BlockPos currentPos(pos.pos.x - entity.size.x, pos.pos.y, pos.pos.z - entity.size.z);
 
-	const double _DX = std::clamp(pos.displacement.x, -CHUNK_SIZE_D, CHUNK_SIZE_D);
-	const double _DY = std::clamp(pos.displacement.y, -CHUNK_SIZE_D, CHUNK_SIZE_D);
-	const double _DZ = std::clamp(pos.displacement.z, -CHUNK_SIZE_D, CHUNK_SIZE_D);
+	const double _DX = std::clamp(pos.displacement.x, -32.0, 32.0);
+	const double _DY = std::clamp(pos.displacement.y, -32.0, 32.0);
+	const double _DZ = std::clamp(pos.displacement.z, -32.0, 32.0);
 
 	const int stepX = sign(_DX);
 	const int stepY = sign(_DY);
@@ -459,27 +461,6 @@ const std::unique_ptr<Chunk>& World::getChunk(const ChunkPos chunkPos) const {
 		std::string error = "Attempted to access non-existent chunk at ";
 		error += std::to_string(chunkPos.getX()) + " " + std::to_string(chunkPos.getY()) + " " + std::to_string(chunkPos.getZ());
 		throw EXCEPTION_WORLD::ChunkNonExistence(error);
-	}
-}
-
-
-
-void World::addStructure(const BlockPos _blockPos, std::unique_ptr<Structure> _structure) {
-	mapStructures[_blockPos] = std::move(_structure);
-}
-
-
-
-// Returns a reference to the structure at the location
-const std::unique_ptr<Structure>& World::getStructure(const BlockPos blockPos) const {
-	try {
-		return mapStructures.at(blockPos);
-	}
-	catch (const std::out_of_range& e)
-	{
-		std::string error = "Attempted to access non-existent chunk at ";
-		error += std::to_string(blockPos.getX()) + " " + std::to_string(blockPos.getY()) + " " + std::to_string(blockPos.getZ());
-		throw EXCEPTION_WORLD::StructureNonExistence(error);
 	}
 }
 

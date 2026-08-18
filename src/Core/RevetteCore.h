@@ -27,9 +27,14 @@ constexpr i32 CHUNK_AREA = 1 << (2 * CHUNK_SIZE_LOG);
 constexpr float CHUNK_SIZE_F = static_cast<float>(CHUNK_SIZE);
 constexpr double CHUNK_SIZE_D = static_cast<double>(CHUNK_SIZE);
 
+// Generation Unit constants.
+// TODO: change these to be runtime constants
+constexpr i32 GENERATION_UNIT_WIDTH_C_LOG = 5;
+constexpr i32 GENERATION_UNIT_WIDTH_C = 1 << GENERATION_UNIT_WIDTH_C_LOG;
+
 // World size constants.
 // TODO: change world size to be a runtime constant.
-constexpr i32 WORLD_RADIUS_CHUNK_LOG = 9;
+constexpr i32 WORLD_RADIUS_CHUNK_LOG = GENERATION_UNIT_WIDTH_C_LOG + 4;
 constexpr i32 WORLD_RADIUS_CHUNK = 1 << WORLD_RADIUS_CHUNK_LOG;
 constexpr i32 WORLD_RADIUS_BLOCK_LOG = WORLD_RADIUS_CHUNK_LOG + CHUNK_SIZE_LOG;
 constexpr i32 WORLD_RADIUS_BLOCK = 1 << WORLD_RADIUS_BLOCK_LOG;

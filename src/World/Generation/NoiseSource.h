@@ -8,17 +8,17 @@
 
 
 
-class NoiseSource2D
-{
-public:
-	NoiseSource2D(const char* noiseSetting, int _seed) :
-		generator(FastNoise::NewFromEncodedNodeTree(noiseSetting)),
-		seed{ _seed }
-	{}
-	NoiseSource2D(const NoiseSource2D&) = delete;
-	std::array<float, CHUNK_AREA> genChunkNoise(ChunkPos2D chunkPos) const;
-
-private:
+class NoiseSource2D {
 	const FastNoise::SmartNode<> generator;
 	const int seed;
+
+public:
+	NoiseSource2D(const char* noiseSetting, int _seed);
+
+	NoiseSource2D(NoiseSource2D&&) = delete;
+	NoiseSource2D(const NoiseSource2D&) = delete;
+	NoiseSource2D operator=(NoiseSource2D&&) = delete;
+	NoiseSource2D operator=(const NoiseSource2D&) = delete;
+
+	std::array<float, CHUNK_AREA> genChunkNoise(ChunkPos2D chunkPos) const;
 };

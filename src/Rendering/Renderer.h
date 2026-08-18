@@ -2,6 +2,8 @@
 #include <memory>
 #include <unordered_map>
 
+#include <boost/container/small_vector.hpp>
+
 #include "ChunkRenderer.h"
 #include "FrameRenderer.h"
 #include "GuiRenderer.h"
@@ -11,17 +13,19 @@
 #include "Mesh/MeshChunk.h"
 #include "../Settings.h"
 #include "../Window.h"
-#include "../Threading/SharedGameRendererState.h"
+#include "../Application/GlobalApplicationState.h"
 #include "../World/ChunkPos.h"
 #include "../World/Entities/EntityPosition.h"
 
 
 
 
-class Renderer
-{
+class Renderer {
 private:
+	// External state objects
+	GlobalApplicationState& globalApplicationState;
 	const Settings& settings;
+	std::chrono::steady_clock::time_point nextTickTimestamp;
 
 	// Vulkan Stuff
 	GLFWwindow* window;
@@ -31,16 +35,14 @@ private:
     ChunkRenderer chunkRenderer;
 	GuiRenderer guiRenderer;
 
-    std::vector<FrameRenderer> frameRenderers;
+	// Drawing 
+	std::vector<std::unique_ptr<MeshChunk::Data>> incomingMeshes;
+	boost::container::small_vector<FrameRenderer, 4> frameRenderers;
 	
 	size_t currentFrameRendererIndex = 0;
 
 	// Drawables
 	std::unordered_map<ChunkPos, std::unique_ptr<MeshChunk>> meshesChunk;
-
-	// Threading Stuff
-	std::atomic_bool& applicationShouldTerminate;
-	std::shared_ptr<SharedGameRendererState> sharedGameState;
 
 	// User Input
 	double cursorLastX;
@@ -48,14 +50,13 @@ private:
 
 private:
 	void processFrame();
-	void unloadMeshes(const ChunkPos& playerChunk);
+	void unloadMeshes();
 	
 public:
-	Renderer(
+	explicit Renderer(
+		GlobalApplicationState& _globalApplicationState,
 		const Settings& _settings,
-		GLFWwindow* _window,
-		std::atomic_bool& _applicationShouldTerminate,
-		std::shared_ptr<SharedGameRendererState> _sharedGameState
+		GLFWwindow* _window
 	);
 	~Renderer();
 
