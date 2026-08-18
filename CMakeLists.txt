@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.21)
 
+set(
+    VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/vcpkg-overlays"
+    CACHE STRING "vcpkg overlay ports folder"
+)
+set(
+    CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+    CACHE FILEPATH "vcpkg root filepath"
+)
+
 project(Revette)
 
 set(CMAKE_CXX_STANDARD 23)
