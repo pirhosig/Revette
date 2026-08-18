@@ -1,9 +1,10 @@
 {
   "dependencies": [
+    "boost-circular-buffer",
+    "boost-container",
     "fast-noise-2",
     "simdjson",
     "volk",
-    "vulkan-memory-allocator",
-    "boost-container"
+    "vulkan-memory-allocator"
   ]
 }

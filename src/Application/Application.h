@@ -3,8 +3,8 @@
 
 
 
-class Application
-{
+
+class Application {
 private:
 	Window window;
 

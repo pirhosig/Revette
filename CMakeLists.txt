@@ -17,12 +17,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 add_executable(Revette 
     src/main.cpp
     
-    src/Application.cpp
     src/GlobalLog.cpp
     src/Logger.cpp
     src/LoopGame.cpp
     src/Settings.cpp
     src/Window.cpp
+    
+    src/Application/Application.cpp
+    src/Application/GlobalApplicationState.cpp
 
     src/Rendering/Buffer.cpp
     src/Rendering/ChunkRenderer.cpp
@@ -55,6 +57,10 @@ add_executable(Revette
     src/World/Generation/ChunkPRNG.cpp
     src/World/Generation/HeightMap.cpp
     src/World/Generation/NoiseSource.cpp
+    src/World/Generation/WorldGenerator.cpp
+    
+    src/World/Generation/GenerationUnits/GenerationUnitPos2D.cpp
+    src/World/Generation/GenerationUnits/SurfaceGenerationUnit.cpp
 
     src/World/Generation/Structures/Structure.cpp
     src/World/Generation/Structures/StructureBoundingBox.cpp
@@ -85,9 +91,12 @@ target_compile_options(Revette PUBLIC
     -Wpedantic
     -Wfloat-conversion
     -Wsign-conversion
+
+    -Wno-interference-size
 )
 
 find_package(Boost CONFIG REQUIRED COMPONENTS
+    circular_buffer
     container
 )
 find_package(FastNoise2 CONFIG REQUIRED)
@@ -99,6 +108,7 @@ find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 
 target_link_libraries(Revette PRIVATE
     atomic
+    Boost::circular_buffer
     Boost::container
     glfw
     FastNoise2::FastNoise

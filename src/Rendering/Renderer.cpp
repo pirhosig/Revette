@@ -13,15 +13,14 @@ constexpr u32 RENDER_AHEAD_COUNT = 3;
 
 
 void Renderer::processFrame() {
-	std::queue<std::unique_ptr<MeshChunk::Data>> loadMeshQueue;
-	sharedGameState->chunkMeshQueue->getQueue(loadMeshQueue);
-	EntityPosition playerPos = sharedGameState->playerPosition.load();
+	globalApplicationState.rendererMeshIngestQueue.drain(std::back_inserter(incomingMeshes));
+	auto playerPosition = globalApplicationState.playerPosition.load();
 	frameRenderers[currentFrameRendererIndex].drawFrame(
 		std::move(loadMeshQueue),
-		playerPos,
+		playerPosition,
 		meshesChunk
 	);
-	unloadMeshes(ChunkPos(playerPos));
+	unloadMeshes();
 	
 	currentFrameRendererIndex = (currentFrameRendererIndex + 1) % frameRenderers.size();
 }
@@ -29,10 +28,12 @@ void Renderer::processFrame() {
 
 
 // Need to defer deletion
-void Renderer::unloadMeshes(const ChunkPos& playerChunk) {
+void Renderer::unloadMeshes() {
 	std::queue<ChunkPos> removeQueue;
 	
-	ChunkPos2D _playerChunk2D(playerChunk);
+	auto playerChunkPos = globalApplicationState.playerChunkPosition.load();
+	ChunkPos2D playerChunkPos2D(playerChunkPos);
+
 	const i64 _loadDistanceHorizontalSquared = (
 		static_cast<i64>(settings.getLoadDistanceHorizontal()) *
 		settings.getLoadDistanceHorizontal()
@@ -41,8 +42,8 @@ void Renderer::unloadMeshes(const ChunkPos& playerChunk) {
 	auto it = meshesChunk.begin();
 	while (it != meshesChunk.end()) {
 		if (
-			_playerChunk2D.distanceEuclideanSquared(it->first) > _loadDistanceHorizontalSquared ||
-			std::abs(playerChunk.getY() - it->first.getY()) > settings.getLoadDistanceVertical()
+			playerChunkPos2D.distanceEuclideanSquared(it->first) > _loadDistanceHorizontalSquared ||
+			std::abs(playerChunkPos.getY() - it->first.getY()) > settings.getLoadDistanceVertical()
 		) {
 			removeQueue.push(it->first);
 			frameRenderers[currentFrameRendererIndex].queueMeshForDeletion(std::move(it->second));
@@ -58,12 +59,14 @@ void Renderer::unloadMeshes(const ChunkPos& playerChunk) {
 
 
 Renderer::Renderer(
+	GlobalApplicationState& _globalApplicationState,
 	const Settings& _settings,
-	GLFWwindow* _window,
-	std::atomic_bool& _applicationShouldTerminate,
-	std::shared_ptr<SharedGameRendererState> _sharedGameState
+	GLFWwindow* _window
 ) :
+	globalApplicationState{_globalApplicationState},
 	settings{_settings},
+	nextTickTimestamp{std::chrono::steady_clock::now()},
+
 	window{_window},
 	vulkanContext(
 		window,
@@ -91,9 +94,7 @@ Renderer::Renderer(
 		vulkanContext.getDevice(),
 		renderTarget,
 		renderResources.getDescriptorLayout()
-	),
-	applicationShouldTerminate{_applicationShouldTerminate},
-	sharedGameState{std::move(_sharedGameState)}
+	)
 {
 	frameRenderers.reserve(RENDER_AHEAD_COUNT);
 	for (u32 i = 0; i < RENDER_AHEAD_COUNT; ++i) {
@@ -121,11 +122,11 @@ Renderer::~Renderer() {
 
 
 void Renderer::run() {
-	while (applicationShouldTerminate.load() == false) {
-		if (std::chrono::steady_clock::now() > sharedGameState->nextTickTimestamp) {
-			sharedGameState->nextTickTimestamp += 20ms;
-			sharedGameState->currentTick++;
-			sharedGameState->currentTick.notify_all();
+	while (globalApplicationState.applicationShouldTerminate.load() == false) {
+		if (std::chrono::steady_clock::now() > nextTickTimestamp) {
+			nextTickTimestamp += 25ms;
+			globalApplicationState.currentGameClockTick++;
+			globalApplicationState.currentGameClockTick.notify_all();
 		}
 		
 		processFrame();

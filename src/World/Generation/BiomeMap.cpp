@@ -38,7 +38,7 @@ BiomeMap::BiomeMap(ChunkPos2D noisePos, NoiseSource2D& noiseTemperature, NoiseSo
 			auto _index =  static_cast<size_t>(lZ * CHUNK_SIZE + lX);
 			int _dist = noisePos.getX() * CHUNK_SIZE + lX;
 			temperature[_index] = std::clamp(
-				0.40f + temperature[_index] - (std::abs(_dist) / WORLD_RADIUS_BLOCK_F),
+				0.40f + temperature[_index] - (std::abs(_dist) / static_cast<float>(WORLD_RADIUS_BLOCK)),
 				0.0f,
 				1.0f
 			);

@@ -4,19 +4,19 @@
 #include "Block.h"
 #include "BlockHash.h"
 #include "Chunk.h"
+#include "ChunkPos.h"
 #include "ChunkStatusMap.h"
 #include "Entities/Entity.h"
 #include "Generation/GeneratorChunkParameters.h"
 #include "Generation/GeneratorChunkNoise.h"
-#include "Generation/Structures/Structure.h"
-#include "../Settings.h"
-#include "../Rendering/Mesh/MeshChunk.h"
-#include "../Threading/SharedGameRendererState.h"
+#include "Application/GlobalApplicationState.h"
+#include "Settings.h"
+#include "Rendering/Mesh/MeshChunk.h"
+#include "Threading/SharedGameRendererState.h"
 
 
 
-class ChunkPriorityTicket
-{
+class ChunkPriorityTicket {
 public:
 	int priority;
 	ChunkPos pos;
@@ -31,15 +31,14 @@ public:
 
 
 
-class World
-{
+class World {
 private:
+	GlobalApplicationState& globalApplicationState;
 	const Settings& settings;
 
 	// Chunk storage
 	std::unordered_map<long long, Entity> mapEntities;
 	std::unordered_map<ChunkPos, std::unique_ptr<Chunk>> mapChunks;
-	std::unordered_map<BlockPos, std::unique_ptr<Structure>> mapStructures;
 
 	// Chunk loading information
 	ChunkPos loadCentre;
@@ -51,8 +50,6 @@ private:
 	// Chunk generation tools
 	std::unordered_map<ChunkPos2D, GeneratorChunkParameters> generatorChunkCache;
 	GeneratorChunkNoise generatorChunkNoise;
-
-	std::shared_ptr<SharedGameRendererState> sharedRendererState;
 
 private:
 	void processEntities(Entity& player);
@@ -68,8 +65,8 @@ private:
 	
 public:
 	World(
+		GlobalApplicationState& _globalApplicationState,
 		const Settings& _settings,
-		std::shared_ptr<SharedGameRendererState> _sharedRendererState,
 		const char* settingNoiseHeightmap
 	);
 
@@ -83,9 +80,4 @@ public:
 	Block getBlock(BlockPos blockPos) const;
 	void setBlock(BlockPos blockPos, Block block) const;
 	const std::unique_ptr<Chunk>& getChunk(const ChunkPos chunkPos) const;
-
-	void addStructure(const BlockPos _blockPos, std::unique_ptr<Structure> _structure);
-	const std::unique_ptr<Structure>& getStructure(const BlockPos blockPos) const;
-
-
 };
