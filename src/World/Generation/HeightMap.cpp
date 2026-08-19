@@ -10,7 +10,7 @@ HeightMap::HeightMap(ChunkPos2D noisePos, NoiseSource2D& noiseSource) :
 	heightMax(std::numeric_limits<i16>::min())
 {
 	std::array<float, CHUNK_AREA> noiseMap = noiseSource.genChunkNoise(noisePos);
-	for (int i = 0; i < CHUNK_AREA; ++i)
+	for (size_t i = 0; i < CHUNK_AREA; ++i)
 	{
 		heightArray[i] = static_cast<i16>(noiseMap[i]) + SEA_LEVEL;
 		heightMax = std::max(heightMax, heightArray[i]);

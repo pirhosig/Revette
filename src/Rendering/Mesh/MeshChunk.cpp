@@ -212,11 +212,12 @@ MeshChunk::Data::Data(const Chunk* chunkCentre, const std::array<Chunk*, 6> neig
 	std::vector<uint32_t> _indicesBlended;
 
 	// Loop and check for each block whether it is solid, and so whether it needs to be added
-	for (uint16_t x = 0; x < CHUNK_SIZE; ++x) {
-	for (uint16_t y = 0; y < CHUNK_SIZE; ++y) {
-	for (uint16_t z = 0; z < CHUNK_SIZE; ++z) {
-		uint16_t _index = (x << 10) + (y << 5) + z;
-		Block block = chunkCentre->blockContainer.getBlock(_index);
+	for (uint32_t x = 0; x < CHUNK_SIZE; ++x) {
+	for (uint32_t y = 0; y < CHUNK_SIZE; ++y) {
+	for (uint32_t z = 0; z < CHUNK_SIZE; ++z) {
+		const ChunkLocalBlockPos _pos(x, y, z);
+		const auto _index = _pos.asIndex();
+		const Block block = chunkCentre->blockContainer.getBlock(_pos);
 		// Skip if air block
 		if (block.blockType == 0) continue;
 
@@ -226,7 +227,7 @@ MeshChunk::Data::Data(const Chunk* chunkCentre, const std::array<Chunk*, 6> neig
 		case 0: [[likely]]
 		{
 			// Offsets for every vertex to draw a cube
-			constexpr int FACE_TABLE[6][4][3] = {
+			constexpr u8 FACE_TABLE[6][4][3] = {
 				{{ 0, 1, 0 }, { 1, 1, 0 }, { 1, 1, 1 }, { 0, 1, 1 }}, // Up
 				{{ 0, 0, 0 }, { 1, 0, 0 }, { 1, 0, 1 }, { 0, 0, 1 }}, // Down
 				{{ 1, 1, 1 }, { 1, 1, 0 }, { 1, 0, 0 }, { 1, 0, 1 }}, // North
@@ -625,7 +626,7 @@ void MeshChunk::drawTested(
 		meshData->indexCountTested,
 		1,
 		meshData->indexCountOpaque,
-		(meshData->indexCountOpaque / 3) * 2,
+		static_cast<int32_t>(meshData->indexCountOpaque / 3) * 2,
 		0
 	);
 }

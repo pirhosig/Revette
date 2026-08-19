@@ -65,9 +65,9 @@ class ChunkLocalBlockPos {
 	u16 pos;
 
 public:
-	ChunkLocalBlockPos(u16 _pos);
+	explicit ChunkLocalBlockPos(u16 _pos);
 	ChunkLocalBlockPos(u16 x, u16 y, u16 z);
-	ChunkLocalBlockPos(BlockPos blockPos);
+	explicit ChunkLocalBlockPos(BlockPos blockPos);
 
 	BlockPos asBlockPos(ChunkPos chunkPos) const;
 	u16 asIndex() const;

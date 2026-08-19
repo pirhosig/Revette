@@ -1,5 +1,10 @@
 #include "BlockContainer.h"
+
+#include <algorithm>
 #include <cassert>
+
+#include <boost/container/small_vector.hpp>
+
 #include "../Exceptions.h"
 
 
@@ -63,9 +68,7 @@ void BlockContainer::setSizeByte() {
 		blockArrayBlocksByIndex.push_back(Block(0));
 		if (_block.blockType != 0) {
 			blockArrayBlocksByIndex.push_back(_block);
-			for (int i = 0; i < CHUNK_VOLUME; ++i) {
-				newArray[i] = 1u;
-			}
+			std::fill(newArray.get(), newArray.get() + CHUNK_VOLUME, 1u);
 		}
 	}
 	else if (std::holds_alternative<std::unique_ptr<uint16_t[]>>(blockArray)) {
@@ -73,9 +76,14 @@ void BlockContainer::setSizeByte() {
 			throw std::runtime_error("Cannot shrink block array to byte, too many blocks.");
 		}
 		auto& currentArray = std::get<std::unique_ptr<uint16_t[]>>(blockArray);
-		for (int i = 0; i < CHUNK_VOLUME; ++i) {
-			newArray[i] = static_cast<uint8_t>(currentArray[i]);
-		}
+		std::transform(
+			currentArray.get(),
+			currentArray.get() + CHUNK_SIZE,
+			newArray.get(),
+			[](uint16_t x) {
+				return static_cast<uint8_t>(x);
+			}
+		);
 	}
 	blockArray = std::move(newArray);
 }
@@ -93,16 +101,12 @@ void BlockContainer::setSizeShort() {
 		blockArrayBlocksByIndex.push_back(Block(0));
 		if (_block.blockType != 0) {
 			blockArrayBlocksByIndex.push_back(_block);
-			for (int i = 0; i < CHUNK_VOLUME; ++i) {
-				newArray[i] = 1u;
-			}
+			std::fill(newArray.get(), newArray.get() + CHUNK_VOLUME, 1u);
 		}
 	}
 	else if (std::holds_alternative<std::unique_ptr<uint8_t[]>>(blockArray)) {
 		auto& currentArray = std::get<std::unique_ptr<uint8_t[]>>(blockArray);
-		for (int i = 0; i < CHUNK_VOLUME; ++i) {
-			newArray[i] = currentArray[i];
-		}
+		std::copy(currentArray.get(), currentArray.get() + CHUNK_SIZE, newArray.get());
 	}
 	blockArray = std::move(newArray);
 }
@@ -110,7 +114,7 @@ void BlockContainer::setSizeShort() {
 
 
 Block BlockContainer::getBlock(ChunkLocalBlockPos blockPos) const {
-	int blockTypeIndex{};
+	size_t blockTypeIndex{};
 	switch (blockArray.index()) {
 	case 0:
 		return std::get<0>(blockArray);
@@ -131,31 +135,42 @@ Block BlockContainer::getBlock(ChunkLocalBlockPos blockPos) const {
 
 
 std::vector<bool> BlockContainer::getSolid() const {
-	std::vector<bool> _solid(CHUNK_VOLUME);
-	std::vector<bool> _indexTransparency(blockArrayBlocksByIndex.size());
-	for (std::size_t i = 0; i < blockArrayBlocksByIndex.size(); ++i) {
-		_indexTransparency[i] = IS_SOLID[blockArrayBlocksByIndex[i].blockType];
+	if (std::holds_alternative<Block>(blockArray)) {
+		return std::vector<bool>(
+			CHUNK_VOLUME,
+			IS_SOLID[std::get<Block>(blockArray).blockType]
+		);
 	}
 
+	boost::container::small_vector<bool, 64U> _indexTransparency;
+	_indexTransparency.reserve(blockArrayBlocksByIndex.size());
+	std::transform(
+		blockArrayBlocksByIndex.begin(),
+		blockArrayBlocksByIndex.end(),
+		std::back_inserter(_indexTransparency),
+		[](Block b) -> bool {
+			return IS_SOLID[b.blockType];
+		}
+	);
+	
+	std::vector<bool> _solid(CHUNK_VOLUME);
 	switch (blockArray.index()) {
 	case 0:
 		break;
 	case 1: {
 		auto& _array = std::get<std::unique_ptr<uint8_t[]>>(blockArray);
-		for (int i = 0; i < CHUNK_VOLUME; ++i) {
+		for (size_t i = 0; i < CHUNK_VOLUME; ++i) {
 			_solid[i] = _indexTransparency[_array[i]];
 		}
 		break;
 	}
 	case 2: {
 		auto& _array = std::get<std::unique_ptr<uint16_t[]>>(blockArray);
-		for (int i = 0; i < CHUNK_VOLUME; ++i) {
+		for (size_t i = 0; i < CHUNK_VOLUME; ++i) {
 			_solid[i] = _indexTransparency[_array[i]];
 		}
 		break;
 	}
-	default:
-		break;
 	}
 
 	return _solid;
@@ -168,44 +183,73 @@ std::vector<bool> BlockContainer::getSolidFace(AxisDirection direction) const {
 		return std::vector<bool>(CHUNK_AREA, IS_SOLID[std::get<Block>(blockArray).blockType]);
 	}
 
-	std::vector<bool> _solid(CHUNK_AREA);
-	std::vector<bool> _indexTransparency(blockArrayBlocksByIndex.size());
-	for (std::size_t i = 0; i < blockArrayBlocksByIndex.size(); ++i) {
-		_indexTransparency[i] = IS_SOLID[blockArrayBlocksByIndex[i].blockType];
-	}
+	boost::container::small_vector<bool, 64U> _indexTransparency;
+	_indexTransparency.reserve(blockArrayBlocksByIndex.size());
+	std::transform(
+		blockArrayBlocksByIndex.begin(),
+		blockArrayBlocksByIndex.end(),
+		std::back_inserter(_indexTransparency),
+		[](Block b) -> bool {
+			return IS_SOLID[b.blockType];
+		}
+	);
 
-	int _indexOffset = 0;
+	std::vector<bool> _solid(CHUNK_AREA);
 	if (std::holds_alternative<std::unique_ptr<uint8_t[]>>(blockArray)) {
-		auto& _array = std::get<std::unique_ptr<uint8_t[]>>(blockArray);
+		const auto& _array = std::get<std::unique_ptr<uint8_t[]>>(blockArray);
 
 		switch (direction) {
 		case AxisDirection::Up:
-			_indexOffset = (CHUNK_SIZE - 1) * CHUNK_SIZE;
-			[[fallthrough]];
+			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX) {
+			for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
+				const auto posIn  = ((CHUNK_SIZE - 1) * CHUNK_SIZE) + (lX * CHUNK_AREA) + lZ;
+				const auto posOut = (lX * CHUNK_SIZE) + lZ;
+				_solid[posOut] = _indexTransparency[_array[posIn]];
+			}
+			}
+			break;
 		case AxisDirection::Down:
 			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX) {
 			for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
-				_solid[lX * CHUNK_SIZE + lZ] = _indexTransparency[_array[_indexOffset + lX * CHUNK_AREA + lZ]];
+				const auto posIn  = (lX * CHUNK_AREA) + lZ;
+				const auto posOut = (lX * CHUNK_SIZE) + lZ;
+				_solid[posOut] = _indexTransparency[_array[posIn]];
 			}
 			}
 			break;
 		case AxisDirection::North:
-			_indexOffset = (CHUNK_SIZE - 1) * CHUNK_AREA;
-			[[fallthrough]];
+			for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY) {
+			for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
+				const auto posIn  = ((CHUNK_SIZE - 1) * CHUNK_AREA) + (lY * CHUNK_SIZE) + lZ;
+				const auto posOut = (lY * CHUNK_SIZE) + lZ;
+				_solid[posOut] = _indexTransparency[_array[posIn]];
+			}
+			}
+			break;
 		case AxisDirection::South:
 			for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY) {
 			for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
-				_solid[lY * CHUNK_SIZE + lZ] = _indexTransparency[_array[_indexOffset + lY * CHUNK_SIZE + lZ]];
+				const auto posIn  = (lY * CHUNK_SIZE) + lZ;
+				const auto posOut = (lY * CHUNK_SIZE) + lZ;
+				_solid[posOut] = _indexTransparency[_array[posIn]];
 			}
 			}
 			break;
 		case AxisDirection::East:
-			_indexOffset = CHUNK_SIZE - 1;
-			[[fallthrough]];
+			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX) {
+			for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY) {
+				const auto posIn  = (CHUNK_SIZE - 1) + (lX * CHUNK_AREA) + (lY * CHUNK_SIZE);
+				const auto posOut = (lX * CHUNK_SIZE) + lY;
+				_solid[posOut] = _indexTransparency[_array[posIn]];
+			}
+			}
+			break;
 		case AxisDirection::West:
 			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX) {
 			for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY) {
-				_solid[lX * CHUNK_SIZE + lY] = _indexTransparency[_array[_indexOffset + lX * CHUNK_AREA + lY * CHUNK_SIZE]];
+				const auto posIn  = (lX * CHUNK_AREA) + (lY * CHUNK_SIZE);
+				const auto posOut = (lX * CHUNK_SIZE) + lY;
+				_solid[posOut] = _indexTransparency[_array[posIn]];
 			}
 			}
 			break;
@@ -219,32 +263,56 @@ std::vector<bool> BlockContainer::getSolidFace(AxisDirection direction) const {
 
 		switch (direction) {
 		case AxisDirection::Up:
-			_indexOffset = (CHUNK_SIZE - 1) * CHUNK_SIZE;
-			[[fallthrough]];
+			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX) {
+			for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
+				const auto posIn  = ((CHUNK_SIZE - 1) * CHUNK_SIZE) + (lX * CHUNK_AREA) + lZ;
+				const auto posOut = (lX * CHUNK_SIZE) + lZ;
+				_solid[posOut] = _indexTransparency[_array[posIn]];
+			}
+			}
+			break;
 		case AxisDirection::Down:
 			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX) {
 			for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
-				_solid[lX * CHUNK_SIZE + lZ] = _indexTransparency[_array[_indexOffset + lX * CHUNK_AREA + lZ]];
+				const auto posIn  = (lX * CHUNK_AREA) + lZ;
+				const auto posOut = (lX * CHUNK_SIZE) + lZ;
+				_solid[posOut] = _indexTransparency[_array[posIn]];
 			}
 			}
 			break;
 		case AxisDirection::North:
-			_indexOffset = (CHUNK_SIZE - 1) * CHUNK_AREA;
-			[[fallthrough]];
+			for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY) {
+			for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
+				const auto posIn  = ((CHUNK_SIZE - 1) * CHUNK_AREA) + (lY * CHUNK_SIZE) + lZ;
+				const auto posOut = (lY * CHUNK_SIZE) + lZ;
+				_solid[posOut] = _indexTransparency[_array[posIn]];
+			}
+			}
+			break;
 		case AxisDirection::South:
 			for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY) {
 			for (unsigned lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
-				_solid[lY * CHUNK_SIZE + lZ] = _indexTransparency[_array[_indexOffset + lY * CHUNK_SIZE + lZ]];
+				const auto posIn  = (lY * CHUNK_SIZE) + lZ;
+				const auto posOut = (lY * CHUNK_SIZE) + lZ;
+				_solid[posOut] = _indexTransparency[_array[posIn]];
 			}
 			}
 			break;
 		case AxisDirection::East:
-			_indexOffset = CHUNK_SIZE - 1;
-			[[fallthrough]];
+			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX) {
+			for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY) {
+				const auto posIn  = (CHUNK_SIZE - 1) + (lX * CHUNK_AREA) + (lY * CHUNK_SIZE);
+				const auto posOut = (lX * CHUNK_SIZE) + lY;
+				_solid[posOut] = _indexTransparency[_array[posIn]];
+			}
+			}
+			break;
 		case AxisDirection::West:
 			for (unsigned lX = 0; lX < CHUNK_SIZE; ++lX) {
 			for (unsigned lY = 0; lY < CHUNK_SIZE; ++lY) {
-				_solid[lX * CHUNK_SIZE + lY] = _indexTransparency[_array[_indexOffset + lX * CHUNK_AREA + lY * CHUNK_SIZE]];
+				const auto posIn  = (lX * CHUNK_AREA) + (lY * CHUNK_SIZE);
+				const auto posOut = (lX * CHUNK_SIZE) + lY;
+				_solid[posOut] = _indexTransparency[_array[posIn]];
 			}
 			}
 			break;
@@ -271,7 +339,7 @@ void BlockContainer::setBlockRaw(uint16_t arrayIndex, uint16_t blockIndex) {
 		std::get<std::unique_ptr<uint8_t[]>>(blockArray)[arrayIndex] = static_cast<uint8_t>(blockIndex);
 	}
 	else if (std::holds_alternative<std::unique_ptr<uint16_t[]>>(blockArray)) {
-		std::get<std::unique_ptr<uint16_t[]>>(blockArray)[arrayIndex] = static_cast<uint16_t>(blockIndex);
+		std::get<std::unique_ptr<uint16_t[]>>(blockArray)[arrayIndex] = blockIndex;
 	}
 }
 

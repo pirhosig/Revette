@@ -15,8 +15,8 @@ std::vector<char> readBinaryFile(std::string& filepath) {
         throw std::runtime_error("Failed to open shader file");
     }
 
-    size_t fileSize = static_cast<size_t>(file.tellg());
-    std::vector<char> buffer(fileSize);
+    auto fileSize = static_cast<std::streamsize>(file.tellg());
+    std::vector<char> buffer(static_cast<size_t>(fileSize));
 
     file.seekg(0);
     file.read(buffer.data(), fileSize);

@@ -2,7 +2,8 @@
   "dependencies": [
     "fast-noise-2",
     "simdjson",
+    "volk",
     "vulkan-memory-allocator",
-    "volk"
+    "boost-container"
   ]
 }

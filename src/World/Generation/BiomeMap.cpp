@@ -35,7 +35,7 @@ BiomeMap::BiomeMap(ChunkPos2D noisePos, NoiseSource2D& noiseTemperature, NoiseSo
 	for (int lZ = 0; lZ < CHUNK_SIZE; ++lZ)
 		for (int lX = 0; lX < CHUNK_SIZE; ++lX)
 		{
-			int _index = lZ * CHUNK_SIZE + lX;
+			auto _index =  static_cast<size_t>(lZ * CHUNK_SIZE + lX);
 			int _dist = noisePos.getX() * CHUNK_SIZE + lX;
 			temperature[_index] = std::clamp(
 				0.40f + temperature[_index] - (std::abs(_dist) / WORLD_RADIUS_BLOCK_F),
@@ -44,12 +44,11 @@ BiomeMap::BiomeMap(ChunkPos2D noisePos, NoiseSource2D& noiseTemperature, NoiseSo
 			);
 		}
 
-	for (int i = 0; i < CHUNK_AREA; ++i)
+	for (size_t i = 0; i < CHUNK_AREA; ++i)
 	{
-		int _indexTemperature = static_cast<int>(temperature[i] * 15.0f);
-		int _indexHumidity = std::clamp(static_cast<int>(humidity[i] * _indexTemperature), 0, _indexTemperature);
-		double _biomeType = BIOME_TABLE[_indexHumidity][_indexTemperature];
-		int _biomeInt = static_cast<int>(_biomeType);
-		biomeArray[i] = static_cast<BIOME>(_biomeInt);
+		auto _indexTemperature = static_cast<size_t>(temperature[i] * 15.0f);
+		auto _indexHumidity = std::clamp(static_cast<size_t>(humidity[i] * _indexTemperature), 0ZU, _indexTemperature);
+		auto _biomeType = BIOME_TABLE[_indexHumidity][_indexTemperature];
+		biomeArray[i] = static_cast<BIOME>(_biomeType);
 	}
 }

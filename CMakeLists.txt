@@ -21,7 +21,6 @@ add_executable(Revette
     src/GlobalLog.cpp
     src/Logger.cpp
     src/LoopGame.cpp
-    src/LoopTimer.cpp
     src/Settings.cpp
     src/Window.cpp
 
@@ -82,9 +81,13 @@ target_compile_options(Revette PUBLIC
     -Wextra
     -Wpedantic
     -Wfloat-conversion
+    -Wsign-conversion
 )
 target_link_options(Revette PUBLIC -flto=auto)
 
+find_package(Boost CONFIG REQUIRED COMPONENTS
+    container
+)
 find_package(FastNoise2 CONFIG REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
@@ -94,6 +97,7 @@ find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 
 target_link_libraries(Revette PRIVATE
     atomic
+    Boost::container
     glfw
     FastNoise2::FastNoise
     simdjson::simdjson

@@ -45,7 +45,7 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters) {
 
 		for (i32 lX = 0; lX < CHUNK_SIZE; ++lX) {
 		for (i32 lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
-			i32 index = lZ * CHUNK_SIZE + lX;
+			const auto index = static_cast<size_t>(lZ * CHUNK_SIZE + lX);
 
 			// Determine the default block to use based on the biome
 			Block defaultBlock(2);
@@ -118,7 +118,7 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters) {
 		uint16_t _randpos = prng.raw();
 		i32 pX = _randpos % CHUNK_SIZE;
 		i32 pZ = (_randpos / CHUNK_SIZE) % CHUNK_SIZE;
-		i32 _idx = pZ * CHUNK_SIZE + pX;
+		const auto _idx = static_cast<size_t>(pZ * CHUNK_SIZE + pX);
 		i32 _ground = genParameters.heightMap.heightArray[_idx];
 
 		switch (genParameters.biomeMap.biomeArray[_idx])
@@ -135,7 +135,7 @@ void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters) {
 
 	for (i32 lX = 0; lX < CHUNK_SIZE; ++lX) {
 	for (i32 lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
-		const i32 _index = lZ * CHUNK_SIZE + lX;
+		const auto _index = static_cast<size_t>(lZ * CHUNK_SIZE + lX);
 		const i32 _surfaceLevel = genParameters.heightMap.heightArray[_index];
 
 		// Continue if surface air block is below chunk OR if the topmost block is above the chunk
@@ -249,17 +249,24 @@ void Chunk::PopulateChunk(World& world)
 
 	// Sort out changes based on age
 	std::unordered_map<BlockPos, std::pair<Block, unsigned>> _changes;
-	for (auto& [_pos, _block, _age] : populationChangesInside)
-		if (!_changes.contains(_pos) || _changes.at(_pos).second < _age) _changes[_pos] = { _block, _age };
+	for (const auto& [_pos, _block, _age] : populationChangesInside) {
+		if (!_changes.contains(_pos) || _changes.at(_pos).second < _age) {
+			_changes[_pos] = { _block, _age };
+		}
+	}
 
 	// Get changes from neighbours
-	for (auto [lX, lY, lZ] : CHUNK_NEIGHBOURS)
+	for (const auto [lX, lY, lZ] : CHUNK_NEIGHBOURS) {
 		world.getChunk(ChunkPos(position.getX() + lX, position.getY() + lY, position.getZ() + lZ))->
 			addAdjacentPopulationChanges(_changes, position);
+	}
 
-	for (auto& [_pos, _change] : _changes)
-		if (_pos == position && (_change.second > 1024 || getBlock(_pos).blockType == 0))
-			setBlock(ChunkLocalBlockPos(_pos), _change.first);
+	for (const auto& [_pos, _change] : _changes) {
+		const ChunkLocalBlockPos _localPos(_pos);
+		if (ChunkPos(_pos) == position && (_change.second > 1024 || getBlock(_localPos).blockType == 0)) {
+			setBlock(_localPos, _change.first);
+		}
+	}
 
 	populationChangesInside.clear();
 }

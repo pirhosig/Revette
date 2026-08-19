@@ -1,5 +1,4 @@
 #pragma once
-#include "LoopTimer.h"
 #include "Rendering/Renderer.h"
 #include "World/World.h"
 class GLFWwindow;
