@@ -52,7 +52,10 @@ void runGenerationThread(
 	GlobalApplicationState& globalApplicationState,
 	const Settings& settings
 ) try {
-	WorldGenerator worldGenerator(settings);
+	WorldGenerator worldGenerator(
+		globalApplicationState,
+		settings
+	);
 	loadSyncPoint.arrive_and_wait();
 	worldGenerator.run();
 }

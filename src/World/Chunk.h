@@ -35,6 +35,8 @@ public:
 	Chunk operator=(Chunk&&) = delete;
 	Chunk operator=(const Chunk&) = delete;
 
+	ChunkPos getPosition() const;
+
 	void GenerateChunk(const class GeneratorChunkParameters& generatorParameters);
 	void PopulateChunk(class World& world);
 

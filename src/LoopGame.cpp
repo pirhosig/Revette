@@ -4,17 +4,13 @@
 
 
 
-const char* const NOISE_HEIGHTMAP = "FQkXCRUJDQAH@BCGZmBkAJBg@AIBEBAOamRk/C83MTD0EAg8JBg@AIBFBAOamRk/DAMAAKBBBAMAAEBBBA==";
-
-
-
 LoopGame::LoopGame(
 	GlobalApplicationState& _globalApplicationState,
 	const Settings& settings,
 	class GLFWwindow* _window
 ) :
 	globalApplicationState{_globalApplicationState},
-	world(globalApplicationState, settings, NOISE_HEIGHTMAP),
+	world(globalApplicationState, settings),
 	player(EntityPosition({ 0.0, 150.0, 0.0 }), {0.8, 3.75, 0.8}),
 	window{ _window }
 {

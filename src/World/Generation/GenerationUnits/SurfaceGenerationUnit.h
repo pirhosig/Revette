@@ -47,16 +47,31 @@ private:
         uint16_t getFoliageThreshold() const;
     };
 
+
+
 public:
     class NoiseSources;
 
-private:
-    std::unique_ptr<std::array<std::array<uint16_t, CHUNK_AREA>, GENERATION_UNIT_WIDTH_C * GENERATION_UNIT_WIDTH_C>> heightData;
+
 
 public:
     static constexpr uint16_t SEA_LEVEL = 64U;
 
-    SurfaceGenerationUnit(GenerationUnitPos2D pos, const NoiseSources& noiseSources);
+
+
+private:
+    GenerationUnitPos2D pos;
+
+    std::unique_ptr<
+        std::array<std::array<uint16_t, CHUNK_AREA>, GENERATION_UNIT_WIDTH_C * GENERATION_UNIT_WIDTH_C>
+    > heightData;
+
+
+
+public:
+    SurfaceGenerationUnit(GenerationUnitPos2D _pos, const NoiseSources& noiseSources);
+
+    GenerationUnitPos2D getPosition() const;
 };
 
 

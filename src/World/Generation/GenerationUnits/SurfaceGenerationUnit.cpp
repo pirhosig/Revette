@@ -69,8 +69,8 @@ FastNoise::SmartNode<> createTemperatureNoise(const char* encodedGenerator) {
 consteval std::array<float, CHUNK_AREA> getPositionArrayX() {
     std::array<float, CHUNK_AREA> positionArray;
 
-    for (int x = 0; x < CHUNK_SIZE; ++x) {
-        for (int y = 0; y < CHUNK_SIZE; ++y) {
+    for (u32 x = 0; x < CHUNK_SIZE; ++x) {
+        for (u32 y = 0; y < CHUNK_SIZE; ++y) {
             positionArray[x * CHUNK_SIZE + y] = static_cast<float>(x);
         }
     }
@@ -82,8 +82,8 @@ constexpr auto positionsX = getPositionArrayX();
 consteval std::array<float, CHUNK_AREA> getPositionArrayY() {
     std::array<float, CHUNK_AREA> positionArray;
 
-    for (int x = 0; x < CHUNK_SIZE; ++x) {
-        for (int y = 0; y < CHUNK_SIZE; ++y) {
+    for (u32 x = 0; x < CHUNK_SIZE; ++x) {
+        for (u32 y = 0; y < CHUNK_SIZE; ++y) {
             positionArray[x * CHUNK_SIZE + y] = static_cast<float>(y);
         }
     }
@@ -115,17 +115,27 @@ constexpr uint8_t BIOME_TABLE[16][16] = {
 
 
 
-SurfaceGenerationUnit::SurfaceGenerationUnit(GenerationUnitPos2D pos, const NoiseSources& noiseSources) :
+SurfaceGenerationUnit::SurfaceGenerationUnit(GenerationUnitPos2D _pos, const NoiseSources& noiseSources) :
+    pos{_pos},
     heightData{std::make_unique<decltype(heightData)::element_type>()}
 {
-    for (int x = 0; x < GENERATION_UNIT_WIDTH_C; ++x) {
-        for (int z = 0; z < GENERATION_UNIT_WIDTH_C; ++z) {
+    for (u32 x = 0; x < GENERATION_UNIT_WIDTH_C; ++x) {
+        for (u32 z = 0; z < GENERATION_UNIT_WIDTH_C; ++z) {
             noiseSources.genChunkHeight(
-                ChunkPos2D(pos.getX() * GENERATION_UNIT_WIDTH_C + x, pos.getZ() * GENERATION_UNIT_WIDTH_C + z),
+                ChunkPos2D(
+                    pos.getX() * GENERATION_UNIT_WIDTH_C + static_cast<i32>(x),
+                    pos.getZ() * GENERATION_UNIT_WIDTH_C + static_cast<i32>(z)
+                ),
                 (*heightData)[x * GENERATION_UNIT_WIDTH_C + z]
             );
         }
     }
+}
+
+
+
+GenerationUnitPos2D SurfaceGenerationUnit::getPosition() const {
+    return pos;
 }
 
 
@@ -203,7 +213,7 @@ std::pair<uint16_t, uint16_t> SurfaceGenerationUnit::NoiseSources::genChunkHeigh
         seed
     );
 
-    for (int i = 0; i < CHUNK_AREA; ++i) {
+    for (size_t i = 0; i < CHUNK_AREA; ++i) {
         output[i] = static_cast<uint16_t>(rawNoise[i]);
     }
 
@@ -241,7 +251,7 @@ void SurfaceGenerationUnit::NoiseSources::genChunkBiomes(
         seed + 0x57
     );
 
-    for (int i = 0; i < CHUNK_AREA; ++i) {
+    for (size_t i = 0; i < CHUNK_AREA; ++i) {
         output[i] = static_cast<BiomeType::EnumType>(
             BIOME_TABLE[static_cast<size_t>(rawHumidity[i])][static_cast<size_t>(rawTemperature[i])]
         );

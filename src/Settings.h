@@ -1,13 +1,13 @@
 #pragma once
-#include <cstdint>
-#include <string>
+#include "Core/RevetteCore.h"
 
 
 
 class Settings {
 private:
-    uint32_t loadDistanceHorizontal;
-    uint32_t loadDistanceVertical;
+    i32 loadDistanceHorizontal;
+    i32 loadDistanceVertical;
+    i32 generationSeed;
 
     bool validationLayersEnabled;
 
@@ -18,7 +18,10 @@ public:
     Settings operator=(Settings&&) = delete;
     Settings operator=(const Settings&) = delete;
 
-    uint32_t getLoadDistanceHorizontal() const;
-    uint32_t getLoadDistanceVertical() const;
+    
+    i32 getLoadDistanceHorizontal() const;
+    i32 getLoadDistanceVertical() const;
+    i32 getGenerationSeed() const;
+
     bool getValidationLayersEnabled() const;
 };

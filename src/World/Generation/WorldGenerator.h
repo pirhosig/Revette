@@ -14,13 +14,23 @@ class WorldGenerator {
     const Settings& settings;
 
     SurfaceGenerationUnit::NoiseSources surfaceNoiseSources;
-    std::vector<std::unique_ptr<SurfaceGenerationUnit>> surfaceUnits;
+    std::vector<std::unique_ptr<SurfaceGenerationUnit>> surfaceGenerationUnits;
+
+    ChunkPos playerChunkPosition;
+    bool generationIsComplete;
 
 public:
     WorldGenerator(
         GlobalApplicationState& _globalApplicationState,
         const Settings& _settings
     );
-
+    
     void run();
+
+
+
+private:
+    // Expand the generated area, and returns true if further generation is needed.
+    bool expandGeneratedArea();
+    void onLoadCentreChange();
 };
