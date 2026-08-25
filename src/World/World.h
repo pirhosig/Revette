@@ -1,4 +1,5 @@
 #pragma once
+#include <mutex>
 #include <unordered_map>
 
 #include "Block.h"
@@ -16,22 +17,16 @@
 
 
 
-class ChunkPriorityTicket {
-public:
-	int priority;
-	ChunkPos pos;
-
-	ChunkPriorityTicket(int _priority, ChunkPos _pos) : priority{ _priority }, pos{ _pos } {}
-
-	bool operator<(const ChunkPriorityTicket& other) const
-	{
-		return priority < other.priority;
-	}
-};
-
-
-
 class World {
+public:
+	struct GlobalStateType {
+		std::mutex mutexForIncomingChunks;
+		std::vector<std::unique_ptr<Chunk>> incomingChunks;
+
+		GlobalStateType();
+	};
+	static GlobalStateType GlobalState;
+
 private:
 	GlobalApplicationState& globalApplicationState;
 	const Settings& settings;
@@ -41,33 +36,20 @@ private:
 	std::unordered_map<ChunkPos, std::unique_ptr<Chunk>> mapChunks;
 
 	// Chunk loading information
+	i64 chunkUnloadDistanceSquared;
 	ChunkPos loadCentre;
-	ChunkStatusMap chunkStatusMap;
-	std::priority_queue<ChunkPriorityTicket> loadQueue;
-	std::priority_queue<ChunkPriorityTicket> populateQueue;
-	std::priority_queue<ChunkPriorityTicket> meshQueue;
-
-	// Chunk generation tools
-	std::unordered_map<ChunkPos2D, GeneratorChunkParameters> generatorChunkCache;
-	GeneratorChunkNoise generatorChunkNoise;
 
 private:
 	void processEntities(Entity& player);
 	void moveEntity(Entity& entity);
 	bool blockIsCollidable(BlockPos blockPos) const;
-	void onLoadCentreChange();
 	void loadChunks();
-	void populateChunks();
-	void meshChunks();
-	void queueChunkForMeshing(const ChunkPos chunkPos);
-	void queueChunkForPopulation(const ChunkPos chunkPos);
-	const GeneratorChunkParameters& getGeneratorChunkParameters(const ChunkPos2D position);
+	void unloadChunks();
 	
 public:
 	World(
 		GlobalApplicationState& _globalApplicationState,
-		const Settings& _settings,
-		const char* settingNoiseHeightmap
+		const Settings& _settings
 	);
 
 	World(World&&) = delete;

@@ -3,117 +3,59 @@
 #include <cassert>
 #include <cmath>
 
+#include "Core/RevetteCore.h"
 #include "Physics.h"
 #include "../Exceptions.h"
 #include "../GlobalLog.h"
 
 
 
-constexpr int SEED = 24383737;
-
-
 namespace {
 
-int chunkLoadPriority(ChunkPos pos, ChunkPos centre) {
-	return std::clamp(200 - static_cast<int>(centre.distanceEuclidean(pos)), 0, 200);
-}
-
-
-
-inline int sign(double x) {
-	return (0.0 < x) - (x < 0.0);
+inline i32 sign(double x) {
+	return static_cast<i32>(0.0 < x) - static_cast<i32>(x < 0.0);
 }
 
 }
 
 
 
-constexpr int CHUNK_NEIGHBOURHOOD[27][3] = {
-	{-1, -1, -1},
-	{-1, -1,  0},
-	{-1, -1,  1},
-	{-1,  0, -1},
-	{-1,  0,  0},
-	{-1,  0,  1},
-	{-1,  1, -1},
-	{-1,  1,  0},
-	{-1,  1,  1},
-	{ 0, -1, -1},
-	{ 0, -1,  0},
-	{ 0, -1,  1},
-	{ 0,  0, -1},
-	{ 0,  0,  0},
-	{ 0,  0,  1},
-	{ 0,  1, -1},
-	{ 0,  1,  0},
-	{ 0,  1,  1},
-	{ 1, -1, -1},
-	{ 1, -1,  0},
-	{ 1, -1,  1},
-	{ 1,  0, -1},
-	{ 1,  0,  0},
-	{ 1,  0,  1},
-	{ 1,  1, -1},
-	{ 1,  1,  0},
-	{ 1,  1,  1}
-};
+World::GlobalStateType::GlobalStateType() {
+	incomingChunks.reserve(1024U);
+}
 
 
 
-constexpr int CHUNK_NEIGHBOURS_CARDINAL[6][3] = {
-	{ 1,  0,  0},
-	{-1,  0,  0},
-	{ 0,  1,  0},
-	{ 0, -1,  0},
-	{ 0,  0,  1},
-	{ 0,  0, -1}
-};
+World::GlobalStateType World::GlobalState{};
 
 
 
 World::World(
 	GlobalApplicationState& _globalApplicationState,
-	const Settings& _settings,
-	const char* settingNoiseHeightmap
+	const Settings& _settings
 ) :
 	globalApplicationState{_globalApplicationState},
 	settings{_settings},
-	loadCentre(0, 1, 0),
-	generatorChunkNoise(
-		SEED,
-		settingNoiseHeightmap,
-		"KQkNCQY@CRRQ=",
-		"KQkNCQY@CRRQ="
-	)
+	chunkUnloadDistanceSquared{
+		static_cast<i64>(settings.getLoadDistanceHorizontal() + 5) * (settings.getLoadDistanceHorizontal() + 5)
+	},
+	loadCentre(0, 1, 0)
 {
-	loadQueue.push(ChunkPriorityTicket(chunkLoadPriority(loadCentre, loadCentre), loadCentre));
-	chunkStatusMap.setChunkStatusLoad(loadCentre, StatusChunkLoad::QUEUED_LOAD);
 	GlobalLog.Write("Loaded World");
 }
 
 
 
 void World::tick(Entity& player) {
-	std::queue<ChunkPos> meshUnloadQueue;
-	sharedRendererState->chunkMeshQueueDeletion->getQueue(meshUnloadQueue);
-	while (!meshUnloadQueue.empty()) {
-		ChunkPos _pos = meshUnloadQueue.front();
-		meshUnloadQueue.pop();
-		if (chunkStatusMap.chunkExists(_pos)) {
-			chunkStatusMap.setChunkStatusMesh(_pos, StatusChunkMesh::NON_EXISTENT);
-		}
-	}
-
 	if (ChunkPos playerChunkPos(player.position);
 		playerChunkPos != loadCentre
 	) {
 		loadCentre = playerChunkPos;
-		onLoadCentreChange();
+		globalApplicationState.playerChunkPosition.store(playerChunkPos);
+		unloadChunks();
 	}
 
 	loadChunks();
-	populateChunks();
-	meshChunks();
 
 	processEntities(player);
 }
@@ -154,9 +96,9 @@ void World::moveEntity(Entity& entity) {
 	const double _DY = std::clamp(pos.displacement.y, -32.0, 32.0);
 	const double _DZ = std::clamp(pos.displacement.z, -32.0, 32.0);
 
-	const int stepX = sign(_DX);
-	const int stepY = sign(_DY);
-	const int stepZ = sign(_DZ);
+	const auto stepX = sign(_DX);
+	const auto stepY = sign(_DY);
+	const auto stepZ = sign(_DZ);
 
 	const double tDeltaX = std::clamp(1.0 / std::abs(_DX), 0.0, 1.0);
 	const double tDeltaY = std::clamp(1.0 / std::abs(_DY), 0.0, 1.0);
@@ -172,16 +114,16 @@ void World::moveEntity(Entity& entity) {
 		((0 < stepZ) ? std::ceil(pos.pos.z) - pos.pos.z : pos.pos.z - std::floor(pos.pos.z)) * tDeltaZ :
 		1.0;
 
-	const int _sx = static_cast<int>(std::ceil(entity.size.x * 2)) - 1;
-	const int _sy = static_cast<int>(std::ceil(entity.size.y))     - 1;
-	const int _sz = static_cast<int>(std::ceil(entity.size.z * 2)) - 1;
+	const auto _sx = static_cast<i32>(std::ceil(entity.size.x * 2)) - 1;
+	const auto _sy = static_cast<i32>(std::ceil(entity.size.y))     - 1;
+	const auto _sz = static_cast<i32>(std::ceil(entity.size.z * 2)) - 1;
 
 	while (tMaxX < 1.0 || tMaxY < 1.0 || tMaxZ < 1.0) {
 		if (tMaxX < tMaxY) {
 			if (tMaxX < tMaxZ) {
-				int lX = (stepX > 0) ? _sx : 0;
-				for (int lZ = 0; lZ < _sz; ++lZ) {
-				for (int lY = 0; lY < _sy; ++lY) {
+				i32 lX = (stepX > 0) ? _sx : 0;
+				for (i32 lZ = 0; lZ < _sz; ++lZ) {
+				for (i32 lY = 0; lY < _sy; ++lY) {
 					if (blockIsCollidable(currentPos.offset(stepX + lX, lY, lZ))) goto Collided;
 				}
 				}
@@ -189,9 +131,9 @@ void World::moveEntity(Entity& entity) {
 				currentPos = currentPos.offset(stepX, 0, 0);
 			}
 			else {
-				int lZ = (stepZ > 0) ? _sz : 0;
-				for (int lY = 0; lY < _sy; ++lY) {
-				for (int lX = 0; lX < _sx; ++lX) {
+				i32 lZ = (stepZ > 0) ? _sz : 0;
+				for (i32 lY = 0; lY < _sy; ++lY) {
+				for (i32 lX = 0; lX < _sx; ++lX) {
 					if (blockIsCollidable(currentPos.offset(lX, lY, stepZ + lZ))) goto Collided;
 				}
 				}
@@ -200,9 +142,9 @@ void World::moveEntity(Entity& entity) {
 			}
 		}
 		else if (tMaxY < tMaxZ) {
-			int lY = (stepY > 0) ? _sy : 0;
-			for (int lX = 0; lX < _sx; ++lX) {
-			for (int lZ = 0; lZ < _sz; ++lZ) {
+			i32 lY = (stepY > 0) ? _sy : 0;
+			for (i32 lX = 0; lX < _sx; ++lX) {
+			for (i32 lZ = 0; lZ < _sz; ++lZ) {
 				if (blockIsCollidable(currentPos.offset(lX, stepY + lY, lZ))) goto Collided;
 			}
 			}
@@ -210,9 +152,9 @@ void World::moveEntity(Entity& entity) {
 			currentPos = currentPos.offset(0, stepY, 0);
 		}
 		else {
-			int lZ = (stepZ > 0) ? _sz : 0;
-			for (int lY = 0; lY < _sy; ++lY) {
-			for (int lX = 0; lX < _sx; ++lX) {
+			i32 lZ = (stepZ > 0) ? _sz : 0;
+			for (i32 lY = 0; lY < _sy; ++lY) {
+			for (i32 lX = 0; lX < _sx; ++lX) {
 				if (blockIsCollidable(currentPos.offset(lX, lY, stepZ + lZ))) goto Collided;
 			}
 			}
@@ -230,7 +172,8 @@ Collided:
 
 
 bool World::blockIsCollidable(BlockPos blockPos) const {
-	if (chunkStatusMap.getChunkStatusLoad(ChunkPos(blockPos)) != StatusChunkLoad::POPULATED) {
+	auto it = mapChunks.find(ChunkPos(blockPos));
+	if (it == mapChunks.end()) {
 		return true;
 	}
 	return Physics::IS_COLLIDABLE[getBlock(blockPos).blockType];
@@ -238,215 +181,32 @@ bool World::blockIsCollidable(BlockPos blockPos) const {
 
 
 
-void World::onLoadCentreChange() {
-	// Jesus christ this function might just be hands down one of the worst pieces of code I have ever written
-	// There is an unbelievable amount of things that could be optimised, done better or probably done without
-	// I pray to god that this never breaks because I sure as hell do not know how it works.
-	// Update: well fuck, it doesn't quite work
-
-	ChunkPos2D _loadCentre2D(loadCentre);
-	const long long _loadDistanceHorizontalSquared = (
-		static_cast<long long>(settings.getLoadDistanceHorizontal()) *
-		settings.getLoadDistanceHorizontal()
-	);
-
-	// Pass 1: unload all chunks that should be unloaded
-	std::vector<ChunkPos> unloadQueue;
-	for (auto& [_pos, _status] : chunkStatusMap.statusMap) {
-		if (
-			_loadCentre2D.distanceEuclideanSquared(_pos) > _loadDistanceHorizontalSquared ||
-			std::abs(loadCentre.getY() - _pos.getY()) > settings.getLoadDistanceVertical()
-		) {
-			unloadQueue.push_back(_pos);
-		}
-	}
-
-	// Actually unload them
-	for (auto& _pos : unloadQueue) {
-		chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::NON_EXISTENT);
-		mapChunks.erase(_pos);
-		// Check if cached generation data can be cleared
-		if (_loadCentre2D.distanceEuclideanSquared(_pos) > _loadDistanceHorizontalSquared) {
-			generatorChunkCache.erase(ChunkPos2D(_pos));
-		}
-	}
-
-	// Figure out wtf is going on with the rest of the chunks
-	for (auto& [_pos, _status] : chunkStatusMap.statusMap) {
-		switch (_status.getLoadStatus()) {
-		case StatusChunkLoad::GENERATED:
-			// Check if this can populate
-			if (chunkStatusMap.getChunkStatusCanPopulate(_pos)) {
-				chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::QUEUED_POPULATE);
-			}
-			[[fallthrough]];
-		case StatusChunkLoad::POPULATED:
-			// Check if any neighbours should be loaded
-			for (auto [lX, lY, lZ] : CHUNK_NEIGHBOURS_CARDINAL) {
-				ChunkPos nPos(_pos.getX() + lX, _pos.getY() + lY, _pos.getZ() + lZ);
-				if (
-					_loadCentre2D.distanceEuclideanSquared(_pos) <= _loadDistanceHorizontalSquared &&
-					std::abs(loadCentre.getY() - _pos.getY()) <= settings.getLoadDistanceVertical() &&
-					chunkStatusMap.getChunkStatusLoad(nPos) == StatusChunkLoad::NON_EXISTENT
-				) {
-					chunkStatusMap.setChunkStatusLoad(nPos, StatusChunkLoad::QUEUED_LOAD);
-				}
-			}
-			break;
-
-		case StatusChunkLoad::QUEUED_POPULATE:
-			if (!_status.canPopulate()) {
-				chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::GENERATED);
-			}
-			break;
-
-		default:
-			break;
-		}
-
-		if (_status.getMeshStatus() == StatusChunkMesh::NON_EXISTENT && _status.canMesh()) {
-			chunkStatusMap.setChunkStatusMesh(_pos, StatusChunkMesh::QUEUED);
-		}
-		else if (_status.getMeshStatus() == StatusChunkMesh::QUEUED && !_status.canMesh()) {
-			chunkStatusMap.setChunkStatusMesh(_pos, StatusChunkMesh::NON_EXISTENT);
-		}
-	}
-
-	// Re generate all chunk queues
-	loadQueue = std::priority_queue<ChunkPriorityTicket>();
-	populateQueue = std::priority_queue<ChunkPriorityTicket>();
-	meshQueue = std::priority_queue<ChunkPriorityTicket>();
-	for (auto& [_pos, _status] : chunkStatusMap.statusMap) {
-		if (_status.getLoadStatus() == StatusChunkLoad::QUEUED_LOAD) {
-			loadQueue.push(ChunkPriorityTicket(chunkLoadPriority(_pos, loadCentre), _pos));
-		}
-		else if (_status.getLoadStatus() == StatusChunkLoad::QUEUED_POPULATE) {
-			populateQueue.push(ChunkPriorityTicket(chunkLoadPriority(_pos, loadCentre), _pos));
-		}
-		else if (_status.getMeshStatus() == StatusChunkMesh::QUEUED) {
-			meshQueue.push(ChunkPriorityTicket(chunkLoadPriority(_pos, loadCentre), _pos));
-		}
-	}
-}
-
-
-
 void World::loadChunks() {
-	constexpr int MAX_LOAD_COUNT = 35;
-	for (int i = 0; !loadQueue.empty() && i < MAX_LOAD_COUNT; ++i) {
-		ChunkPos lPos = loadQueue.top().pos;
-		loadQueue.pop();
-
-		// Make sure that the chunk is queued for loading (something has gone horribly wrong if it isn't)
-		assert(
-			(chunkStatusMap.getChunkStatusLoad(lPos) == StatusChunkLoad::QUEUED_LOAD) &&
-			"Attempted to load already loaded chunk."
-		);
-
-		// Load the chunk
-		auto insertRes = mapChunks.insert({ lPos, std::make_unique<Chunk>(lPos) });
-		chunkStatusMap.setChunkStatusLoad(lPos, StatusChunkLoad::LOADED);
-
-		// Generate the chunk
-		insertRes.first->second->GenerateChunk(getGeneratorChunkParameters(ChunkPos2D(lPos)));
-		chunkStatusMap.setChunkStatusLoad(lPos, StatusChunkLoad::GENERATED);
-
-		// Check if it, or its neighbours can populate or load
-		ChunkPos2D _loadCentre2D(loadCentre);
-		const long long _loadDistanceHorizontalSquared = (
-			static_cast<long long>(settings.getLoadDistanceHorizontal()) *
-			settings.getLoadDistanceHorizontal()
-		);
-		for (auto [lX, lY, lZ] : CHUNK_NEIGHBOURHOOD) {
-			ChunkPos _pos(lPos.getX() + lX, lPos.getY() + lY, lPos.getZ() + lZ);
-			if (
-				_loadCentre2D.distanceEuclideanSquared(_pos) <= _loadDistanceHorizontalSquared &&
-				std::abs(loadCentre.getY() - _pos.getY()) <= settings.getLoadDistanceVertical()
-			) {
-				auto _status = chunkStatusMap.getChunkStatusLoad(_pos);
-				if (_status == StatusChunkLoad::NON_EXISTENT) {
-					loadQueue.push(ChunkPriorityTicket(chunkLoadPriority(_pos, loadCentre), _pos));
-					chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::QUEUED_LOAD);
-				}
-				else if (_status == StatusChunkLoad::GENERATED && chunkStatusMap.getChunkStatusCanPopulate(_pos)) {
-					queueChunkForPopulation(_pos);
-				}
-			}
+	std::scoped_lock<std::mutex> lock(World::GlobalState.mutexForIncomingChunks);
+	for (auto& chunk : World::GlobalState.incomingChunks) {
+		const auto _pos = chunk->getPosition();
+		if (mapChunks.try_emplace(
+			_pos,
+			std::move(chunk)
+		).second == false) {
+			throw std::runtime_error("in function World::loadChunks(): Chunk unexpectedly recreated.");
 		}
 	}
 }
 
 
 
-void World::populateChunks() {
-	constexpr int MAX_POPULATE_COUNT = 25;
-	for (int i = 0; !populateQueue.empty() && i < MAX_POPULATE_COUNT; ++i) {
-		ChunkPos _pos = populateQueue.top().pos;
-		populateQueue.pop();
-
-		// Make sure that the chunk is queued for population
-		assert(chunkStatusMap.getChunkStatusLoad(_pos) == StatusChunkLoad::QUEUED_POPULATE &&
-			"Attempted to populate already populated chunk."
-		);
-
-		getChunk(_pos)->PopulateChunk(*this);
-
-		chunkStatusMap.setChunkStatusLoad(_pos, StatusChunkLoad::POPULATED);
-		// Check if this chunk or any cardinal neighbours can generate meshes
-		const int NEIGHBOURHOOD[7][3] = {
-			{ 0, 0, 0 }, { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 }
-		};
-		for (auto [_dx, _dy, _dz] : NEIGHBOURHOOD) {
-			ChunkPos meshPos(_pos.getX() + _dx, _pos.getY() + _dy, _pos.getZ() + _dz);
-			if (chunkStatusMap.getChunkStatusCanMesh(meshPos)) {
-				queueChunkForMeshing(meshPos);
-			}
+void World::unloadChunks() {
+	std::erase_if(
+		mapChunks,
+		[&](const auto& item) {
+			const auto& [_pos, _chunk] = item;
+			return (
+				(loadCentre.distanceEuclideanSquared(_pos) > chunkUnloadDistanceSquared) ||
+				(std::abs(loadCentre.getY() - _pos.getY()) > settings.getLoadDistanceVertical() + 5)
+			);
 		}
-	}
-}
-
-
-
-void World::meshChunks() {
-	std::queue<std::unique_ptr<MeshChunk::Data>> meshDataQueue;
-
-	constexpr int MAX_MESH_COUNT = 20;
-	for (int i = 0; i < MAX_MESH_COUNT; ++i) {
-		if (meshQueue.empty()) {
-			break;
-		}
-
-		ChunkPos mPos = meshQueue.top().pos;
-		meshQueue.pop();
-
-		// Make sure chunk is generated but does not have a mesh (the universe is broken if it isn't)
-		assert(
-			(chunkStatusMap.getChunkStatusLoad(mPos) == StatusChunkLoad::POPULATED) &&
-			"Attempted to create mesh for chunk that has not finished loading"
-		);
-		assert(
-			(chunkStatusMap.getChunkStatusMesh(mPos) == StatusChunkMesh::QUEUED) &&
-			"Attempted to regenerate mesh."
-		);
-
-		// Create a mesh if the chunk is not empty
-		if (!getChunk(mPos)->shouldSkipMeshing()) {
-			std::array<Chunk*, 6> neighbours{};
-			for (unsigned j = 0; j < 6; ++j) {
-				neighbours[j] = getChunk(mPos.direction(static_cast<AxisDirection>(j))).get();
-			}
-			auto meshData = std::make_unique<MeshChunk::Data>(getChunk(mPos).get(), neighbours);
-			if (!meshData->isEmpty()) {
-				meshDataQueue.push(std::move(meshData));
-			}
-		}
-		chunkStatusMap.setChunkStatusMesh(mPos, StatusChunkMesh::MESHED);
-	}
-
-	// Push meshes, if any were created
-	if (meshDataQueue.size()) {
-		sharedRendererState->chunkMeshQueue->mergeQueue(meshDataQueue);
-	}
+	);
 }
 
 
@@ -462,33 +222,4 @@ const std::unique_ptr<Chunk>& World::getChunk(const ChunkPos chunkPos) const {
 		error += std::to_string(chunkPos.getX()) + " " + std::to_string(chunkPos.getY()) + " " + std::to_string(chunkPos.getZ());
 		throw EXCEPTION_WORLD::ChunkNonExistence(error);
 	}
-}
-
-
-
-void World::queueChunkForMeshing(const ChunkPos chunkPos) {
-	assert(
-		chunkStatusMap.getChunkStatusCanMesh(chunkPos) &&
-		"Attempted to queue mesh that cannot be meshed"
-	);
-	meshQueue.push(ChunkPriorityTicket(chunkLoadPriority(chunkPos, loadCentre), chunkPos));
-	chunkStatusMap.setChunkStatusMesh(chunkPos, StatusChunkMesh::QUEUED);
-}
-
-
-
-void World::queueChunkForPopulation(const ChunkPos chunkPos) {
-	assert(
-		chunkStatusMap.getChunkStatusCanPopulate(chunkPos) &&
-		"Attempted to populate chunk that cannot be populated"
-	);
-	populateQueue.push(ChunkPriorityTicket(chunkLoadPriority(chunkPos, loadCentre), chunkPos));
-	chunkStatusMap.setChunkStatusLoad(chunkPos, StatusChunkLoad::QUEUED_POPULATE);
-}
-
-
-
-const GeneratorChunkParameters& World::getGeneratorChunkParameters(const ChunkPos2D position) {
-	if (!generatorChunkCache.contains(position)) generatorChunkCache.try_emplace(position, position, generatorChunkNoise);
-	return generatorChunkCache.at(position);
 }

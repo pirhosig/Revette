@@ -24,6 +24,10 @@ Chunk::Chunk(ChunkPos _pos) : generated{ false }, position(_pos) {}
 
 
 
+ChunkPos Chunk::getPosition() const { return position; }
+
+
+
 void Chunk::GenerateChunk(const GeneratorChunkParameters& genParameters) {
 	if (generated) throw EXCEPTION_WORLD::ChunkRegeneration("Attempted to re-generate chunk");
 	generated = true;

@@ -26,6 +26,8 @@ add_executable(Revette
     src/Application/Application.cpp
     src/Application/GlobalApplicationState.cpp
 
+    src/Core/RevetteCore.cpp
+
     src/Rendering/Buffer.cpp
     src/Rendering/ChunkRenderer.cpp
     src/Rendering/Fence.cpp

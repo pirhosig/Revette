@@ -9,8 +9,8 @@ namespace {
 consteval std::array<float, CHUNK_AREA> getPositionArrayX() {
     std::array<float, CHUNK_AREA> positionArray;
 
-    for (int x = 0; x < CHUNK_SIZE; ++x) {
-        for (int y = 0; y < CHUNK_SIZE; ++y) {
+    for (u32 x = 0; x < CHUNK_SIZE; ++x) {
+        for (u32 y = 0; y < CHUNK_SIZE; ++y) {
             positionArray[y * CHUNK_SIZE + x] = static_cast<float>(x);
         }
     }
@@ -21,8 +21,8 @@ consteval std::array<float, CHUNK_AREA> getPositionArrayX() {
 consteval std::array<float, CHUNK_AREA> getPositionArrayY() {
     std::array<float, CHUNK_AREA> positionArray;
 
-    for (int x = 0; x < CHUNK_SIZE; ++x) {
-        for (int y = 0; y < CHUNK_SIZE; ++y) {
+    for (u32 x = 0; x < CHUNK_SIZE; ++x) {
+        for (u32 y = 0; y < CHUNK_SIZE; ++y) {
             positionArray[y * CHUNK_SIZE + x] = static_cast<float>(y);
         }
     }
