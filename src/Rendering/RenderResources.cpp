@@ -90,7 +90,8 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
             .memoryTypeBits{},
             .pool{},
             .pUserData{},
-            .priority{}
+            .priority{},
+            .minAlignment{}
         };
     
         if (vmaCreateImage(

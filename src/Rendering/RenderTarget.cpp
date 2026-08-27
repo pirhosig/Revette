@@ -127,7 +127,8 @@ void RenderTarget::createDepthObjects() {
         .memoryTypeBits{},
         .pool{},
         .pUserData{},
-        .priority{}
+        .priority{},
+        .minAlignment{}
     };
     if (vmaCreateImage(allocator, &imageInfo, &allocInfo, &depthImage, &depthImageAllocation, {}) != VK_SUCCESS) {
         throw std::runtime_error("Failed to allocate depth image");

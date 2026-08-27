@@ -36,7 +36,8 @@ Buffer::Buffer(
         .memoryTypeBits{},
         .pool{},
         .pUserData{},
-        .priority{}
+        .priority{},
+        .minAlignment{}
     };
     VmaAllocationInfo allocInfo{};
     if (vmaCreateBuffer(allocator, &bufferInfo, &allocCreateInfo, &buffer, &allocation, &allocInfo) != VK_SUCCESS) {
