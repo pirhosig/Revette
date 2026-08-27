@@ -40,6 +40,8 @@ add_executable(Revette
     src/Rendering/SingleCommandBuffer.cpp
     src/Rendering/Vulkan_Utils.cpp
     src/Rendering/VulkanContext.cpp
+
+    src/Rendering/Mesh/MeshBuilder.cpp
     src/Rendering/Mesh/MeshChunk.cpp
 
     src/Threading/SharedGameRendererState.cpp
@@ -93,7 +95,7 @@ target_compile_options(Revette PUBLIC
     -Wpedantic
     -Wfloat-conversion
     -Wsign-conversion
-
+    # TODO: enable -Wnrvo
     -Wno-interference-size
 )
 

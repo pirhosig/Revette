@@ -26,7 +26,7 @@ World::GlobalStateType::GlobalStateType() {
 
 
 
-World::GlobalStateType World::GlobalState{};
+World::GlobalStateType World::globalState{};
 
 
 
@@ -182,8 +182,8 @@ bool World::blockIsCollidable(BlockPos blockPos) const {
 
 
 void World::loadChunks() {
-	std::scoped_lock<std::mutex> lock(World::GlobalState.mutexForIncomingChunks);
-	for (auto& chunk : World::GlobalState.incomingChunks) {
+	std::scoped_lock lock(World::globalState.mutexForIncomingChunks);
+	for (auto& chunk : World::globalState.incomingChunks) {
 		const auto _pos = chunk->getPosition();
 		if (mapChunks.try_emplace(
 			_pos,

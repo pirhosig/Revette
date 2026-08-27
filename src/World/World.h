@@ -18,14 +18,15 @@
 
 
 class World {
-public:
 	struct GlobalStateType {
 		std::mutex mutexForIncomingChunks;
 		std::vector<std::unique_ptr<Chunk>> incomingChunks;
 
 		GlobalStateType();
 	};
-	static GlobalStateType GlobalState;
+	static GlobalStateType globalState;
+
+
 
 private:
 	GlobalApplicationState& globalApplicationState;
@@ -39,6 +40,8 @@ private:
 	i64 chunkUnloadDistanceSquared;
 	ChunkPos loadCentre;
 
+
+
 private:
 	void processEntities(Entity& player);
 	void moveEntity(Entity& entity);
@@ -46,6 +49,8 @@ private:
 	void loadChunks();
 	void unloadChunks();
 	
+
+
 public:
 	World(
 		GlobalApplicationState& _globalApplicationState,
@@ -62,4 +67,5 @@ public:
 	Block getBlock(BlockPos blockPos) const;
 	void setBlock(BlockPos blockPos, Block block) const;
 	const std::unique_ptr<Chunk>& getChunk(const ChunkPos chunkPos) const;
+
 };

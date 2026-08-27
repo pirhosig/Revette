@@ -37,4 +37,5 @@ public:
 	i32 getManhattanDistance(const GenerationUnitPos2D& other) const;
 	OffsetType getOffsetTo(const GenerationUnitPos2D& other) const;
 	GenerationUnitPos2D calculateOffsetBy(i32 xDistance, i32 zDistance) const;
+
 };
