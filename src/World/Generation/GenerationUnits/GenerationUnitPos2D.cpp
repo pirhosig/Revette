@@ -1,10 +1,5 @@
 #include "GenerationUnitPos2D.h"
-
-
-
-
-
-
+#include <cmath>
 
 namespace {
 

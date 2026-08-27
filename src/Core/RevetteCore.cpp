@@ -4,6 +4,12 @@
 
 
 
+/*
+This file contains checks for very elementary assumptions in the codebase.
+*/
+
+
+
 static_assert(
     CACHE_ALIGNMENT == std::hardware_destructive_interference_size,
     "This cache configuration is not supported."
