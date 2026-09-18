@@ -1,13 +1,14 @@
 #include "Renderer.h"
 #include <algorithm>
 
-#include "../GlobalLog.h"
+#include "GlobalLog.h"
+#include "Core/RevetteCore.h"
 
 using namespace std::chrono_literals;
 
 
 
-constexpr int RENDER_AHEAD_COUNT = 3;
+constexpr u32 RENDER_AHEAD_COUNT = 3;
 
 
 
@@ -32,8 +33,8 @@ void Renderer::unloadMeshes(const ChunkPos& playerChunk) {
 	std::queue<ChunkPos> removeQueue;
 	
 	ChunkPos2D _playerChunk2D(playerChunk);
-	const long long _loadDistanceHorizontalSquared = (
-		static_cast<long long>(settings.getLoadDistanceHorizontal()) *
+	const i64 _loadDistanceHorizontalSquared = (
+		static_cast<i64>(settings.getLoadDistanceHorizontal()) *
 		settings.getLoadDistanceHorizontal()
 	);
 
@@ -95,7 +96,7 @@ Renderer::Renderer(
 	sharedGameState{std::move(_sharedGameState)}
 {
 	frameRenderers.reserve(RENDER_AHEAD_COUNT);
-	for (int i = 0; i < RENDER_AHEAD_COUNT; ++i) {
+	for (u32 i = 0; i < RENDER_AHEAD_COUNT; ++i) {
 		frameRenderers.emplace_back(
 			vulkanContext.getDevice(),
 			vulkanContext.getQueueGraphics(),

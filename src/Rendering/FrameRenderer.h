@@ -9,6 +9,7 @@
 #include "RenderResources.h"
 #include "RenderTarget.h"
 #include "SingleCommandBuffer.h"
+#include "Core/RevetteCore.h"
 
 
 
@@ -38,11 +39,11 @@ private:
         RenderResources& _renderResources,
         ChunkRenderer& _chunkRenderer,
         GuiRenderer& _guiRenderer,
-        uint32_t queueFamilyIndex,
+        u32 queueFamilyIndex,
         VmaAllocator allocator
     );
 
-    uint32_t beginFrame(
+    u32 beginFrame(
         std::queue<std::unique_ptr<MeshChunk::Data>> loadMeshes,
         std::unordered_map<ChunkPos, std::unique_ptr<MeshChunk>>& chunkMeshes
     );
@@ -55,7 +56,7 @@ private:
         EntityPosition playerPosition,
         std::unordered_map<ChunkPos, std::unique_ptr<MeshChunk>>& chunkMeshes
     );
-    void endFrame(uint32_t imageIndex);
+    void endFrame(u32 imageIndex);
 
 public:
     FrameRenderer(
@@ -65,7 +66,7 @@ public:
         RenderResources& _renderResources,
         ChunkRenderer& _chunkRenderer,
         GuiRenderer& _guiRenderer,
-        uint32_t queueFamilyIndex,
+        u32 queueFamilyIndex,
         VmaAllocator allocator
     );
     ~FrameRenderer();

@@ -1,6 +1,8 @@
 #pragma once
 #include "Vulkan_Headers.h"
 
+#include "Core/RevetteCore.h"
+
 
 
 class VulkanContext {
@@ -10,7 +12,7 @@ private:
     VkSurfaceKHR surface{};
     VkPhysicalDevice physicalDevice{};
     VkDevice device{};
-    uint32_t queueGraphicsIndex{};
+    u32 queueGraphicsIndex{};
     VkQueue queueGraphics{};
     VmaAllocator allocator{};
 
@@ -38,7 +40,7 @@ public:
     VkPhysicalDevice getPhysicalDevice() const;
     VkSurfaceKHR getSurface() const;
     VkDevice getDevice() const;
-    uint32_t getQueueGraphicsFamily() const;
+    u32 getQueueGraphicsFamily() const;
     VkQueue  getQueueGraphics() const;
     VmaAllocator getAllocator() const;
 };

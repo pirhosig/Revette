@@ -3,6 +3,7 @@
 
 #include "Fence.h"
 #include "Vulkan_Headers.h"
+#include "Core/RevetteCore.h"
 
 
 
@@ -28,12 +29,12 @@ private:
 private:
     RenderResources() = default;
 
-    void createTextures(VkQueue queue, uint32_t queueIndex);
+    void createTextures(VkQueue queue, u32 queueIndex);
     void createDescriptorLayout();
     void createDescriptorSet();
 
 public:
-    RenderResources(VkDevice _device, VkQueue queue, uint32_t queueIndex, VmaAllocator _allocator);
+    RenderResources(VkDevice _device, VkQueue queue, u32 queueIndex, VmaAllocator _allocator);
     ~RenderResources();
 
     RenderResources(RenderResources&&) = delete;

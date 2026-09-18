@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include "Core/RevetteCore.h"
+
 
 
 namespace {
@@ -81,7 +83,7 @@ VkShaderModule createShaderModule(VkDevice device, std::string filepath) {
         .pNext{},
         .flags{},
         .codeSize = shaderCode.size(),
-        .pCode = reinterpret_cast<const uint32_t*>(shaderCode.data())
+        .pCode = reinterpret_cast<const u32*>(shaderCode.data())
     };
 
     VkShaderModule shader;

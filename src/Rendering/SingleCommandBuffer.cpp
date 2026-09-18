@@ -22,7 +22,7 @@ void beginCommandBuffer(VkCommandBuffer commandBuffer) {
 
 
 
-SingleCommandBuffer::SingleCommandBuffer(VkDevice _device, uint32_t queueIndex) : SingleCommandBuffer() {
+SingleCommandBuffer::SingleCommandBuffer(VkDevice _device, u32 queueIndex) : SingleCommandBuffer() {
     device = _device;
 
     VkCommandPoolCreateInfo createInfo{

@@ -37,7 +37,7 @@ This function prepares all objects to be ready to render the next frame. It does
  - Resets and begins the command buffer
  - Transitions the image into a renderable state
 */
-uint32_t FrameRenderer::beginFrame(
+u32 FrameRenderer::beginFrame(
     std::queue<std::unique_ptr<MeshChunk::Data>> loadMeshes,
     std::unordered_map<ChunkPos, std::unique_ptr<MeshChunk>>& chunkMeshes
 ) {
@@ -47,7 +47,7 @@ uint32_t FrameRenderer::beginFrame(
         throw std::runtime_error("Failed to wait for fences");
     }
 
-    uint32_t imageIndex{};
+    u32 imageIndex{};
     if (vkAcquireNextImageKHR(
         device,
         renderTarget.getSwapchain(),
@@ -124,9 +124,9 @@ uint32_t FrameRenderer::beginFrame(
         .dependencyFlags{},
         .memoryBarrierCount{},
         .pMemoryBarriers{},
-        .bufferMemoryBarrierCount = static_cast<uint32_t>(bufferBarriers.size()),
+        .bufferMemoryBarrierCount = static_cast<u32>(bufferBarriers.size()),
         .pBufferMemoryBarriers = bufferBarriers.data(),
-        .imageMemoryBarrierCount = static_cast<uint32_t>(imageBarriers.size()),
+        .imageMemoryBarrierCount = static_cast<u32>(imageBarriers.size()),
         .pImageMemoryBarriers = imageBarriers.data()
     };
     vkCmdPipelineBarrier2(commandBuffer.getBuffer(), &dependencyInfo);
@@ -245,7 +245,7 @@ void FrameRenderer::drawChunks(
 /*
 This function submits all the rendering commands to the GPU, and submits the frame for presentation to the screen.
 */
-void FrameRenderer::endFrame(uint32_t imageIndex) {
+void FrameRenderer::endFrame(u32 imageIndex) {
     vkCmdEndRendering(commandBuffer.getBuffer());
 
     // Transition the image to the presentation format (mostly likely a no-op)
@@ -323,7 +323,7 @@ FrameRenderer::FrameRenderer(
     RenderResources& _renderResources,
     ChunkRenderer& _chunkRenderer,
     GuiRenderer& _guiRenderer,
-    uint32_t queueFamilyIndex,
+    u32 queueFamilyIndex,
     VmaAllocator _allocator
 ) :
     device{_device},
@@ -352,7 +352,7 @@ FrameRenderer::FrameRenderer(
     RenderResources& _renderResources,
     ChunkRenderer& _chunkRenderer,
     GuiRenderer& _guiRenderer,
-    uint32_t queueFamilyIndex,
+    u32 queueFamilyIndex,
     VmaAllocator allocator
 ) : FrameRenderer(
     _device,
@@ -404,7 +404,7 @@ void FrameRenderer::drawFrame(
     EntityPosition playerPosition,
     std::unordered_map<ChunkPos, std::unique_ptr<MeshChunk>>& chunkMeshes
 ) {
-    uint32_t imageIndex = beginFrame(std::move(loadMeshes), chunkMeshes);
+    u32 imageIndex = beginFrame(std::move(loadMeshes), chunkMeshes);
     
     // Delete the whole queue
     meshDeletionQueue = std::queue<std::unique_ptr<MeshChunk>>();

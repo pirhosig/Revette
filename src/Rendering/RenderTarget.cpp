@@ -4,6 +4,7 @@
 #include <stdexcept>
 
 #include "Vulkan_Utils.h"
+#include "Core/RevetteCore.h"
 
 
 
@@ -20,7 +21,7 @@ void RenderTarget::createSwapchainObjects() {
     VkColorSpaceKHR colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 
     // This should probably be a setting rather than hardcoded
-    uint32_t imageCount = std::max(3U, capabilities.minImageCount + 1);
+    u32 imageCount = std::max(3U, capabilities.minImageCount + 1);
     // A value of zero in maxImageCount indicates that it is unlimited
     if (capabilities.maxImageCount && imageCount > capabilities.maxImageCount) {
         imageCount = capabilities.maxImageCount;
@@ -34,10 +35,10 @@ void RenderTarget::createSwapchainObjects() {
         glfwGetFramebufferSize(window, &width, &height);
 
         extent.width = std::clamp(
-            static_cast<uint32_t>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width
+            static_cast<u32>(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width
         );
         extent.height = std::clamp(
-            static_cast<uint32_t>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height
+            static_cast<u32>(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height
         );
     }
 
@@ -70,7 +71,7 @@ void RenderTarget::createSwapchainObjects() {
 
     // Get the swapchain images (created automatically along with the swapchain)
 
-    uint32_t realImageCount;
+    u32 realImageCount;
     if (vkGetSwapchainImagesKHR(device, swapchain, &realImageCount, nullptr) != VK_SUCCESS) {
         throw std::runtime_error("Failed to get swapchain image count");
     }

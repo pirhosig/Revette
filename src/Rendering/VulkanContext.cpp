@@ -43,16 +43,15 @@ constexpr VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{
 
 
 void getRequiredGLFWInstanceExtensions(std::vector<const char*>& extensions) {
-    uint32_t extensionCount = 0;
+    u32 extensionCount = 0;
     const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionCount);
     if (glfwExtensions == nullptr) {
         throw std::runtime_error("Failed to fetch required extensions for GLFW");
     }
 
-    for (uint32_t i = 0; i < extensionCount; ++i) {
+    for (u32 i = 0; i < extensionCount; ++i) {
         extensions.push_back(*(glfwExtensions + i));
     }
-    
 }
 
 }
@@ -82,9 +81,9 @@ void VulkanContext::createInstance(bool debugEnabled) {
         .pNext{},
         .flags{},
         .pApplicationInfo = &appInfo,
-        .enabledLayerCount = static_cast<uint32_t>(requiredLayers.size()),
+        .enabledLayerCount = static_cast<u32>(requiredLayers.size()),
         .ppEnabledLayerNames = requiredLayers.data(),
-        .enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size()),
+        .enabledExtensionCount = static_cast<u32>(requiredExtensions.size()),
         .ppEnabledExtensionNames = requiredExtensions.data()
     };
 
@@ -126,7 +125,7 @@ void VulkanContext::createSurface(GLFWwindow* window) {
 
 
 void VulkanContext::selectPhysicalDevice() {
-    uint32_t deviceCount = 0;
+    u32 deviceCount = 0;
     if (vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr) != VK_SUCCESS) {
         throw std::runtime_error("Failed to count physical devices");
     }
@@ -146,15 +145,15 @@ void VulkanContext::selectPhysicalDevice() {
 
 
 
-uint32_t getQueueIndexGraphics(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
-    uint32_t queueFamilyCount = 0;
+u32 getQueueIndexGraphics(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
+    u32 queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
     constexpr VkQueueFlags REQUIRED_FLAGS = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT;
 
-    for (uint32_t i = 0; i < queueFamilyCount; ++i) {
+    for (u32 i = 0; i < queueFamilyCount; ++i) {
         // Skip if not all required usages are possible
         if ((queueFamilies[i].queueFlags & REQUIRED_FLAGS) != REQUIRED_FLAGS) continue;
 
@@ -201,7 +200,7 @@ void VulkanContext::createDevice() {
         .pQueueCreateInfos = &queueGraphicsCreateInfo,
         .enabledLayerCount{},
         .ppEnabledLayerNames{},
-        .enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
+        .enabledExtensionCount = static_cast<u32>(deviceExtensions.size()),
         .ppEnabledExtensionNames = deviceExtensions.data(),
         .pEnabledFeatures{}
     };
@@ -287,6 +286,6 @@ void VulkanContext::waitDeviceIdle() noexcept {
 VkPhysicalDevice VulkanContext::getPhysicalDevice() const { return physicalDevice; }
 VkSurfaceKHR VulkanContext::getSurface() const { return surface; }
 VkDevice VulkanContext::getDevice() const { return device; }
-uint32_t VulkanContext::getQueueGraphicsFamily() const { return queueGraphicsIndex; }
+u32 VulkanContext::getQueueGraphicsFamily() const { return queueGraphicsIndex; }
 VkQueue VulkanContext::getQueueGraphics() const { return queueGraphics; }
 VmaAllocator VulkanContext::getAllocator() const { return allocator; }

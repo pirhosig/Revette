@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Vulkan_Utils.h"
+#include "Core/RevetteCore.h"
 
 
 
@@ -57,9 +58,9 @@ VkPipeline createPipeline(
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .pNext{},
         .flags{},
-        .vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size()),
+        .vertexBindingDescriptionCount = static_cast<u32>(bindingDescriptions.size()),
         .pVertexBindingDescriptions = bindingDescriptions.data(),
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size()),
+        .vertexAttributeDescriptionCount = static_cast<u32>(attributeDescriptions.size()),
         .pVertexAttributeDescriptions = attributeDescriptions.data()
     };
 
@@ -144,7 +145,7 @@ VkPipeline createPipeline(
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
         .pNext{},
         .flags{},
-        .dynamicStateCount = static_cast<uint32_t>(dynamicStates.size()),
+        .dynamicStateCount = static_cast<u32>(dynamicStates.size()),
         .pDynamicStates = dynamicStates.data()
     };
 
@@ -152,7 +153,7 @@ VkPipeline createPipeline(
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
         .pNext = &renderingInfo,
         .flags{},
-        .stageCount = static_cast<uint32_t>(shaderStageInfos.size()),
+        .stageCount = static_cast<u32>(shaderStageInfos.size()),
         .pStages = shaderStageInfos.data(),
         .pVertexInputState = &vertexInputInfo,
         .pInputAssemblyState = &inputAssemblyInfo,

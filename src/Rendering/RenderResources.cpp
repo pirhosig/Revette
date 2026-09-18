@@ -16,9 +16,9 @@ namespace {
 
 struct TextureLoadInfo{
     const char* filepath;
-    uint32_t cellWidth;
-    uint32_t cellHeight;
-    uint32_t mipLevelCount;
+    u32 cellWidth;
+    u32 cellHeight;
+    u32 mipLevelCount;
 };
 constexpr std::array TEXTURE_INFOS{
     TextureLoadInfo{"res/textures/texture_atlas.png", 16u, 16u, 4u},
@@ -30,7 +30,7 @@ constexpr std::array TEXTURE_INFOS{
 
 
 // The fence that this returns must be waited on
-void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
+void RenderResources::createTextures(VkQueue queue, u32 queueIndex) {
     SingleCommandBuffer commandBuffer(device, queueIndex);
     // TODO don't use a buffer suballocator for single allocation buffers
     std::vector<LinearBufferSuballocator> uploadBuffers;
@@ -49,9 +49,9 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
         if (width % cellWidth != 0 || height % cellHeight != 0) {
             throw std::runtime_error("Invalid texture size");
         }
-        uint32_t textureGridWidth = width / cellWidth;
-        uint32_t textureGridHeight = height / cellHeight;
-        uint32_t textureCount = textureGridWidth * textureGridHeight;
+        u32 textureGridWidth = width / cellWidth;
+        u32 textureGridHeight = height / cellHeight;
+        u32 textureCount = textureGridWidth * textureGridHeight;
     
         VkDeviceSize imageSize = width * height * 4;
         uploadBuffers.emplace_back(allocator, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, false);
@@ -132,10 +132,10 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
 
         std::vector<VkBufferImageCopy> copyRegions;
         copyRegions.reserve(textureCount);
-        for (uint32_t row = 0; row < textureGridHeight; ++row) {
-            for (uint32_t col = 0; col < textureGridWidth; ++col) {
-                uint32_t bufferOffset = (row * textureGridWidth * cellWidth * cellHeight + col * cellWidth) * 4;
-                uint32_t arrayIndex = row * textureGridWidth + col;
+        for (u32 row = 0; row < textureGridHeight; ++row) {
+            for (u32 col = 0; col < textureGridWidth; ++col) {
+                u32 bufferOffset = (row * textureGridWidth * cellWidth * cellHeight + col * cellWidth) * 4;
+                u32 arrayIndex = row * textureGridWidth + col;
 
                 copyRegions.push_back(VkBufferImageCopy{
                     .bufferOffset = bufferOffset,
@@ -162,14 +162,14 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
             uploadBuffer.getHandle(),
             texture.image,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            static_cast<uint32_t>(copyRegions.size()),
+            static_cast<u32>(copyRegions.size()),
             copyRegions.data()
         );
 
         if (mipLevelCount > 1) {
-            uint32_t mipWidth = cellWidth;
-            uint32_t mipHeight = cellHeight;
-            for (uint32_t level = 1; level < mipLevelCount; ++level) {
+            u32 mipWidth = cellWidth;
+            u32 mipHeight = cellHeight;
+            for (u32 level = 1; level < mipLevelCount; ++level) {
                 if (mipWidth > 1) mipWidth /= 2;
                 if (mipHeight > 1) mipHeight /= 2;
 
@@ -209,7 +209,7 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
                     },
                     .srcOffsets{
                         VkOffset3D{},
-                        VkOffset3D{static_cast<int32_t>(mipWidth), static_cast<int32_t>(mipHeight), 1},
+                        VkOffset3D{static_cast<i32>(mipWidth), static_cast<i32>(mipHeight), 1},
                     },
                     .dstSubresource{
                         .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -219,7 +219,7 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
                     },
                     .dstOffsets{
                         VkOffset3D{},
-                        VkOffset3D{static_cast<int32_t>(mipWidth), static_cast<int32_t>(mipHeight), 1},
+                        VkOffset3D{static_cast<i32>(mipWidth), static_cast<i32>(mipHeight), 1},
                     }
                 };
                 VkBlitImageInfo2 blitInfo{
@@ -288,7 +288,7 @@ void RenderResources::createTextures(VkQueue queue, uint32_t queueIndex) {
                 .pMemoryBarriers{},
                 .bufferMemoryBarrierCount{},
                 .pBufferMemoryBarriers{},
-                .imageMemoryBarrierCount = static_cast<uint32_t>(imageBarriers.size()),
+                .imageMemoryBarrierCount = static_cast<u32>(imageBarriers.size()),
                 .pImageMemoryBarriers = imageBarriers.data()
             };
             vkCmdPipelineBarrier2(commandBuffer.getBuffer(), &dependencyInfo);
@@ -415,7 +415,7 @@ void RenderResources::createDescriptorLayout() {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .pNext{},
         .flags{},
-        .bindingCount = static_cast<uint32_t>(bindings.size()),
+        .bindingCount = static_cast<u32>(bindings.size()),
         .pBindings = bindings.data()
     };
 
@@ -442,7 +442,7 @@ void RenderResources::createDescriptorSet() {
         .pNext{},
         .flags{},
         .maxSets = 1,
-        .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
+        .poolSizeCount = static_cast<u32>(poolSizes.size()),
         .pPoolSizes = poolSizes.data()
     };
 
@@ -479,7 +479,7 @@ void RenderResources::createDescriptorSet() {
                 .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .pNext{},
                 .dstSet = descriptorSet,
-                .dstBinding = static_cast<uint32_t>(imageInfos.size() - 1),
+                .dstBinding = static_cast<u32>(imageInfos.size() - 1),
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
                 .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -492,7 +492,7 @@ void RenderResources::createDescriptorSet() {
 
     vkUpdateDescriptorSets(
         device,
-        static_cast<uint32_t>(descriptorWrites.size()),
+        static_cast<u32>(descriptorWrites.size()),
         descriptorWrites.data(),
         {},
         {}
@@ -501,7 +501,7 @@ void RenderResources::createDescriptorSet() {
 
 
 
-RenderResources::RenderResources(VkDevice _device, VkQueue queue, uint32_t queueIndex, VmaAllocator _allocator) :
+RenderResources::RenderResources(VkDevice _device, VkQueue queue, u32 queueIndex, VmaAllocator _allocator) :
     RenderResources()
 {
     device = _device;

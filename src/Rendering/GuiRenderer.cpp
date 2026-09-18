@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 #include "Vulkan_Utils.h"
+#include "Core/RevetteCore.h"
 
 
 
@@ -13,7 +14,7 @@ namespace {
 struct Vertex {
     float x;
     float y;
-    uint16_t texture;
+    u16 texture;
 
     static std::array<VkVertexInputBindingDescription, 1> getBindingDescriptions() {
         return {
@@ -106,9 +107,9 @@ void GuiRenderer::createPipeline(const RenderTarget& renderTarget) {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .pNext{},
         .flags{},
-        .vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size()),
+        .vertexBindingDescriptionCount = static_cast<u32>(bindingDescriptions.size()),
         .pVertexBindingDescriptions = bindingDescriptions.data(),
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size()),
+        .vertexAttributeDescriptionCount = static_cast<u32>(attributeDescriptions.size()),
         .pVertexAttributeDescriptions = attributeDescriptions.data()
     };
 
@@ -207,7 +208,7 @@ void GuiRenderer::createPipeline(const RenderTarget& renderTarget) {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
         .pNext{},
         .flags{},
-        .dynamicStateCount = static_cast<uint32_t>(dynamicStates.size()),
+        .dynamicStateCount = static_cast<u32>(dynamicStates.size()),
         .pDynamicStates = dynamicStates.data()
     };
 
@@ -215,7 +216,7 @@ void GuiRenderer::createPipeline(const RenderTarget& renderTarget) {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
         .pNext = &renderingInfo,
         .flags{},
-        .stageCount = static_cast<uint32_t>(shaderStageInfos.size()),
+        .stageCount = static_cast<u32>(shaderStageInfos.size()),
         .pStages = shaderStageInfos.data(),
         .pVertexInputState = &vertexInputInfo,
         .pInputAssemblyState = &inputAssemblyInfo,
@@ -284,10 +285,10 @@ void GuiRenderer::draw(
     float charWidth = 24.0f / static_cast<float>(screenSize.width);
     float charHeight = 32.0f / static_cast<float>(screenSize.height);
     std::vector<Vertex> vertices;
-    std::vector<uint16_t> indices;
+    std::vector<u16> indices;
     for (int i = 0; i < _length; ++i) {
         char c = coordinateString[i];
-        uint16_t tex = 0;
+        u16 tex = 0;
         if (c == ' ') {
             continue;
         }
@@ -305,7 +306,7 @@ void GuiRenderer::draw(
         float xr = -1.0f + charWidth * static_cast<float>(i + 1);
         float yl = -1.0f;
         float yu = -1.0f + charHeight;
-        uint16_t baseIndex = static_cast<uint16_t>(vertices.size());
+        u16 baseIndex = static_cast<u16>(vertices.size());
         vertices.push_back(Vertex{.x = xl, .y = yl, .texture = tex});
         vertices.push_back(Vertex{.x = xr, .y = yl, .texture = tex});
         vertices.push_back(Vertex{.x = xr, .y = yu, .texture = tex});
@@ -332,7 +333,7 @@ void GuiRenderer::draw(
     VkBuffer _buffer = transientBuffer.getHandle();
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, &_buffer, &offsetVertices);
     vkCmdBindIndexBuffer(commandBuffer, _buffer, offsetIndices, VK_INDEX_TYPE_UINT16);
-    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, static_cast<u32>(indices.size()), 1, 0, 0, 0);
 }
 
 

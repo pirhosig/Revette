@@ -2,6 +2,7 @@
 #include <memory>
 #include <vector>
 
+#include "Core/RevetteCore.h"
 #include "../Buffer.h"
 #include "../LinearBufferSuballocator.h"
 #include "../Vulkan_Headers.h"
@@ -13,13 +14,13 @@ class Chunk;
 class MeshChunk {
 public:
 	struct alignas(8) Vertex {
-		uint32_t x: 10;
-		uint32_t y: 10;
-		uint32_t z: 10;
-		uint32_t u: 1;
-		uint32_t v: 1;
-		uint16_t texture;
-		uint8_t light;
+		u32 x: 10;
+		u32 y: 10;
+		u32 z: 10;
+		u32 u: 1;
+		u32 v: 1;
+		u16 texture;
+		u8  light;
 
 		static std::array<VkVertexInputBindingDescription, 1> getBindingDescriptions();
 		static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
@@ -79,11 +80,11 @@ private:
 	ChunkPos position;
 
 	std::vector<Vertex> vertices;
-	std::vector<uint32_t> indices;
+	std::vector<u32> indices;
 
-	uint32_t indexCountOpaque{};
-	uint32_t indexCountTested{};
-	uint32_t indexCountBlended{};
+	u32 indexCountOpaque{};
+	u32 indexCountTested{};
+	u32 indexCountBlended{};
 
 public:
 	Data(const Chunk* chunkCentre, const std::array<Chunk*, 6> neighbours);
