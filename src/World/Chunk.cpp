@@ -5,7 +5,6 @@
 
 #include "BlockHash.h"
 #include "Generation/ChunkPRNG.h"
-#include "Generation/GeneratorChunkParameters.h"
 #include "Generation/Structures/StructurePlants.h"
 #include "Generation/Structures/StructuresRuins.h"
 #include "World.h"
@@ -273,6 +272,12 @@ void Chunk::PopulateChunk(World& world)
 	}
 
 	populationChangesInside.clear();
+}
+
+
+
+BlockContainer Chunk::clone_block_container() const {
+	return blockContainer.clone();
 }
 
 

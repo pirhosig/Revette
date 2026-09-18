@@ -8,8 +8,6 @@
 #include "ChunkPos.h"
 #include "ChunkStatusMap.h"
 #include "Entities/Entity.h"
-#include "Generation/GeneratorChunkParameters.h"
-#include "Generation/GeneratorChunkNoise.h"
 #include "Application/GlobalApplicationState.h"
 #include "Settings.h"
 #include "Rendering/Mesh/MeshChunk.h"

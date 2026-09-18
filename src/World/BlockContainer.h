@@ -9,9 +9,14 @@
 
 
 class BlockContainer {
-public:
-	std::variant<Block, std::unique_ptr<uint8_t[]>, std::unique_ptr<uint16_t[]>> blockArray;
+	std::variant<
+		Block,
+		std::unique_ptr<std::array<u8,  CHUNK_VOLUME>>,
+		std::unique_ptr<std::array<u16, CHUNK_VOLUME>>
+	> blockArray;
 	std::vector<Block> blockArrayBlocksByIndex;
+
+
 
 public:
 	BlockContainer();
@@ -20,7 +25,8 @@ public:
 	void setSizeByte();
 	void setSizeShort();
 
-	Block getBlock(ChunkLocalBlockPos blockPos) const;
+	BlockContainer clone() const;
+	Block getBlock(ChunkLocalBlockPos blockPos) const noexcept;
 	std::vector<bool> getSolid() const;
 	std::vector<bool> getSolidFace(AxisDirection direction) const;
 

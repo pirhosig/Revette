@@ -3,16 +3,18 @@
 #include <mutex>
 #include <vector>
 
+#include "Settings.h"
+#include "Application/GlobalApplicationState.h"
 #include "Core/RevetteCore.h"
+#include "Util/ConcurrentQueue.h"
 #include "World/BlockContainer.h"
 #include "World/Chunk.h"
 
 
 
 class MeshBuilder {
-    struct GlobalStateType {
-		std::mutex mutexForIncomingBlockData;
-		std::vector<BlockContainer> incomingBlockData;
+	struct GlobalStateType {
+		ConcurrentQueue<BlockContainer> incomingBlockData;
 
 		GlobalStateType();
 	};
@@ -25,7 +27,15 @@ public:
 
     
 
+private:
+	GlobalApplicationState& globalApplicationState;
+    const Settings& settings;
+
+
+
 public:
+	MeshBuilder();
+
     void run();
 
 };
