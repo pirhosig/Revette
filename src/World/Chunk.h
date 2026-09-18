@@ -18,9 +18,7 @@ struct BlockChange {
 
 
 
-class Chunk
-{
-private:
+class Chunk {
 	bool generated;
 	BlockContainer blockContainer;
 	std::vector<BlockChange> populationChangesAdjacent;
@@ -36,10 +34,11 @@ public:
 	Chunk operator=(const Chunk&) = delete;
 
 	ChunkPos getPosition() const;
-
+	
 	void GenerateChunk(const class GeneratorChunkParameters& generatorParameters);
 	void PopulateChunk(class World& world);
-
+	
+	BlockContainer clone_block_container() const;
 	Block getBlock(ChunkLocalBlockPos blockPos) const;
 	std::vector<bool> getSolidFaceMask(AxisDirection direction) const;
 	void setBlock(ChunkLocalBlockPos blockPos, Block block);

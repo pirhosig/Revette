@@ -13,7 +13,7 @@
 
 
 template <typename T>
-class ConcurrentQueue {
+class alignas(CACHE_ALIGNMENT) ConcurrentQueue {
     boost::circular_buffer<T> queue;
     std::mutex queueMutex;
 

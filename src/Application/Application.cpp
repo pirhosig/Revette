@@ -68,6 +68,7 @@ catch (const std::exception& error) {
 
 
 void Application::run() {
+	// Needs to be set to the number of threads
 	std::barrier loadSyncPoint(3);
 
 	Settings settings;

@@ -56,11 +56,7 @@ add_executable(Revette
 
     src/World/Entities/Entity.cpp
     src/World/Entities/EntityPosition.cpp
-
-    src/World/Generation/BiomeMap.cpp
     src/World/Generation/ChunkPRNG.cpp
-    src/World/Generation/HeightMap.cpp
-    src/World/Generation/NoiseSource.cpp
     src/World/Generation/WorldGenerator.cpp
     
     src/World/Generation/GenerationUnits/GenerationUnitPos2D.cpp
@@ -96,7 +92,7 @@ target_compile_options(Revette PUBLIC
     -Wfloat-conversion
     -Wsign-conversion
     # TODO: enable -Wnrvo
-    -Wno-interference-size
+    # TODO: enable -Wmissing-declarations
 )
 
 find_package(Boost CONFIG REQUIRED COMPONENTS
