@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.25)
 
 set(
     VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/vcpkg-overlays"
@@ -71,19 +71,21 @@ set_source_files_properties(
     COMPILE_FLAGS "-w"
 )
 
-set_property(TARGET Revette PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+set_target_properties(Revette PROPERTIES
+    COMPILE_WARNING_AS_ERROR TRUE
+    INTERPROCEDURAL_OPTIMIZATION TRUE
+    LINK_WARNING_AS_ERROR TRUE
+)
 
 target_compile_options(Revette PUBLIC
     -O3
     -march=native
-    -Werror
     -Wall
     -Wextra
     -Wpedantic
     -Wfloat-conversion
     -Wsign-conversion
 )
-target_link_options(Revette PUBLIC -flto=auto)
 
 find_package(Boost CONFIG REQUIRED COMPONENTS
     container
@@ -106,12 +108,7 @@ target_link_libraries(Revette PRIVATE
 )
 
 target_include_directories(Revette PRIVATE
-    ${GLFW_INCLUDE_PATH}
     ${GLM_INCLUDE_PATH}
     deps/
     src/
 )
-
-
-
-
