@@ -75,6 +75,8 @@ void Application::run() {
 	
 	GlobalApplicationState globalApplicationState;
 
+	// TODO: Create threads with a larger stack.
+	// This can be fixed either by using a third party thread library, or will be added in C++29.
 	std::jthread renderThread(
 		runRenderThread,
 		std::ref(loadSyncPoint),

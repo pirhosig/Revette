@@ -2,10 +2,13 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <queue>
 
+#include <boost/container/vector.hpp>
 #include <FastNoise/FastNoise.h>
 
 #include "Core/RevetteCore.h"
+#include "World/BlockContainer.h"
 #include "GenerationUnitPos2D.h"
 
 
@@ -26,7 +29,7 @@ class SurfaceGenerationUnit {
 private:
     class BiomeType {
     public:
-        enum EnumType : uint8_t {
+        enum EnumType : u8 {
             DESERT_WARM,
             DESERT_WARM_DEEP,
             FOREST_BOREAL,
@@ -44,8 +47,15 @@ private:
         BiomeType();
         BiomeType(EnumType _enumVal);
 
-        uint16_t getFoliageThreshold() const;
+        BiomeType(BiomeType&&) = default;
+        BiomeType(const BiomeType&) = default;
+
+        u16 getFoliageThreshold() const;
+        Block getSurfaceBlock() const;
     };
+
+    class ProtoChunk1;
+    class ProtoChunk2;
 
 
 
@@ -55,16 +65,27 @@ public:
 
 
 public:
-    static constexpr uint16_t SEA_LEVEL = 64U;
+    static constexpr u16 SEA_LEVEL = 64U;
 
 
 
 private:
     GenerationUnitPos2D pos;
 
+    // These should be replaced with type-erased containers in order to leak less private state.
     std::unique_ptr<
-        std::array<std::array<uint16_t, CHUNK_AREA>, GENERATION_UNIT_WIDTH_C * GENERATION_UNIT_WIDTH_C>
+        std::array<std::array<u16, CHUNK_AREA>, GENERATION_UNIT_WIDTH_C * GENERATION_UNIT_WIDTH_C>
     > heightData;
+    std::unique_ptr<
+        std::array<std::array<BiomeType, CHUNK_AREA>, GENERATION_UNIT_WIDTH_C * GENERATION_UNIT_WIDTH_C>
+    > biomeData;
+    std::array<
+        std::queue<std::pair<u16, GenerationUnitPos2D::LocalPos>>,
+        2
+    > generationPassQueues;
+
+
+    void generatePass1();
 
 
 
@@ -72,19 +93,21 @@ public:
     SurfaceGenerationUnit(GenerationUnitPos2D _pos, const NoiseSources& noiseSources);
 
     GenerationUnitPos2D getPosition() const;
+
+    bool expandGeneratedArea();
 };
 
 
 
 class SurfaceGenerationUnit::NoiseSources {
-    const int32_t seed;
+    const i32 seed;
     const FastNoise::SmartNode<> noiseHeight;
     const FastNoise::SmartNode<> noiseHumidity;
     const FastNoise::SmartNode<> noiseTemperature;
 
 public:
     NoiseSources(
-        int32_t _seed,
+        i32 _seed,
 		const char* noiseEncodingHeight,
 		const char* noiseEncodingHumidity,
 		const char* noiseEncodingTemperature
@@ -95,6 +118,6 @@ public:
     NoiseSources operator=(NoiseSources&&) = delete;
     NoiseSources operator=(const NoiseSources&) = delete;
 
-    std::pair<uint16_t, uint16_t> genChunkHeight(ChunkPos2D chunkPos, std::array<uint16_t, CHUNK_AREA>& output) const;
+    std::pair<u16, u16> genChunkHeight(ChunkPos2D chunkPos, std::array<u16, CHUNK_AREA>& output) const;
     void genChunkBiomes(ChunkPos2D chunkPos, std::array<BiomeType, CHUNK_AREA>& output) const;
 };

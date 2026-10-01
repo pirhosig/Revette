@@ -20,6 +20,18 @@ public:
 
 
 
+	class LocalPos {
+		u16 pos;
+
+	public:
+		LocalPos(u16 x, u16 z);
+		u16 asIndex() const;
+		u16 getX() const;
+		u16 getZ() const;
+	};
+
+
+
 private:
 	i32 x;
 	i32 z;
@@ -34,6 +46,7 @@ public:
 	i32 getX() const;
 	i32 getZ() const;
 
+	ChunkPos2D asChunkPos2D(LocalPos localPos) const;
 	i32 getManhattanDistance(const GenerationUnitPos2D& other) const;
 	OffsetType getOffsetTo(const GenerationUnitPos2D& other) const;
 	GenerationUnitPos2D calculateOffsetBy(i32 xDistance, i32 zDistance) const;

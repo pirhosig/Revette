@@ -2,8 +2,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include <boost/container/small_vector.hpp>
-
+#include "Util/efficient_vector.h"
 #include "ChunkRenderer.h"
 #include "FrameRenderer.h"
 #include "GuiRenderer.h"
@@ -37,7 +36,7 @@ private:
 
 	// Drawing 
 	std::vector<std::unique_ptr<MeshChunk::Data>> incomingMeshes;
-	boost::container::small_vector<FrameRenderer, 4> frameRenderers;
+	rvl::efficient_vector<FrameRenderer> frameRenderers;
 	
 	size_t currentFrameRendererIndex = 0;
 

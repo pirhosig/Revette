@@ -30,6 +30,32 @@ i32 GenerationUnitPos2D::OffsetType::getZ() const { return z; }
 
 
 
+GenerationUnitPos2D::LocalPos::LocalPos(u16 x, u16 z) {
+    x &= (GENERATION_UNIT_WIDTH_C - 1);
+    z &= (GENERATION_UNIT_WIDTH_C - 1);
+    pos = (x << GENERATION_UNIT_WIDTH_C_LOG) | z;
+}
+
+
+
+u16 GenerationUnitPos2D::LocalPos::asIndex() const {
+    return pos;
+}
+
+
+
+u16 GenerationUnitPos2D::LocalPos::getX() const {
+    return pos >> GENERATION_UNIT_WIDTH_C_LOG;
+}
+
+
+
+u16 GenerationUnitPos2D::LocalPos::getZ() const {
+    return pos & ((1u << GENERATION_UNIT_WIDTH_C_LOG) - 1u);
+}
+
+
+
 GenerationUnitPos2D::GenerationUnitPos2D(i32 _x, i32 _z) :
     x{generationUnitWrapCoordinate(_x)},
     z{generationUnitWrapCoordinate(_z)}
@@ -46,6 +72,15 @@ GenerationUnitPos2D::GenerationUnitPos2D(ChunkPos2D pos) :
 
 i32 GenerationUnitPos2D::getX() const { return x; }
 i32 GenerationUnitPos2D::getZ() const { return z; }
+
+
+
+ChunkPos2D GenerationUnitPos2D::asChunkPos2D(LocalPos localPos) const {
+    return ChunkPos2D{
+        getX() * GENERATION_UNIT_WIDTH_C + localPos.getX(),
+        getZ() * GENERATION_UNIT_WIDTH_C + localPos.getZ()
+    };
+}
 
 
 

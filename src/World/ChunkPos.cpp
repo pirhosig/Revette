@@ -142,9 +142,9 @@ ChunkLocalBlockPos::ChunkLocalBlockPos(BlockPos blockPos) {
 
 BlockPos ChunkLocalBlockPos::asBlockPos(ChunkPos chunkPos) const
 {
-	int x = pos >> 10;
-	int y = (pos >> 5) & (32 - 1);
-	int z = pos & (32 - 1);
+	i32 x = pos >> 10u;
+	i32 y = (pos >> 5u) & (32u - 1u);
+	i32 z = pos & (32u - 1u);
 	return BlockPos(
 		chunkPos.getX() * CHUNK_SIZE + x,
 		chunkPos.getY() * CHUNK_SIZE + y,

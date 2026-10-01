@@ -74,10 +74,7 @@ Renderer::Renderer(
 	),
 	renderTarget(
 		window,
-		vulkanContext.getPhysicalDevice(),
-		vulkanContext.getSurface(),
-		vulkanContext.getDevice(),
-		vulkanContext.getAllocator()
+		vulkanContext
 	),
 	renderResources(
 		vulkanContext.getDevice(),

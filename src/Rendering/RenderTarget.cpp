@@ -8,11 +8,21 @@
 
 
 
+RenderTarget::RenderTarget(const VulkanContext& _vulkanContext) :
+    vulkanContext{_vulkanContext}
+{}
+
+
+
 void RenderTarget::createSwapchainObjects() {
     // Create the swapchain object itself
 
     VkSurfaceCapabilitiesKHR capabilities;
-    if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &capabilities) != VK_SUCCESS) {
+    if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+        vulkanContext.getPhysicalDevice(),
+        vulkanContext.getSurface(),
+        &capabilities
+    ) != VK_SUCCESS) {
         throw std::runtime_error("Failed to get surface capabilities");
     }
 
@@ -46,7 +56,7 @@ void RenderTarget::createSwapchainObjects() {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .pNext{},
         .flags{},
-        .surface = surface,
+        .surface = vulkanContext.getSurface(),
         .minImageCount = imageCount,
         .imageFormat = colourFormat,
         .imageColorSpace = colorSpace,
@@ -63,7 +73,7 @@ void RenderTarget::createSwapchainObjects() {
         .oldSwapchain = nullptr
     };
 
-    if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
+    if (vkCreateSwapchainKHR(vulkanContext.getDevice(), &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create swapchain");
     }
 
@@ -72,11 +82,16 @@ void RenderTarget::createSwapchainObjects() {
     // Get the swapchain images (created automatically along with the swapchain)
 
     u32 realImageCount;
-    if (vkGetSwapchainImagesKHR(device, swapchain, &realImageCount, nullptr) != VK_SUCCESS) {
+    if (vkGetSwapchainImagesKHR(vulkanContext.getDevice(), swapchain, &realImageCount, nullptr) != VK_SUCCESS) {
         throw std::runtime_error("Failed to get swapchain image count");
     }
     swapchainImages.resize(realImageCount);
-    if (vkGetSwapchainImagesKHR(device, swapchain, &realImageCount, swapchainImages.data()) != VK_SUCCESS) {
+    if (vkGetSwapchainImagesKHR(
+        vulkanContext.getDevice(),
+        swapchain,
+        &realImageCount,
+        swapchainImages.data()
+    ) != VK_SUCCESS) {
         throw std::runtime_error("Failed to get swapchain images");
     }
 
@@ -86,7 +101,7 @@ void RenderTarget::createSwapchainObjects() {
     swapchainImageViews.resize(realImageCount);
     for (size_t i = 0; i < realImageCount; ++i) {
         swapchainImageViews[i] = createImageView(
-            device,
+            vulkanContext.getDevice(),
             swapchainImages[i],
             colourFormat,
             VK_IMAGE_ASPECT_COLOR_BIT
@@ -131,30 +146,33 @@ void RenderTarget::createDepthObjects() {
         .priority{},
         .minAlignment{}
     };
-    if (vmaCreateImage(allocator, &imageInfo, &allocInfo, &depthImage, &depthImageAllocation, {}) != VK_SUCCESS) {
+    if (vmaCreateImage(
+        vulkanContext.getAllocator(),
+        &imageInfo,
+        &allocInfo,
+        &depthImage,
+        &depthImageAllocation,
+        {}
+    ) != VK_SUCCESS) {
         throw std::runtime_error("Failed to allocate depth image");
     }
 
-    depthImageView = createImageView(device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+    depthImageView = createImageView(
+        vulkanContext.getDevice(),
+        depthImage,
+        depthFormat,
+        VK_IMAGE_ASPECT_DEPTH_BIT
+    );
 }
 
 
 
 // Delegates to an empty constructor so that the constructor will be called even
 // if this function throws an exception
-RenderTarget::RenderTarget(
-    GLFWwindow* _window,
-    VkPhysicalDevice _physicalDevice,
-    VkSurfaceKHR _surface,
-    VkDevice _device,
-    VmaAllocator _allocator
-) : RenderTarget()
+RenderTarget::RenderTarget(GLFWwindow* _window, const VulkanContext& _vulkanContext) :
+    RenderTarget(_vulkanContext)
 {
     window = _window;
-    physicalDevice = _physicalDevice;
-    surface = _surface;
-    device = _device;
-    allocator = _allocator;
 
     createSwapchainObjects();
     createDepthObjects();
@@ -163,17 +181,13 @@ RenderTarget::RenderTarget(
 
 
 RenderTarget::~RenderTarget() {
-    if (!device) return;
-
-    vkDestroyImageView(device, depthImageView, nullptr);
-    vmaDestroyImage(allocator, depthImage, depthImageAllocation);
+    vkDestroyImageView(vulkanContext.getDevice(), depthImageView, nullptr);
+    vmaDestroyImage(vulkanContext.getAllocator(), depthImage, depthImageAllocation);
 
     for (auto view : swapchainImageViews) {
-        vkDestroyImageView(device, view, nullptr);
+        vkDestroyImageView(vulkanContext.getDevice(), view, nullptr);
     }
-    vkDestroySwapchainKHR(device, swapchain, nullptr);
-
-    device = {};
+    vkDestroySwapchainKHR(vulkanContext.getDevice(), swapchain, nullptr);
 }
 
 

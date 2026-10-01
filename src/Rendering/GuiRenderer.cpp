@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <stdexcept>
+#include <vector>
 
 #include "Vulkan_Utils.h"
 #include "Core/RevetteCore.h"
