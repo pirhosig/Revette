@@ -48,6 +48,3 @@ constexpr i32 WORLD_RADIUS_BLOCK = 1 << WORLD_RADIUS_BLOCK_LOG;
 constexpr i32 WORLD_DIAMETER_BLOCK = 2 * WORLD_RADIUS_BLOCK;
 
 constexpr float WORLD_RADIUS_BLOCK_F = static_cast<float>(WORLD_RADIUS_BLOCK);
-
-// TODO: remove this from global constants.
-constexpr int SEA_LEVEL = 64;

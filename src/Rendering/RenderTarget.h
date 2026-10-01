@@ -1,23 +1,20 @@
 #pragma once
-#include <vector>
-
+#include "Util/efficient_vector.h"
 #include "Vulkan_Headers.h"
+#include "VulkanContext.h"
 
 
 
 class RenderTarget {
 private:
     struct GLFWwindow* window;
-    VkPhysicalDevice physicalDevice;
-    VkSurfaceKHR surface;
-    VkDevice device;
-    VmaAllocator allocator;
+    const VulkanContext& vulkanContext;
 
     VkFormat colourFormat{};
     VkExtent2D extent{};
     VkSwapchainKHR swapchain{};
-    std::vector<VkImage> swapchainImages;
-    std::vector<VkImageView> swapchainImageViews;
+    rvl::efficient_vector<VkImage> swapchainImages;
+    rvl::efficient_vector<VkImageView> swapchainImageViews;
 
     VkFormat depthFormat{};
     VkImage depthImage{};
@@ -25,19 +22,13 @@ private:
     VkImageView depthImageView{};
 
 private:
-    RenderTarget() = default;
+    explicit RenderTarget(const VulkanContext& _vulkanContext);
 
     void createSwapchainObjects();
     void createDepthObjects();
 
 public:
-    RenderTarget(
-        struct GLFWwindow* _window,
-        VkPhysicalDevice _physicalDevice,
-        VkSurfaceKHR _surface,
-        VkDevice _device,
-        VmaAllocator _allocator
-    );
+    RenderTarget(struct GLFWwindow* _window, const VulkanContext& _vulkanContext);
     ~RenderTarget();
 
     RenderTarget(RenderTarget&&) = delete;

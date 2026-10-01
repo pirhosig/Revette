@@ -1,9 +1,9 @@
 #pragma once
-#include <vector>
 
 #include "Fence.h"
 #include "Vulkan_Headers.h"
 #include "Core/RevetteCore.h"
+#include "Util/efficient_vector.h"
 
 
 
@@ -20,7 +20,7 @@ private:
     VkDevice device;
     VmaAllocator allocator;
 
-    std::vector<TextureArray> textures;
+    rvl::efficient_vector<TextureArray> textures;
 
     VkDescriptorSetLayout descriptorLayout{};
     VkDescriptorPool descriptorPool{};
