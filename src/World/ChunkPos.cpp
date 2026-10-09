@@ -93,7 +93,31 @@ ChunkOffset ChunkPos::offset(ChunkPos other) const {
 }
 
 
-ChunkPos2D::ChunkPos2D(i32 _x, i32 _z) : x(wrapChunkCoordinate(_x)), z(wrapChunkCoordinate(_z)) {}
+
+ChunkPos2D::LocalPos::LocalPos(u16 _index) {
+	index = _index & ((1 << (2 * CHUNK_SIZE_LOG)) - 1);
+}
+
+
+
+ChunkPos2D::LocalPos::LocalPos(u16 x, u16 z) {
+	x &= (CHUNK_SIZE - 1u);
+	z &= (CHUNK_SIZE - 1u);
+	index = (x << CHUNK_SIZE_LOG) | z;
+}
+
+
+
+u16 ChunkPos2D::LocalPos::asIndex() const {
+	return index;
+}
+
+
+
+ChunkPos2D::ChunkPos2D(i32 _x, i32 _z) :
+	x(wrapChunkCoordinate(_x)),
+	z(wrapChunkCoordinate(_z))
+{}
 
 
 
@@ -116,16 +140,16 @@ i64 ChunkPos2D::distanceEuclideanSquared(ChunkPos2D other) const {
 
 ChunkLocalBlockPos::ChunkLocalBlockPos(u16 x, u16 y, u16 z) {
 	// Truncate the range of each position to [0, 32)
-	x &= (32 - 1);
-	y &= (32 - 1);
-	z &= (32 - 1);
+	x &= (CHUNK_SIZE - 1);
+	y &= (CHUNK_SIZE - 1);
+	z &= (CHUNK_SIZE - 1);
 	pos = (x << 10) | (y << 5) | z;
 }
 
 
 
 ChunkLocalBlockPos::ChunkLocalBlockPos(u16 _pos) {
-	pos = _pos & ((1u << 15) - 1);
+	pos = _pos & ((1u << (3 * CHUNK_SIZE_LOG)) - 1);
 }
 
 

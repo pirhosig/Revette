@@ -45,8 +45,23 @@ public:
 
 
 class ChunkPos2D {
+public:
+	class LocalPos {
+		u16 index;
+
+	public:
+		explicit LocalPos(u16 _index);
+		LocalPos(u16 x, u16 z);
+		u16 asIndex() const;
+	};
+
+
+
+private:
 	i32 x;
 	i32 z;
+
+
 
 public:
 	ChunkPos2D(i32 _x, i32 _z);
@@ -61,6 +76,7 @@ public:
 
 
 
+// TODO: move this to be a nested class of ChunkPos.
 class ChunkLocalBlockPos {
 	u16 pos;
 

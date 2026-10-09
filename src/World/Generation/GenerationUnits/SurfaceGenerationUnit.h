@@ -8,6 +8,7 @@
 #include <FastNoise/FastNoise.h>
 
 #include "Core/RevetteCore.h"
+#include "Util/efficient_vector.h"
 #include "World/BlockContainer.h"
 #include "GenerationUnitPos2D.h"
 
@@ -27,74 +28,71 @@ results in a disjoint set of structures.
 */
 class SurfaceGenerationUnit {
 private:
-    class BiomeType {
-    public:
-        enum EnumType : u8 {
-            DESERT_WARM,
-            DESERT_WARM_DEEP,
-            FOREST_BOREAL,
-            FOREST_TEMPERATE,
-            RAINFOREST,
-            SAVANNAH,
-            SHRUBLAND,
-            TUNDRA
-        };
-
-    private:
-        EnumType enumVal;
-
-    public:
-        BiomeType();
-        BiomeType(EnumType _enumVal);
-
-        BiomeType(BiomeType&&) = default;
-        BiomeType(const BiomeType&) = default;
-
-        u16 getFoliageThreshold() const;
-        Block getSurfaceBlock() const;
-    };
-
-    class ProtoChunk1;
-    class ProtoChunk2;
-
+    class BiomeType;
+    class SurfaceNoise;
+    class ProtoChunk;
+    class MinorFeatures;
 
 
 public:
     class NoiseSources;
 
 
-
 public:
-    static constexpr u16 SEA_LEVEL = 64U;
-
+    static constexpr i32 SEA_LEVEL = 64;
 
 
 private:
     GenerationUnitPos2D pos;
 
-    // These should be replaced with type-erased containers in order to leak less private state.
-    std::unique_ptr<
-        std::array<std::array<u16, CHUNK_AREA>, GENERATION_UNIT_WIDTH_C * GENERATION_UNIT_WIDTH_C>
-    > heightData;
-    std::unique_ptr<
-        std::array<std::array<BiomeType, CHUNK_AREA>, GENERATION_UNIT_WIDTH_C * GENERATION_UNIT_WIDTH_C>
-    > biomeData;
+    rvl::vector32<SurfaceNoise> surfaceNoises;
+    std::vector<ProtoChunk> protoTerrainChunks;
     std::array<
         std::queue<std::pair<u16, GenerationUnitPos2D::LocalPos>>,
         2
     > generationPassQueues;
 
 
-    void generatePass1();
-
-
-
 public:
     SurfaceGenerationUnit(GenerationUnitPos2D _pos, const NoiseSources& noiseSources);
+    ~SurfaceGenerationUnit();
 
     GenerationUnitPos2D getPosition() const;
 
     bool expandGeneratedArea();
+};
+
+
+
+class SurfaceGenerationUnit::BiomeType {
+public:
+    enum EnumType : u8 {
+        DESERT_WARM,
+        DESERT_WARM_DEEP,
+        FOREST_BOREAL,
+        FOREST_TEMPERATE,
+        RAINFOREST,
+        SAVANNAH,
+        SHRUBLAND,
+        TUNDRA
+    };
+
+
+private:
+    EnumType enumVal;
+
+
+public:
+    BiomeType();
+    BiomeType(EnumType _enumVal);
+
+    BiomeType(BiomeType&&) = default;
+    BiomeType(const BiomeType&) = default;
+    BiomeType& operator=(BiomeType&&) = default;
+    BiomeType& operator=(const BiomeType&) = default;
+
+    u16 getFoliageThreshold() const;
+    Block getSurfaceBlock() const;
 };
 
 
@@ -104,6 +102,7 @@ class SurfaceGenerationUnit::NoiseSources {
     const FastNoise::SmartNode<> noiseHeight;
     const FastNoise::SmartNode<> noiseHumidity;
     const FastNoise::SmartNode<> noiseTemperature;
+
 
 public:
     NoiseSources(

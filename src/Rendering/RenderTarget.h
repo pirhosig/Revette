@@ -13,8 +13,8 @@ private:
     VkFormat colourFormat{};
     VkExtent2D extent{};
     VkSwapchainKHR swapchain{};
-    rvl::efficient_vector<VkImage> swapchainImages;
-    rvl::efficient_vector<VkImageView> swapchainImageViews;
+    rvl::vector32<VkImage> swapchainImages;
+    rvl::vector32<VkImageView> swapchainImageViews;
 
     VkFormat depthFormat{};
     VkImage depthImage{};
