@@ -84,8 +84,13 @@ set_target_properties(Revette PROPERTIES
 )
 
 target_compile_options(Revette PUBLIC
+    # Optimisation options
     -O3
+    -fno-math-errno
+    -fno-trapping-math
     -march=native
+
+    # Warning options
     -Wall
     -Wextra
     -Wpedantic

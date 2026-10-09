@@ -36,7 +36,7 @@ private:
 
 	// Drawing 
 	std::vector<std::unique_ptr<MeshChunk::Data>> incomingMeshes;
-	rvl::efficient_vector<FrameRenderer> frameRenderers;
+	rvl::vector32<FrameRenderer> frameRenderers;
 	
 	size_t currentFrameRendererIndex = 0;
 

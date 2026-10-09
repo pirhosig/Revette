@@ -113,74 +113,11 @@ constexpr u8 BIOME_TABLE[16][16] = {
 	{ 7,  7,  7,  2,  2,  2,  3,  3,  3,  4,  4,  4,  4,  4,  4,  4 }
 };
 
-}
-
-
-
-SurfaceGenerationUnit::SurfaceGenerationUnit(GenerationUnitPos2D _pos, const NoiseSources& noiseSources) :
-    pos{_pos},
-    heightData{std::make_unique<decltype(heightData)::element_type>()},
-    biomeData{std::make_unique<decltype(biomeData)::element_type>()}
-{
-    // It might be a good idea to move this outside of the constructor.
-    for (u16 x = 0; x < GENERATION_UNIT_WIDTH_C; ++x) {
-    for (u16 z = 0; z < GENERATION_UNIT_WIDTH_C; ++z) {
-        GenerationUnitPos2D::LocalPos genPos{x, z};
-        noiseSources.genChunkHeight(pos.asChunkPos2D(genPos), (*heightData)[genPos.asIndex()]);
-    }
-    }
-
-    for (u16 x = 0; x < GENERATION_UNIT_WIDTH_C; ++x) {
-    for (u16 z = 0; z < GENERATION_UNIT_WIDTH_C; ++z) {
-        GenerationUnitPos2D::LocalPos genPos{x, z};
-        noiseSources.genChunkBiomes(pos.asChunkPos2D(genPos), (*biomeData)[genPos.asIndex()]);
-    }
-    }
-}
-
-
-
-GenerationUnitPos2D SurfaceGenerationUnit::getPosition() const {
-    return pos;
-}
-
-
-
-bool SurfaceGenerationUnit::expandGeneratedArea() {
-    if (generationPassQueues[0].size() > 0) {
-        u16 currentPhase = generationPassQueues[0].front().first;
-        while (generationPassQueues[0].size() > 0) {
-            auto [_phase, _pos] = generationPassQueues[0].front();
-            if (_phase > currentPhase) {
-                break;
-            }
-            generationPassQueues[0].pop();
-
-            // TODO chunk generation pass 1
-
-            // After this stage a "ProtoChunk" needs to contain both the shaped terrain
-            // as well as the pre-emptively placed local features.
-        }
-    }
-
-    // Could possibly have types ProtoChunk1 --> ProtoChunk2 --> ...
-
-    
-    /*
-    Here be the plan:
-        1. Raw noise generation
-        2. Noise modifiers: these are localised to a generation unit.
-        3. Structure space reservation - 
-
-        Local scale:
-
-        4. Terrain shape - combine modified noise and structure placement to form the basic terrain shape.
-
-        This does not modify the block data:
-        5. Local features: small local features (e.g. plants) determination.
-
-        6. Chunk assembly: create the full assembled chunk from the shaped terrain and local features.
-    */ 
+struct PendingBlock {
+    ChunkLocalBlockPos pos;
+    u16 age;
+    Block block;
+};
 
 }
 
@@ -257,68 +194,85 @@ Block SurfaceGenerationUnit::BiomeType::getSurfaceBlock() const {
 
 
 /*
-Represents a chunk after the first generation step.
-At this point the raw noise date has been calculated.
+Represents a chunk column in the surface generation unit after the first generation step.
+At this point the raw noise data has been calculated.
 */
-class SurfaceGenerationUnit::ProtoChunk1 {
-    BlockContainer blockContainer;
-    ChunkPos pos;
-
+class SurfaceGenerationUnit::SurfaceNoise {
 public:
-    ProtoChunk1(
-        ChunkPos _pos,
-        const std::array<u16, CHUNK_AREA>& heightData,
-        const std::array<BiomeType, CHUNK_AREA>& biomeData
-    );
+    std::array<u16, CHUNK_AREA> height;
+    std::array<BiomeType, CHUNK_AREA> biomes;
+    u16 heightMin;
+    u16 heightMax;
+
+    
+    SurfaceNoise(ChunkPos2D _pos, const NoiseSources& noise);
+    SurfaceNoise(SurfaceNoise&&) = default;
+    SurfaceNoise& operator=(SurfaceNoise&&) = default;
+    
+    SurfaceNoise(const SurfaceNoise&) = delete;
+    SurfaceNoise& operator=(const SurfaceNoise&) = delete;
 };
+
+
+
+SurfaceGenerationUnit::SurfaceNoise::SurfaceNoise(ChunkPos2D _pos, const NoiseSources& noise) {
+    auto [_heightMin, _heightMax] = noise.genChunkHeight(_pos, height);
+    heightMin = _heightMin;
+    heightMax = _heightMax;
+    noise.genChunkBiomes(_pos, biomes);
+}
 
 
 
 /*
-Represents a chunk after the first generation step.
-At this point the raw noise date has been calculated.
+Represents a chunk after the second generation step, once the base terrain shape has been calculated.
 */
-class SurfaceGenerationUnit::ProtoChunk2 {
+class SurfaceGenerationUnit::ProtoChunk {
+public:
     BlockContainer blockContainer;
     ChunkPos pos;
 
-public:
-    
+    ProtoChunk(ChunkPos _pos, SurfaceNoise& protoChunkNoise);
+    rvl::vector32<PendingBlock> generateMinorFeatures();
 };
 
 
 
-SurfaceGenerationUnit::ProtoChunk1::ProtoChunk1(
-    ChunkPos _pos,
-    const std::array<u16, CHUNK_AREA>& heightData,
-    const std::array<BiomeType, CHUNK_AREA>& biomeData
-) :
+SurfaceGenerationUnit::ProtoChunk::ProtoChunk(ChunkPos _pos, SurfaceNoise& protoChunkNoise) :
     pos{_pos}
 {
-    const i32 _bottom = pos.getY() * CHUNK_SIZE;
-	const i32 _top = _bottom + CHUNK_SIZE - 1;
+    const i32 _lowY = pos.getY() * CHUNK_SIZE;
+    const i32 _uppY = _lowY + CHUNK_SIZE - 1;
+
     // Return if all of the chunk falls above the terrain height
-    
+    if (protoChunkNoise.heightMax + 1 < _lowY && SEA_LEVEL < _lowY) {
+        return;
+    }
+
     // Fill the chunk if all of the chunk falls below the terrain height
-	// This code is sort of horrible, but it runs hella fast compared to what was here before
-	// Nvm this code is now even faster, and also looks okay
-    
+    if (_uppY < protoChunkNoise.heightMin) {
+        blockContainer.setSingleBlock(Block(2));
+        return;
+    }
 
-    
+    // This code is sort of horrible, but it runs hella fast compared to what was here before
+    // Nvm this code is now even faster, and also looks okay
 
+    // Some blocks must be placed beyond this point, so this optimisation is valid
     blockContainer.setSizeByte();
     const auto _blockStone = blockContainer.getOrAddPalleteIndex(Block(2));
 
     for (u16 lX = 0; lX < CHUNK_SIZE; ++lX) {
     for (u16 lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
-        // TODO: switch to relative surface height
-        const i32 _surface = heightData[lZ * CHUNK_SIZE + lX];
+        const ChunkPos2D::LocalPos _columnPos{lX, lZ};
+
+        // TODO: switch to relative surface height ... Done?
+        const i32 _surface = protoChunkNoise.height[_columnPos.asIndex()] - pos.getY() * CHUNK_SIZE;
 
         u16 lY = 0;
 
-
         // Fill up subsurface.
-        for (; lY < CHUNK_SIZE && _bottom + lY < _surface; ++lY) {
+        for (; lY < CHUNK_SIZE && _lowY + lY < _surface; ++lY) {
             blockContainer.setBlockRaw(
                 ChunkLocalBlockPos(lX, lY, lZ).asIndex(),
                 _blockStone
@@ -329,25 +283,142 @@ SurfaceGenerationUnit::ProtoChunk1::ProtoChunk1(
         }
 
         // Surface
-        
-        
-        if (_bottom + lY < SEA_LEVEL) {
-            blockContainer.setBlock(
-                ChunkLocalBlockPos(lX, lY, lZ),
-                Block(2)
-            );
-        }
-        else {
-            blockContainer.setBlock(
-                ChunkLocalBlockPos(lX, lY, lZ),
-                biomeData[lZ * CHUNK_SIZE + lX].getSurfaceBlock()
-            );
-        }
 
-        lY++;
+        // Surface above shoreline.
+        if (SEA_LEVEL < _lowY + lY) {
+            blockContainer.setBlock(
+                ChunkLocalBlockPos(lX, lY, lZ),
+                protoChunkNoise.biomes[_columnPos.asIndex()].getSurfaceBlock()
+            );
+            ++lY;
+        }
+        // Shore or sea.
+        else {
+            blockContainer.setBlock(ChunkLocalBlockPos(lX, lY, lZ), Block(5));
+            ++lY;
+
+            // Fill rest with water.
+            for (; lY < CHUNK_SIZE && _lowY + lY <= SEA_LEVEL; ++lY) {
+                blockContainer.setBlock(ChunkLocalBlockPos(lX, lY, lZ), Block(6));
+            }
+        }
     }
     }
 }
+
+
+
+rvl::vector32<PendingBlock> SurfaceGenerationUnit::ProtoChunk::generateMinorFeatures() {
+    // Create population features
+	// Return if chunk is entirely below surface or if all the surface air blocks are also below this chunk
+	if (_chunkTop <= genParameters.heightMap.heightMin || genParameters.heightMap.heightMax + 1 < _chunkBottom) return;
+
+	// LCG as the PRNG for population: this may or may not work out in the end
+	// I have no idea tbh, I am not the stats person
+	// Update: it somehow works
+	ChunkPRNG prng(position);
+
+	i32 _worldPosX = position.getX() * CHUNK_SIZE;
+	i32 _worldPosZ = position.getZ() * CHUNK_SIZE;
+
+	// Ruin placement code. Ruins are a general class of structures that can be placed in funky ways
+	// Try to place a ruin at a random poi32 in the chunk
+	{
+		uint16_t _randpos = prng.raw();
+		i32 pX = _randpos % CHUNK_SIZE;
+		i32 pZ = (_randpos / CHUNK_SIZE) % CHUNK_SIZE;
+		const auto _idx = static_cast<size_t>(pZ * CHUNK_SIZE + pX);
+		i32 _ground = genParameters.heightMap.heightArray[_idx];
+
+		switch (genParameters.biomeMap.biomeArray[_idx])
+		{
+		case BIOME::DESERT:
+			if (_ground > -10 && prng.raw() > 65163) Structures::Ruins::clayFrame(
+				*this, prng, BlockPos(_worldPosX + pX, _ground, _worldPosZ + pZ)
+			);
+		default:
+			break;
+		}
+	}
+
+
+	for (i32 lX = 0; lX < CHUNK_SIZE; ++lX) {
+	for (i32 lZ = 0; lZ < CHUNK_SIZE; ++lZ) {
+		const auto _index = static_cast<size_t>(lZ * CHUNK_SIZE + lX);
+		const i32 _surfaceLevel = genParameters.heightMap.heightArray[_index];
+
+		// Continue if surface air block is below chunk OR if the topmost block is above the chunk
+		// Currently no features generate below sea level, so this is sort of a hack until those features exist
+		if (
+			_surfaceLevel + 1 < _chunkBottom ||
+			_surfaceLevel + 1 > _chunkTop ||
+			_surfaceLevel < SEA_LEVEL + 3
+		) {
+			continue;
+		}
+
+		// Variables defined for quick access
+		const BlockPos _centre(_worldPosX + lX, _surfaceLevel + 1, _worldPosZ + lZ);
+		const uint16_t _foliageValue = prng.raw();
+
+		switch (genParameters.biomeMap.biomeArray[_index]) {
+		case BIOME::DESERT:
+			// Cactus
+			if (_foliageValue > 65439)
+			{
+				auto height = prng.scaledInt(1.13, 2.87);
+				for (i32 i = 0; i < height; ++i) setBlockPopulation(_centre.offset(0, i, 0), Block(9), 0);
+			}
+			// Desert Flower
+			else if (_foliageValue > 65394) setBlockPopulation(_centre, Block(14), 0);
+			else if (_foliageValue > 65391) setBlockPopulation(_centre, Block(10), 0);
+			break;
+		
+		case BIOME::DESERT_DEEP:
+			break;
+		
+		case BIOME::FOREST_BOREAL:
+			if      (_foliageValue > 65358) Structures::Trees::PineBasic(*this, prng, _centre);
+			else if (_foliageValue > 65325) Structures::Trees::PineMassive(*this, prng, _centre);
+			else if (_foliageValue > 65161) Structures::Trees::PineFancy(*this, prng, _centre);
+			break;
+		
+		case BIOME::FOREST_TEMPERATE:
+			if      (_foliageValue > 64434) Structures::Trees::Oak(*this, prng, _centre);
+			else if (_foliageValue > 64342) Structures::Trees::Aspen(*this, prng, _centre);
+			else if (_foliageValue > 64093) setBlockPopulation(_centre, Block(15), 0);
+			else if (_foliageValue > 63988) setBlockPopulation(_centre, Block(10), 0);
+			break;
+		
+		case BIOME::RAINFOREST:
+			// Rainforests are pretty bland like this ngl (slightly better now)
+			if      (_foliageValue > 60272) Structures::Trees::RainforestBasic(*this, prng, _centre);
+			else if (_foliageValue > 59989) Structures::Trees::RainforestTall(*this, prng, _centre);
+			else if (_foliageValue > 49596) Structures::Trees::RainforestShrub(*this, _centre);
+			else if (_foliageValue > 37063) setBlockPopulation(_centre, Block(10), 0);
+			break;
+		
+		case BIOME::SAVANNAH:
+			if      (_foliageValue > 65530) Structures::Trees::SavannahBaobab(*this, prng, _centre);
+			else if (_foliageValue > 65423) Structures::Trees::SavannahAcacia(*this, prng, _centre);
+			else if (_foliageValue > 52428) setBlockPopulation(_centre, Block(10), 0);
+			break;
+		
+		case BIOME::SHRUBLAND:
+			if      (_foliageValue > 52428) setBlockPopulation(_centre, Block(10), 0);
+			else if (_foliageValue > 52369) setBlockPopulation(_centre, Block(4), 0);
+			break;
+		
+		case BIOME::TUNDRA:
+			if (_foliageValue > 65430) setBlockPopulation(_centre, Block(2), 0);
+			break;
+		
+		default:
+			break;
+		}
+	}
+	}
+};
 
 
 
@@ -365,6 +436,7 @@ SurfaceGenerationUnit::NoiseSources::NoiseSources(
 
 
 
+// Returns a pair of (min, max) specifying the range of the height within this chunk.
 std::pair<u16, u16> SurfaceGenerationUnit::NoiseSources::genChunkHeight(
     ChunkPos2D chunkPos,
     std::array<u16, CHUNK_AREA>& output
@@ -423,4 +495,69 @@ void SurfaceGenerationUnit::NoiseSources::genChunkBiomes(
             BIOME_TABLE[static_cast<size_t>(rawHumidity[i])][static_cast<size_t>(rawTemperature[i])]
         );
     }
+}
+
+
+
+SurfaceGenerationUnit::SurfaceGenerationUnit(GenerationUnitPos2D _pos, const NoiseSources& noiseSources) :
+    pos{_pos}
+{
+    // It might be a good idea to move this outside of the constructor.
+    surfaceNoises.reserve(GENERATION_UNIT_WIDTH_C * GENERATION_UNIT_WIDTH_C);
+    for (u16 x = 0; x < GENERATION_UNIT_WIDTH_C; ++x) {
+    for (u16 z = 0; z < GENERATION_UNIT_WIDTH_C; ++z) {
+        GenerationUnitPos2D::LocalPos genPos{x, z};
+        surfaceNoises.emplace_back(pos.asChunkPos2D(genPos), noiseSources);
+    }
+    }
+}
+
+
+
+SurfaceGenerationUnit::~SurfaceGenerationUnit() = default;
+
+
+
+GenerationUnitPos2D SurfaceGenerationUnit::getPosition() const {
+    return pos;
+}
+
+
+
+bool SurfaceGenerationUnit::expandGeneratedArea() {
+    if (generationPassQueues[0].size() > 0) {
+        u16 currentPhase = generationPassQueues[0].front().first;
+        while (generationPassQueues[0].size() > 0) {
+            auto [_phase, _pos] = generationPassQueues[0].front();
+            if (_phase > currentPhase) {
+                break;
+            }
+            generationPassQueues[0].pop();
+
+            // TODO chunk generation pass 1
+
+            // After this stage a "ProtoChunk" needs to contain both the shaped terrain
+            // as well as the pre-emptively placed local features.
+        }
+    }
+
+    // Could possibly have types ProtoChunk1 --> ProtoChunk2 --> ...
+
+    
+    /*
+    Here be the plan:
+        1. Raw noise generation
+        2. Noise modifiers: these are localised to a generation unit.
+        3. Structure space reservation - 
+
+        Local scale:
+
+        4. Terrain shape - combine modified noise and structure placement to form the basic terrain shape.
+
+        This does not modify the block data:
+        5. Local features: small local features (e.g. plants) determination.
+
+        6. Chunk assembly: create the full assembled chunk from the shaped terrain and local features.
+    */ 
+
 }

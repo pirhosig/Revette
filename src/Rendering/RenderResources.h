@@ -20,7 +20,7 @@ private:
     VkDevice device;
     VmaAllocator allocator;
 
-    rvl::efficient_vector<TextureArray> textures;
+    rvl::vector32<TextureArray> textures;
 
     VkDescriptorSetLayout descriptorLayout{};
     VkDescriptorPool descriptorPool{};
