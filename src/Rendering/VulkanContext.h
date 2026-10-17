@@ -17,14 +17,8 @@ private:
     VmaAllocator allocator{};
 
 private:
-    VulkanContext() = default;
-
-    void createInstance(bool debugEnabled);
-    void createDebugMessenger(bool debugEnabled);
-    void createSurface(struct GLFWwindow* window);
-    void selectPhysicalDevice();
-    void createDevice();
-    void createAllocator();
+    class Private;
+    VulkanContext(bool);
 
 public:
     VulkanContext(struct GLFWwindow* window, bool debugEnabled);
@@ -32,8 +26,8 @@ public:
 
     VulkanContext(VulkanContext&&) = delete;
     VulkanContext(const VulkanContext&) = delete;
-    VulkanContext operator=(VulkanContext&&) = delete;
-    VulkanContext operator=(const VulkanContext&) = delete;
+    VulkanContext& operator=(VulkanContext&&) = delete;
+    VulkanContext& operator=(const VulkanContext&) = delete;
 
     void waitDeviceIdle() noexcept;
 
